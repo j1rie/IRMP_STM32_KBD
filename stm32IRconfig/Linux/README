@@ -1,0 +1,12 @@
+configure and monitor STM32IR
+
+Usage:
+stm32IRconfig [/dev/hidraw1]
+
+program and read the eeprom (wakeups, macros and capabilities)
+reset wakeups, macros and alarm
+set and get the alarm
+send IR
+monitor (read) STM32IR, stop with ^C
+
+put the udev rule from irmplircd into your udev rules directory, then you don't need to give a device
