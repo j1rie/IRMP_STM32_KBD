@@ -226,7 +226,7 @@ void LED_Switch_init(void)
 	/* disable SWD, so pins are available */
 	GPIO_PinRemapConfig(GPIO_Remap_SWJ_Disable, ENABLE);
 #endif /* ST_Link */
-#if (defined(StickLink) || defined(GreenLink))
+#if defined(StickLink) || defined(GreenLink)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 #endif /* StickLink */
 	/* start with wakeup and reset switch off */
@@ -706,6 +706,7 @@ void send_magic(void)
 int main(void)
 {
 	uint8_t buf[HID_OUT_BUFFER_SIZE-1];
+	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
 
@@ -772,7 +773,11 @@ int main(void)
 			}
 
 			/* send IR-data */
-			USB_HID_SendData(REPORT_ID_IR, (uint8_t *) &myIRData, sizeof(myIRData));
+			kbd_buf[2] = (myIRData.command + 4) & 0xFF;
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+			delay_ms(30);
+			kbd_buf[2] = 0;
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release
 		}
 	}
 }
