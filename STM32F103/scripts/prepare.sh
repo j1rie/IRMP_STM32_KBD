@@ -132,9 +132,6 @@ tar -xvf $ar --strip-components=1 \
     $path/irmpconfig.h \
     $path/irmpprotocols.h \
     $path/irmpsystem.h \
-    $path/irsnd.c \
-    $path/irsnd.h \
-    $path/irsndconfig.h \
     $path/README.txt
 cd ..
 

@@ -1,7 +1,7 @@
 /**********************************************************************************************************
-	stm32config: configure and monitor STM32IR
+	stm32config: configure and monitor IRMP_STM32_KBD
 
-	Copyright (C) 2014-2015 Jörg Riechardt
+	Copyright (C) 2014-2018 Jörg Riechardt
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ int main(int argc, const char **argv) {
 	outBuf[0] = 0x03; // Report ID
 	outBuf[1] = 0x00; // STAT_CMD
 
-cont:	printf("program eeprom: wakeups and macros (p)\nprogram eeprom: wakeups and macros with remote control(P)\nget eeprom (wakeups, macros and capabilities) (g)\nreset (wakeups, macros and alarm) (r)\nset alarm (s)\nget alarm (a)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
+cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control(P)\nget eeprom (wakeups, IR-data, keys and capabilities) (g)\nreset (wakeups, IR-data, keys and alarm) (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {

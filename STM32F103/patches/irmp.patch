@@ -1,6 +1,6 @@
 diff -Nrup A/irmpconfig.h B/irmpconfig.h
 --- A/irmpconfig.h	2018-02-19 11:30:11.000000000 +0100
-+++ B/irmpconfig.h	2018-02-20 22:34:43.000000000 +0100
++++ B/irmpconfig.h	2018-08-28 22:12:22.455471006 +0200
 @@ -56,17 +56,17 @@
  #define IRMP_SUPPORT_KASEIKYO_PROTOCOL          1       // Kaseikyo             >= 10000                 ~250 bytes
  
@@ -52,47 +52,3 @@ diff -Nrup A/irmpconfig.h B/irmpconfig.h
  #endif
  
  #endif // _IRMPCONFIG_H_
-diff -Nrup A/irsndconfig.h B/irsndconfig.h
---- A/irsndconfig.h	2018-02-19 11:30:11.000000000 +0100
-+++ B/irsndconfig.h	2018-06-07 16:56:36.000000000 +0200
-@@ -47,17 +47,17 @@
- #define IRSND_SUPPORT_KASEIKYO_PROTOCOL         1       // Kaseikyo             >= 10000                 ~300 bytes
- 
- // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
--#define IRSND_SUPPORT_DENON_PROTOCOL            0       // DENON, Sharp         >= 10000                 ~200 bytes
-+#define IRSND_SUPPORT_DENON_PROTOCOL            1       // DENON, Sharp         >= 10000                 ~200 bytes
- #define IRSND_SUPPORT_RC5_PROTOCOL              1       // RC5                  >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_RC6_PROTOCOL              0       // RC6                  >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_RC6A_PROTOCOL             0       // RC6A                 >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_JVC_PROTOCOL              0       // JVC                  >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_NEC16_PROTOCOL            0       // NEC16                >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_NEC42_PROTOCOL            0       // NEC42                >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_IR60_PROTOCOL             0       // IR60 (SDA2008)       >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_GRUNDIG_PROTOCOL          0       // Grundig              >= 10000                 ~300 bytes
--#define IRSND_SUPPORT_SIEMENS_PROTOCOL          0       // Siemens, Gigaset     >= 15000                 ~150 bytes
--#define IRSND_SUPPORT_NOKIA_PROTOCOL            0       // Nokia                >= 10000                 ~400 bytes
-+#define IRSND_SUPPORT_RC6_PROTOCOL              1       // RC6                  >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_RC6A_PROTOCOL             1       // RC6A                 >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_JVC_PROTOCOL              1       // JVC                  >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_NEC16_PROTOCOL            1       // NEC16                >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_NEC42_PROTOCOL            1       // NEC42                >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_IR60_PROTOCOL             1       // IR60 (SDA2008)       >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_GRUNDIG_PROTOCOL          1       // Grundig              >= 10000                 ~300 bytes
-+#define IRSND_SUPPORT_SIEMENS_PROTOCOL          1       // Siemens, Gigaset     >= 15000                 ~150 bytes
-+#define IRSND_SUPPORT_NOKIA_PROTOCOL            1       // Nokia                >= 10000                 ~400 bytes
- 
- // exotic protocols, enable here!               Enable  Remarks                 F_INTERRUPTS            Program Space
- #define IRSND_SUPPORT_BOSE_PROTOCOL             0       // BOSE                 >= 10000                 ~100 bytes
-@@ -146,9 +146,9 @@
-  * ARM STM32 section:
-  *---------------------------------------------------------------------------------------------------------------------------------------------------
-  */
--#elif defined (ARM_STM32)                                               // use B6 as IR output on STM32
--#  define IRSND_PORT_LETTER                     B
--#  define IRSND_BIT_NUMBER                      6
-+#elif defined (ARM_STM32)                                               // use IR_OUT_PORT + IR_OUT_PIN as IR output on STM32
-+#  define IRSND_PORT_LETTER                     IR_OUT_PORT
-+#  define IRSND_BIT_NUMBER                      IR_OUT_PIN
- #  define IRSND_TIMER_NUMBER                    4
- #  define IRSND_TIMER_CHANNEL_NUMBER            1                       // only channel 1 can be used at the moment, others won't work
- 

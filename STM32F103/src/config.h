@@ -10,13 +10,14 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* MACRO_SLOTS x (MACRO_DEPTH + 1) + WAKE_SLOTS < 85
- * Eeprom page size = 1kB - 4, 255 pairs of 16bit variable + address,
- * IRdata needs 3 variables, 255 / 3 = 85
+/* NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 <= 255
+ * Eeprom page size = 1kB - 4, 255 pairs of 16bit variable + address
+ * Eeprom partition 1: NUM_KEYS IRMP_DATA
+ * Eeprom partition 2: NUM_KEYS keys
+ * Eeprom partition 3: WAKE_SLOTS IRMP_DATA
  */
-#define MACRO_SLOTS	8
-#define MACRO_DEPTH	8
-#define WAKE_SLOTS	8
+#define NUM_KEYS   62
+#define WAKE_SLOTS	2 // at least 2: wakeup and reboot
 #define SIZEOF_IR	6
 
 /* uncomment below for CooCox */
@@ -61,9 +62,6 @@
 /* uncomment this in order to pull down the "active" pin of the mainboard power button connector directly */
 //#define SimpleCircuit
 
-/* uncomment this for an external LED instead of the reset functionality on Blue-, Red-, Green- or StickLink */
-#define EXTLED
-
 /* uncomment this for legacy boards with pulldown resistor for USB reset */
 //#define PullDown
 
@@ -79,161 +77,103 @@
 #endif
 
 
-/* B6 IRSND (irsndconfig.h) , B10 Logging (irmp.c) */
-#define IR_OUT_PORT B
-#define IR_OUT_PIN  6
+/* B10 Logging (irmp.c) */
 
 #if defined(BlueLink) /* blue ST-Link, IRSND = NRST */
 	#define WAKEUP_PORT		GPIOA
 	#define WAKEUP_PIN		GPIO_Pin_13 /* DIO */
-#ifndef EXTLED
-	#define RESET_PORT		GPIOA
-	#define RESET_PIN		GPIO_Pin_14 /* CLK */
-#else
 	#define EXTLED_PORT		GPIOA
 	#define EXTLED_PIN		GPIO_Pin_14 /* CLK */
-#endif
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11 /* SWIM */
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_14 /* TMS */
 	#define USB_DISC_PORT		GPIOB
 	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOB /* TODO use concat */
 	#define USB_DISC_PIN		GPIO_Pin_13 /* TCK */
 #elif defined(RedLink) /* red ST-Link, IRSND = NRST */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_14 /* DIO */
-#ifndef EXTLED
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_13 /* CLK */
-#else
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_13 /* CLK */
-#endif
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11 /* SWIM */
-	#define WAKEUP_RESET_PORT	GPIOA
-	#define WAKEUP_RESET_PIN	GPIO_Pin_14
 	#define USB_DISC_PORT		GPIOA
 	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOA /* TODO use concat */
 	#define USB_DISC_PIN		GPIO_Pin_13
 #elif defined(StickLink) /* ST-Link stick, IRSND = RST */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_14 /* DIO */
-#ifndef EXTLED
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_13 /* CLK */
-#else
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_13 /* CLK */
-#endif
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11 /* SWIM */
 	#define LED_PORT		GPIOA
 	#define LED_PIN			GPIO_Pin_9
-	#define WAKEUP_RESET_PORT	GPIOA
-	#define WAKEUP_RESET_PIN	GPIO_Pin_14
 #elif defined(GreenLink) /* green ST-Link stick, IRSND = RST */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_14 /* DIO */
-#ifndef EXTLED
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_13 /* CLK */
-#else
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_13 /* CLK */
-#endif
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11 /* SWIM */
 	#define LED_PORT		GPIOA
 	#define LED_PIN			GPIO_Pin_9
-	#define WAKEUP_RESET_PORT	GPIOA
-	#define WAKEUP_RESET_PIN	GPIO_Pin_14
 #elif defined(DeveloperBoard) /* classic developer board */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_14
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_15
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_10
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11
 	#define LED_PORT		GPIOB
 	#define LED_PIN			GPIO_Pin_13
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_12
 #elif defined(BlueDeveloperBoard) /* blue developer board */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_14
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_15
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_10
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		9
 	#define LED_PORT		GPIOC
 	#define LED_PIN			GPIO_Pin_13
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_12
 #elif defined(BlackDeveloperBoard) /* black developer board */
 	#define WAKEUP_PORT		GPIOA
 	#define WAKEUP_PIN		GPIO_Pin_14 /* CLK */
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_14
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_10
 	#define IR_IN_PORT		A
 	#define IR_IN_PIN		13 /* IO */
 	#define LED_PORT		GPIOB
 	#define LED_PIN			GPIO_Pin_12
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_13
 #elif defined(BlackDeveloperBoardTest) /* black developer board test */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_8
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_14
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_10
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		7
 	#define LED_PORT		GPIOB
 	#define LED_PIN			GPIO_Pin_12
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_13
 #elif defined(MapleMini) || defined(MapleMini_2k) /* Maple Mini */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_10
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_15
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_12
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		0
 	#define LED_PORT		GPIOB
 	#define LED_PIN			GPIO_Pin_1
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_13
 	#define USB_DISC_PORT		GPIOB
 	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOB /* TODO use concat */
 	#define USB_DISC_PIN		GPIO_Pin_9
 #elif defined(MapleMini_ExtBd) || defined(MapleMini_2k_ExtBd) /* Maple Mini with Extension Board */
 	#define WAKEUP_PORT		GPIOB
 	#define WAKEUP_PIN		GPIO_Pin_7 /* 15 */
-	#define RESET_PORT		GPIOB
-	#define RESET_PIN		GPIO_Pin_15
 	#define EXTLED_PORT		GPIOB
 	#define EXTLED_PIN		GPIO_Pin_6 /* 16 */
 	#define IR_IN_PORT		C
 	#define IR_IN_PIN		13 /* 14 */
-	#undef	IR_OUT_PORT
-	#undef	IR_OUT_PIN
-	#define IR_OUT_PORT		A
-	#define IR_OUT_PIN		6
 	#define LED_PORT		GPIOB
 	#define LED_PIN			GPIO_Pin_1
-	#define WAKEUP_RESET_PORT	GPIOB
-	#define WAKEUP_RESET_PIN	GPIO_Pin_13
 	#define USB_DISC_PORT		GPIOB
 	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOB /* TODO use concat */
 	#define USB_DISC_PIN		GPIO_Pin_9
