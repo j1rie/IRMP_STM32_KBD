@@ -21,6 +21,30 @@
 #include <inttypes.h>
 #include <termios.h>
 #include <fcntl.h>
+#include "usb_hid_keys.h"
+
+enum __attribute__ ((__packed__)) access {
+	ACC_GET,
+	ACC_SET,
+	ACC_RESET
+};
+
+enum __attribute__ ((__packed__)) command {
+	CMD_CAPS,
+	CMD_ALARM,
+	CMD_IRDATA,
+	CMD_KEY,
+	CMD_WAKE,
+	CMD_REBOOT,
+	CMD_IRDATA_REMOTE,
+	CMD_WAKE_REMOTE
+};
+
+enum __attribute__ ((__packed__)) status {
+	STAT_CMD,
+	STAT_SUCCESS,
+	STAT_FAILURE
+};
 
 static int stm32fd = -1;
 uint8_t inBuf[17];
@@ -70,7 +94,7 @@ void write_and_check() {
 	read_stm32();
 	while (inBuf[0] == 0x01)
 		read_stm32();
-	if (inBuf[1] == 0x01) { // STAT_SUCCESS
+	if (inBuf[1] == STAT_SUCCESS) {
 		puts("*****************************OK********************************\n");
 	} else {
 		puts("***************************ERROR*******************************\n");
@@ -80,82 +104,98 @@ void write_and_check() {
 int main(int argc, const char **argv) {
 
 	uint64_t i;
+	uint16_t kk;
 	char c, d;
-	uint8_t s, m, k, l, idx;
+	uint8_t n, k, l, idx;
 	int retValm, jump_to_firmware;
 	jump_to_firmware = 0;
 
 	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32");
 
-	outBuf[0] = 0x03; // Report ID
-	outBuf[1] = 0x00; // STAT_CMD
+	outBuf[0] = 0x03; // Report ID Configuration, PC->STM32
+	outBuf[1] = STAT_CMD;
 
-cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control(P)\nget eeprom (wakeups, IR-data, keys and capabilities) (g)\nreset (wakeups, IR-data, keys and alarm) (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
+cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control (P)\nget eeprom: wakeups, IR-data, keys and capabilities (g)\nreset: wakeups, IR-data, keys and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 'p':
-prog:		printf("set wakeup(w)\nset macro(m)\n");
+prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x01; // ACC_SET
+		outBuf[idx++] = ACC_SET;
 		switch (d) {
 		case 'w':
-			printf("enter slot number (starting with 0)\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = 0x05; // CMD_WAKE
-			outBuf[idx++] = s;    // (s+1)-th slot
+			printf("enter wakeup number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_WAKE;
+			outBuf[idx++] = n;
+			printf("enter IRData (protocoladdresscommandflag)\n");
+			scanf("%" SCNx64 "", &i);
+			outBuf[idx++] = (i>>40) & 0xFF;
+			outBuf[idx++] = (i>>24) & 0xFF;
+			outBuf[idx++] = (i>>32) & 0xFF;
+			outBuf[idx++] = (i>>8) & 0xFF;
+			outBuf[idx++] = (i>>16) & 0xFF;
+			outBuf[idx++] = i & 0xFF;
+			write_and_check();
 			break;
-		case 'm':
-			printf("enter macro number (starting with 0)\n");
-			scanf("%"SCNd8"", &m);
-			outBuf[idx++] = 0x04; // CMD_MACRO
-			outBuf[idx++] = m;    // (m+1)-th macro
-			printf("enter slot number, 0 for trigger\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = s;    // (s+1)-th slot
+		case 'i':
+			printf("enter IR-data number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_IRDATA;
+			outBuf[idx++] = n;
+			printf("enter IRData (protocoladdresscommandflag)\n");
+			scanf("%" SCNx64 "", &i);
+			outBuf[idx++] = (i>>40) & 0xFF;
+			outBuf[idx++] = (i>>24) & 0xFF;
+			outBuf[idx++] = (i>>32) & 0xFF;
+			outBuf[idx++] = (i>>8) & 0xFF;
+			outBuf[idx++] = (i>>16) & 0xFF;
+			outBuf[idx++] = i & 0xFF;
+			write_and_check();
+			break;
+		case 'k':
+			printf("enter key number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_KEY;
+			outBuf[idx++] = n;
+			printf("enter key (AABB)\n"); // AA = modifier, BB = key, TODO KEY_xxx
+			scanf("%" SCNx16 "", &kk); // TODO string
+			outBuf[idx++] = kk & 0xFF;
+			outBuf[idx++] = (kk>>8) & 0xFF;
+			write_and_check();
 			break;
 		default:
 			goto prog;
 		}
-		printf("enter IRData (protocoladdresscommandflag)\n");
-		scanf("%"SCNx64"", &i);
-		outBuf[idx++] = (i>>40) & 0xFF;
-		outBuf[idx++] = (i>>24) & 0xFF;
-		outBuf[idx++] = (i>>32) & 0xFF;
-		outBuf[idx++] = (i>>8) & 0xFF;
-		outBuf[idx++] = (i>>16) & 0xFF;
-		outBuf[idx++] = i & 0xFF;
-		write_and_check();
 		break;
 
 	case 'P':
-Prog:		printf("set wakeup with remote control(w)\nset macro with remote control(m)\n");
+Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x01; // ACC_SET
+		outBuf[idx++] = ACC_SET;
 		switch (d) {
 		case 'w':
-			printf("enter slot number (starting with 0)\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = 0x05; // CMD_WAKE
-			outBuf[idx++] = s;    // (s+1)-th slot
+			printf("enter wakeup number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_WAKE_REMOTE;
+			outBuf[idx++] = n;
 			break;
-		case 'm':
-			printf("enter macro number (starting with 0)\n");
-			scanf("%"SCNd8"", &m);
-			outBuf[idx++] = 0x04; // CMD_MACRO
-			outBuf[idx++] = m;    // (m+1)-th macro
-			printf("enter slot number, 0 for trigger\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = s;    // (s+1)-th slot
+		case 'i':
+			printf("enter IR-data number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_IRDATA_REMOTE;
+			outBuf[idx++] = n;
 			break;
 		default:
 			goto Prog;
 		}
+#if 0
 		printf("enter IRData by pressing a button on the remote control\n");
 		read_stm32();
 		outBuf[idx++] = inBuf[1];
@@ -163,34 +203,39 @@ Prog:		printf("set wakeup with remote control(w)\nset macro with remote control(
 		outBuf[idx++] = inBuf[3];
 		outBuf[idx++] = inBuf[4];
 		outBuf[idx++] = inBuf[5];
-		outBuf[idx++] = inBuf[6];
+		/* omit flags */
+		outBuf[idx++] = 0;
+#endif
 		write_and_check();
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget macro slot(m)\nget caps(c)\n");
+get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget caps(c)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x00; // ACC_GET
+		outBuf[idx++] = ACC_GET;
 		switch (d) {
 		case 'w':
-			printf("enter slot number (starting with 0)\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = 0x05; // CMD_WAKE
-			outBuf[idx++] = s;    // (s+1)-th slot
+			printf("enter wakeup number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_WAKE;
+			outBuf[idx++] = n;
 			break;
-		case 'm':
-			printf("enter macro number (starting with 0)\n");
-			scanf("%"SCNd8"", &m);
-			outBuf[idx++] = 0x04; // CMD_MACRO
-			outBuf[idx++] = m;    // (m+1)-th macro
-			printf("enter slot number, 0 for trigger\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = s;    // (s+1)-th slot
+		case 'i':
+			printf("enter IR-data number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_IRDATA;
+			outBuf[idx++] = n;
+			break;
+		case 'k':
+			printf("enter key number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_KEY;
+			outBuf[idx++] = n;
 			break;
 		case 'c':
-			outBuf[idx++] = 0x01; // CMD_CAPS
+			outBuf[idx++] = CMD_CAPS;
 			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
 				outBuf[idx] = l;
 				write_stm32();
@@ -199,9 +244,9 @@ get:		printf("get wakeup(w)\nget macro slot(m)\nget caps(c)\n");
 				while (inBuf[0] == 0x01)
 					read_stm32();
 				if (!l) { // first query for slots and depth
-					printf("macro_slots: %u\n", inBuf[4]);
-					printf("macro_depth: %u\n", inBuf[5]);
-					printf("wakeup_slots: %u\n", inBuf[6]);
+					printf("number of keys: %u\n", inBuf[4]);
+					//printf("macro_depth: %u\n", inBuf[5]);
+					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
 				} else {
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
@@ -235,29 +280,32 @@ again:			;
 out:		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset alarm(a)\n");
+reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset alarm(a)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x02; // ACC_RESET
+		outBuf[idx++] = ACC_RESET;
 		switch (d) {
 		case 'w':
 			printf("enter slot number (starting with 0)\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = 0x05; // CMD_WAKE
-			outBuf[idx++] = s;    // (s+1)-th slot
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_WAKE;
+			outBuf[idx++] = n;
 			break;
-		case 'm':
-			printf("enter macro number (starting with 0)\n");
-			scanf("%"SCNd8"", &m);
-			outBuf[idx++] = 0x04; // CMD_MACRO
-			outBuf[idx++] = m;    // (m+1)-th macro
-			printf("enter slot number, 0 for trigger\n");
-			scanf("%"SCNd8"", &s);
-			outBuf[idx++] = s;    // (s+1)-th slot
+		case 'i':
+			printf("enter IR-data number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_IRDATA;
+			outBuf[idx++] = n;
+			break;
+		case 'k':
+			printf("enter key number (starting with 0)\n");
+			scanf("%" SCNd8 "", &n);
+			outBuf[idx++] = CMD_KEY;
+			outBuf[idx++] = n;
 			break;
 		case 'a':
-			outBuf[idx++] = 0x03; // CMD_ALARM
+			outBuf[idx++] = CMD_ALARM;
 			break;
 		default:
 			goto reset;
@@ -268,10 +316,10 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset alarm(a)\n");
 	case 's':
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x01; // ACC_SET
-		outBuf[idx++] = 0x03; // CMD_ALARM
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_ALARM;
 		printf("enter alarm\n");
-		scanf("%"SCNx64"", &i);
+		scanf("%" SCNx64 "", &i);
 		memcpy(&outBuf[idx++], &i, 4);
 		write_and_check();
 		break;
@@ -279,32 +327,16 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset alarm(a)\n");
 	case 'a':
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x00; // ACC_GET
-		outBuf[idx++] = 0x03; // CMD_ALARM
-		write_and_check();
-		break;
-
-	case 'i':
-		printf("enter IRData (protocoladdresscommandflag)\n");
-		scanf("%"SCNx64"", &i);
-		memset(&outBuf[2], 0, 15);
-		idx = 2;
-		outBuf[idx++] = 0x01; // ACC_SET
-		outBuf[idx++] = 0x00; // CMD_EMIT
-		outBuf[idx++] = (i>>40) & 0xFF;
-		outBuf[idx++] = (i>>24) & 0xFF;
-		outBuf[idx++] = (i>>32) & 0xFF;
-		outBuf[idx++] = (i>>8) & 0xFF;
-		outBuf[idx++] = (i>>16) & 0xFF;
-		outBuf[idx++] = i & 0xFF;
+		outBuf[idx++] = ACC_GET;
+		outBuf[idx++] = CMD_ALARM;
 		write_and_check();
 		break;
 
 	case 'b':
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
-		outBuf[idx++] = 0x01; // ACC_SET
-		outBuf[idx++] = 0x06; // CMD_REBOOT
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_REBOOT;
 		write_and_check();
 		usleep(2500000);
 		close(stm32fd);

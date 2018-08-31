@@ -36,7 +36,9 @@ enum __attribute__ ((__packed__)) command {
 	CMD_IRDATA,
 	CMD_KEY,
 	CMD_WAKE,
-	CMD_REBOOT
+	CMD_REBOOT,
+	CMD_IRDATA_REMOTE,
+	CMD_WAKE_REMOTE
 };
 
 enum __attribute__ ((__packed__)) status {
@@ -320,7 +322,8 @@ uint8_t get_num_of_irdata(IRMP_DATA *ir)
 	for (i=0; i < NUM_KEYS; i++) {
 		idx = SIZEOF_IR/2 * i;
 		eeprom_restore(buf, idx);
-		if (!memcmp(buf, ir, sizeof(buf)))
+		/* don't compare flags */
+		if (!memcmp(buf, ir, sizeof(buf) - 1))
 			return i;
 	}
 	return 0xFF;
@@ -415,21 +418,26 @@ void Wakeup(void)
 	send_ir_on_delay = 90;
 }
 
-void store_new_wakeup(void)
+uint8_t store_new_irdata(uint8_t num)
 {
-	uint8_t idx;
-	IRMP_DATA wakeup_IRData;
-	irmp_get_data(&wakeup_IRData); // flush input of irmp data
+	uint8_t ret = 0;
+	IRMP_DATA new_IRData;
+	uint8_t tmp[SIZEOF_IR];
+	irmp_get_data(&new_IRData); // flush input of irmp data
 	blink_LED();
 	/* 5 seconds to press button on remote */
 	delay_ms(5000);
-	if (irmp_get_data(&wakeup_IRData)) {
-		wakeup_IRData.flags = 0;
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1);
-		/* store received wakeup IRData in first wakeup slot */
-		eeprom_store(idx, (uint8_t *) &wakeup_IRData);
+	if (irmp_get_data(&new_IRData)) {
+		new_IRData.flags = 0;
+		/* store received IRData at address num */
+		eeprom_store(num, (uint8_t *) &new_IRData);
+		/* validate stored value in eeprom */
+		eeprom_restore(tmp, num);
+		if (memcmp(&new_IRData, tmp, sizeof(tmp)))
+			ret = 1;
 		blink_LED();
 	}
+	return ret;
 }
 
 int8_t get_handler(uint8_t *buf)
@@ -473,7 +481,7 @@ int8_t get_handler(uint8_t *buf)
 		ret += SIZEOF_IR;
 		break;
 	case CMD_KEY:
-		*((uint16_t*)&buf[3]) = get_key(buf[3]); // ?!
+		*((uint16_t*)&buf[3]) = get_key(buf[3]);
 		ret += 2;
 		break;
 	case CMD_WAKE:
@@ -521,6 +529,15 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_REBOOT:
 		Reboot = 1;
 		break;
+	case CMD_IRDATA_REMOTE:
+		idx = SIZEOF_IR/2 * buf[3];
+		if(store_new_irdata(idx))
+			ret = -1;
+	case CMD_WAKE_REMOTE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[3];
+		if(store_new_irdata(idx))
+			ret = -1;
+		break;
 	default:
 		ret = -1;
 	}
@@ -541,8 +558,7 @@ int8_t reset_handler(uint8_t *buf)
 		idx = SIZEOF_IR/2 * buf[3];
 		eeprom_store(idx, zeros);
 	case CMD_KEY:
-		idx = NUM_KEYS * SIZEOF_IR/2 + buf[3];
-		put_key(0xFFFF, idx);
+		put_key(0xFFFF, buf[3]);
 		break;
 	case CMD_WAKE:
 		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[3];
@@ -652,7 +668,7 @@ void send_magic(void)
 int main(void)
 {
 	uint8_t buf[HID_OUT_BUFFER_SIZE-1];
-	uint8_t kbd_buf[2] = {0};
+	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
 
@@ -714,13 +730,13 @@ int main(void)
 			}
 
 			/* send IR-data */
-			//kbd_buf[0] = (get_key(get_num_of_irdata(myIRData)) & 0xFF00) >> 8; // modifier
+			kbd_buf[0] = get_key(get_num_of_irdata(&myIRData)) >> 8; // modifier
 			kbd_buf[2] = get_key(get_num_of_irdata(&myIRData)) & 0xFF; // key
 			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 			delay_ms(30);
-			//kbd_buf[0] = 0;
+			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
 		}
 	}
 }
