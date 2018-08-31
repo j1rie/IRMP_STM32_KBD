@@ -387,9 +387,9 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 +    0xa1, 0x01,            /*     COLLECTION (Application)   */
 +    0x05, 0x07,            /*     USAGE_PAGE (Keyboard)      */
 +    0x19, 0x00,            /*     Usage Minimum (0x00)       */
-+    0x29, 0xE7,            /*     Usage Maximum (231)        */
++    0x29, 0xFF,            /*     Usage Maximum (255)        */
 +    0x15, 0x00,            /*     LOGICAL_MINIMUM (0)        */
-+    0x25, 0xE7,            /*     LOGICAL_MAXIMUM (231)      */
++    0x25, 0xFF,            /*     LOGICAL_MAXIMUM (255)      */
 +    0x85, 0x01,            /*     REPORT_ID (1)              */
 +    0x95, HID_IN_BUFFER_SIZE-1, /* REPORT_COUNT              */
 +    0x75, 0x08,            /*     REPORT_SIZE (8)            */

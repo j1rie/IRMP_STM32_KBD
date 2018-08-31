@@ -4,7 +4,7 @@ struct mapline {
     uint8_t usb_hid_key;
 };
 
-const uint8_t lines = 150;
+const uint8_t lines = 225;
 
 struct mapline map[lines] =
 {
@@ -54,7 +54,7 @@ struct mapline map[lines] =
 { "KEY_LEFTBRACE", 0x2f }, // Keyboard [ and {
 { "KEY_RIGHTBRACE", 0x30 }, // Keyboard ] and }
 { "KEY_BACKSLASH", 0x31 }, // Keyboard \ and |
-//{ "KEY_HASHTILDE", 0x32 }, // Keyboard Non-US # and ~
+{ "KEY_NONUSHASH", 0x32 }, // Keyboard Non-US # and ~
 { "KEY_SEMICOLON", 0x33 }, // Keyboard ; and :
 { "KEY_APOSTROPHE", 0x34 }, // Keyboard ' and "
 { "KEY_GRAVE", 0x35 }, // Keyboard ` and ~
@@ -138,19 +138,82 @@ struct mapline map[lines] =
 { "KEY_NUMLOCK", 0x83 },  // Keyboard Locking Num Lock
 { "KEY_SCROLLLOCK", 0x84 },  // Keyboard Locking Scroll Lock
 { "KEY_KPCOMMA", 0x85 }, // Keypad Comma
+// Keypad Equal Sign
 { "KEY_RO", 0x87 }, // Keyboard International1
 { "KEY_KATAKANAHIRAGANA", 0x88 }, // Keyboard International2
 { "KEY_YEN", 0x89 }, // Keyboard International3
 { "KEY_HENKAN", 0x8a }, // Keyboard International4
 { "KEY_MUHENKAN", 0x8b }, // Keyboard International5
 { "KEY_KPJPCOMMA", 0x8c }, // Keyboard International6
+//  Keyboard International7
+//  Keyboard International8
+//  Keyboard International9
 { "KEY_HANGEUL", 0x90 }, // Keyboard LANG1
 { "KEY_HANJA", 0x91 }, // Keyboard LANG2
 { "KEY_KATAKANA", 0x92 }, // Keyboard LANG3
 { "KEY_HIRAGANA", 0x93 }, // Keyboard LANG4
 { "KEY_ZENKAKUHANKAKU", 0x94 }, // Keyboard LANG5
+{ "KEY_LANG6", 0x95 }, // Keyboard LANG6
+{ "KEY_LANG7", 0x96 }, // Keyboard LANG7
+{ "KEY_LANG8", 0x97 }, // Keyboard LANG8
+{ "KEY_ALTERASE",  0x99},  // Keyboard alternate erase
+{ "KEY_SYSREQATTN",  0x9A},  // Keyboard SysReq/Attention
+{ "KEY_CANCEL",      0x9B},  // Keyboard Cancel
+{ "KEY_CLEAR",       0x9C},  // Keyboard Clear
+{ "KEY_PRIOR",       0x9D},  // Keyboard Prior
+{ "KEY_RETURN",      0x9E},  // Keyboard Return
+{ "KEY_SEPARATOR",   0x9F},  // Keyboard Separator
+{ "KEY_OUT",         0xA0},  // Keyboard Out
+{ "KEY_OPER",        0xA1},  // Keyboard Oper
+{ "KEY_CLRAGAIN",    0xA2},  // Keyboard Clear/Again
+{ "KEY_CRSEL",       0xA3},  // Keyboard CrSel/Props
+{ "KEY_EXSEL",       0xA4},  // Keyboard ExSel
+{ "KEY_KP00",        0xB0},  // Keypad 00
+{ "KEY_KP000",       0xB1},  // Keypad 000
+{ "KEY_THOUSANDSEP", 0xB2},  // Thousands separator, depends on Locale either . or ,
+{ "KEY_DECIMALSEP",  0xB3},  // Decimal separator, depends on Locale, either , or .
+{ "KEY_CURRENCY",    0xB4},  // Currency Unit, depends on locale e.g. $
+{ "KEY_CURRENCYSUB", 0xB5},  // Currency sub-unit, depends on locale e.g. ¢
 { "KEY_KPLEFTPAREN", 0xb6 }, // Keypad (
 { "KEY_KPRIGHTPAREN", 0xb7 }, // Keypad )
+{ "KEY_KPLCURLY",    0xB8},  // Keypad {
+{ "KEY_KPRCURLY",    0xB9},  // Keypad },
+{ "KEY_KPTAB",       0xBA},  // Keypad Tab
+{ "KEY_KPBACKSPACE", 0xBB},  // Keypad Backspace
+{ "KEY_KPA",         0xBC},  // Keypad A
+{ "KEY_KPB",         0xBD},  // Keypad B
+{ "KEY_KPC",         0xBE},  // Keypad C
+{ "KEY_KPD",         0xBF},  // Keypad D
+{ "KEY_KPE",         0xC0},  // Keypad E
+{ "KEY_KPF",         0xC1},  // Keypad F
+{ "KEY_KPXOR",       0xC2},  // Keypad XOR
+{ "KEY_KPHAT",       0xC3},  // Keypad ^
+{ "KEY_KPPERCENT",   0xC4},  // Keypad %
+{ "KEY_KPLT",        0xC5},  // Keypad <
+{ "KEY_KPGT",        0xC6},  // Keypad >
+{ "KEY_KPAMP",       0xC7},  // Keypad &
+{ "KEY_KPAMPAMP",    0xC8},  // Keypad &&
+{ "KEY_KPBAR",       0xC9},  // Keypad |
+{ "KEY_KPBARBAR",    0xCA},  // Keypad ||
+{ "KEY_KPCOLON",     0xCB},  // Keypad :
+{ "KEY_KPHASH",      0xCC},  // Keypad #
+{ "KEY_KPSPACE",     0xCD},  // Keypad Space
+{ "KEY_KPAT",        0xCE},  // Keypad @
+{ "KEY_KPEXCLAM",    0xCF},  // Keypad !
+{ "KEY_KPMEMSTORE",  0xD0},  // Keypad Memory Store
+{ "KEY_KPMEMRECALL", 0xD1},  // Keypad Memory Recall
+{ "KEY_KPMEMCLEAR",  0xD2},  // Keypad Memory Clear
+{ "KEY_KPMEMADD",    0xD3},  // Keypad memory add
+{ "KEY_KPMEMSUB",    0xD4},  // Keypad Memory Subtract
+{ "KEY_KPMEMMULT",   0xD5},  // Keypad Memory Multiply
+{ "KEY_KPMEMDIV",    0xD6},  // Keypad Memory Divide
+{ "KEY_KPPLUSMINUS",  0xD7},  // Keypad +/-
+{ "KEY_KPCLEAR",     0xD8}, // Keypad Clear
+{ "KEY_KPCLEARENT",  0xD9},  // Keypad Clear Entry
+{ "KEY_KPBINARY",    0xDA},  // Keypad Binary
+{ "KEY_KPOCTAL",     0xDB},  // keypad Octal
+{ "KEY_KPDECIMAL",   0xDC},  // Keypad Decimal
+{ "KEY_KPHEX",       0xDD},  // Keypad Hexadecimal
 { "KEY_LEFTCTRL", 0xe0 }, // Keyboard Left Control
 { "KEY_LEFTSHIFT", 0xe1 }, // Keyboard Left Shift
 { "KEY_LEFTALT", 0xe2 }, // Keyboard Left Alt
@@ -159,4 +222,19 @@ struct mapline map[lines] =
 { "KEY_RIGHTSHIFT", 0xe5 }, // Keyboard Right Shift
 { "KEY_RIGHTALT", 0xe6 }, // Keyboard Right Alt
 { "KEY_RIGHTMETA", 0xe7 }, // Keyboard Right GUI
+{ "KEY_PLAYPAUSE",	0xE8},  // Reserved? ...\/
+{ "KEY_STOPCD",	0xE9},
+{ "KEY_PREVIOUSSONG",  0xEA},
+{ "KEY_NEXTSONG",	0xEB},
+{ "KEY_EJECTCD",	0xEC},
+{ "KEY_WWW",	        0xF0},
+{ "KEY_BACK",	0xF1},
+{ "KEY_FORWARD",	0xF2},
+{ "KEY_SCROLLUP",	0xF5},
+{ "KEY_SCROLLDOWN",	0xF6},
+{ "KEY_EDIT",	0xF7},
+{ "KEY_SLEEP",	0xF8},
+{ "KEY_COFFEE",	0xF9},
+{ "KEY_REFRESH",	0xFA},
+{ "KEY_CALC",	0xFB},  // reserved? ...
 };

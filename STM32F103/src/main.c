@@ -420,22 +420,25 @@ void Wakeup(void)
 
 uint8_t store_new_irdata(uint8_t num)
 {
-	uint8_t ret = 0;
+	uint8_t loop, ret = 0;
 	IRMP_DATA new_IRData;
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
-	blink_LED();
+	//blink_LED();
 	/* 5 seconds to press button on remote */
-	delay_ms(5000);
-	if (irmp_get_data(&new_IRData)) {
-		new_IRData.flags = 0;
-		/* store received IRData at address num */
-		eeprom_store(num, (uint8_t *) &new_IRData);
-		/* validate stored value in eeprom */
-		eeprom_restore(tmp, num);
-		if (memcmp(&new_IRData, tmp, sizeof(tmp)))
-			ret = 1;
-		blink_LED();
+	for(loop=0; loop < 50; loop++) {
+		delay_ms(100);
+		if (irmp_get_data(&new_IRData)) {
+			new_IRData.flags = 0;
+			/* store received IRData at address num */
+			eeprom_store(num, (uint8_t *) &new_IRData);
+			/* validate stored value in eeprom */
+			eeprom_restore(tmp, num);
+			if (memcmp(&new_IRData, tmp, sizeof(tmp)))
+				ret = 1;
+			blink_LED();
+			return ret;
+		}
 	}
 	return ret;
 }

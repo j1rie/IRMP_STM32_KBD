@@ -115,7 +115,7 @@ int main(int argc, const char **argv) {
 	outBuf[0] = 0x03; // Report ID Configuration, PC->STM32
 	outBuf[1] = STAT_CMD;
 
-cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control (P)\nget eeprom: wakeups, IR-data, keys and capabilities (g)\nreset: wakeups, IR-data, keys and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
+cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys and capabilities (g)\nreset: wakeups, IR-data, keys and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
@@ -179,7 +179,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 		}
 		break;
 
-	case 'P':
+	case 'q':
 Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
