@@ -104,7 +104,7 @@ void write_and_check() {
 int main(int argc, const char **argv) {
 
 	uint64_t i;
-	uint16_t kk;
+	uint16_t kk = 0x0000;
 	char c, d;
 	uint8_t n, k, l, idx;
 	int retValm, jump_to_firmware;
@@ -162,8 +162,14 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 			scanf("%" SCNd8 "", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
-			printf("enter key (AABB)\n"); // AA = modifier, BB = key, TODO KEY_xxx
-			scanf("%" SCNx16 "", &kk); // TODO string
+			printf("enter key (KEY_xxx)\n");
+			scanf("%s", &c);
+			for(l=0; l < lines; l++) {
+			    if(!strcmp(map[l].key, &c)) {
+				kk = map[l].usb_hid_key;
+				break;
+			    }
+			}
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check();
