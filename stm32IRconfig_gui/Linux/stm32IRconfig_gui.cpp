@@ -1,7 +1,7 @@
 /*
- *  GUI Config Tool for IRMP STM32 devices
+ *  GUI Config Tool for IRMP STM32 KBD devices
  *
- *  Copyright (C) 2015-2017 Joerg Riechardt
+ *  Copyright (C) 2015-2018 Joerg Riechardt
  *
  *  based on work by Alan Ott
  *  Copyright 2010  Alan Ott
@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <FXArray.h>
 #include "icons.h"
+#include "usb_hid_keys.h"
 
 // Headers needed for sleeping.
 #ifdef _WIN32
@@ -31,6 +32,29 @@
 #ifdef _WIN32
 	#pragma warning(disable:4996)
 #endif
+
+enum __attribute__ ((__packed__)) access {
+	ACC_GET,
+	ACC_SET,
+	ACC_RESET
+};
+
+enum __attribute__ ((__packed__)) command {
+	CMD_CAPS,
+	CMD_ALARM,
+	CMD_IRDATA,
+	CMD_KEY,
+	CMD_WAKE,
+	CMD_REBOOT,
+	CMD_IRDATA_REMOTE,
+	CMD_WAKE_REMOTE
+};
+
+enum __attribute__ ((__packed__)) status {
+	STAT_CMD,
+	STAT_SUCCESS,
+	STAT_FAILURE
+};
 
 class MainWindow : public FXMainWindow {
 	FXDECLARE(MainWindow)
@@ -45,15 +69,18 @@ public:
 		ID_SEND_OUTPUT_REPORT,
 		ID_PWAKEUP,
 		ID_PMACRO,
+		ID_PKEY,
 		ID_PRWAKEUP,
 		ID_PRMACRO,
 		ID_GWAKEUP,
 		ID_GMACRO,
+		ID_GKEY,
 		ID_GCAP,
 		ID_AGET,
 		ID_ASET,
 		ID_RWAKEUP,
 		ID_RMACRO,
+		ID_RKEY,
 		ID_RALARM,
 		ID_SEND,
 		ID_READ_CONT,
@@ -83,15 +110,18 @@ private:
 	FXButton *reboot_button;
 	FXButton *pwakeup_button;
 	FXButton *pmacro_button;
+	FXButton *pkey_button;
 	FXButton *prwakeup_button;
 	FXButton *prmacro_button;
 	FXButton *gwakeup_button;
 	FXButton *gmacro_button;
+	FXButton *gkey_button;
 	FXButton *gcap_button;
 	FXButton *aget_button;
 	FXButton *aset_button;
 	FXButton *rwakeup_button;
 	FXButton *rmacro_button;
+	FXButton *rkey_button;
 	FXButton *ralarm_button;
 	FXButton *send_button;
 	FXButton *read_cont_button;
@@ -133,7 +163,7 @@ private:
 	uint8_t ReadIRcontActive;
 	uint8_t ReadIRActive;
 	int wakeupslots;
-	int macrodepth;
+	int irdatanr;
 	int macroslots;
 	FXString protocols;
 	FXString firmware;
@@ -161,15 +191,18 @@ public:
 	long onSendOutputReport(FXObject *sender, FXSelector sel, void *ptr);
 	long onPwakeup(FXObject *sender, FXSelector sel, void *ptr);
 	long onPmacro(FXObject *sender, FXSelector sel, void *ptr);
+	long onPkey(FXObject *sender, FXSelector sel, void *ptr);
 	long onPRwakeup(FXObject *sender, FXSelector sel, void *ptr);
 	long onPRmacro(FXObject *sender, FXSelector sel, void *ptr);
 	long onGwakeup(FXObject *sender, FXSelector sel, void *ptr);
-	long onGmacro(FXObject *sender, FXSelector sel, void *ptr);
+	long onGirdata(FXObject *sender, FXSelector sel, void *ptr);
+	long onGkey(FXObject *sender, FXSelector sel, void *ptr);
 	long onGcaps(FXObject *sender, FXSelector sel, void *ptr);
 	long onAget(FXObject *sender, FXSelector sel, void *ptr);
 	long onAset(FXObject *sender, FXSelector sel, void *ptr);
 	long onRwakeup(FXObject *sender, FXSelector sel, void *ptr);
 	long onRmacro(FXObject *sender, FXSelector sel, void *ptr);
+	long onRkey(FXObject *sender, FXSelector sel, void *ptr);
 	long onRalarm(FXObject *sender, FXSelector sel, void *ptr);
 	long onSendIR(FXObject *sender, FXSelector sel, void *ptr);
 	long onReadIR(FXObject *sender, FXSelector sel, void *ptr);
@@ -185,6 +218,7 @@ public:
 	long onNew(FXObject *sender, FXSelector sel, void *ptr);
 	long onOpen(FXObject *sender, FXSelector sel, void *ptr);
 	long onSave(FXObject *sender, FXSelector sel, void *ptr);
+	long onGeeprom(FXObject *sender, FXSelector sel, void *ptr);
 	long Write();
 	long Read();
 	long Write_and_Check();
@@ -216,15 +250,18 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SEND_OUTPUT_REPORT, MainWindow::onSendOutputReport ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PWAKEUP, MainWindow::onPwakeup ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PMACRO, MainWindow::onPmacro ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PKEY, MainWindow::onPkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PRWAKEUP, MainWindow::onPRwakeup ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PRMACRO, MainWindow::onPRmacro ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GWAKEUP, MainWindow::onGwakeup ),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GMACRO, MainWindow::onGmacro ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GMACRO, MainWindow::onGirdata ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GKEY, MainWindow::onGkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GCAP, MainWindow::onGcaps ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_AGET, MainWindow::onAget ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_ASET, MainWindow::onAset ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RWAKEUP, MainWindow::onRwakeup ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RMACRO, MainWindow::onRmacro ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RKEY, MainWindow::onRkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RALARM, MainWindow::onRalarm ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SEND, MainWindow::onSendIR ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_READ_CONT, MainWindow::onReadIRcont ),
@@ -249,7 +286,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 Configuration", NULL, NULL, DECOR_ALL, 275, 50, 730, 950)  // for 1280x1024
+	: FXMainWindow(app, "IRMP STM32 Configuration", NULL, NULL, DECOR_ALL, 275, 38, 730, 978)  // for 1280x1024
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -285,20 +322,23 @@ MainWindow::MainWindow(FXApp *app)
 	//set Group Box
 	FXGroupBox *gb121 = new FXGroupBox(hf12, "set", FRAME_GROOVE|LAYOUT_FILL_X);
 	pwakeup_button = new FXButton(gb121, "wakeup", NULL, this, ID_PWAKEUP, BUTTON_NORMAL|LAYOUT_FILL_X);
-	pmacro_button = new FXButton(gb121, "macro", NULL, this, ID_PMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	pmacro_button = new FXButton(gb121, "irdata", NULL, this, ID_PMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	pkey_button = new FXButton(gb121, "key", NULL, this, ID_PKEY, BUTTON_NORMAL|LAYOUT_FILL_X);
 	//set by remote Group Box
 	FXGroupBox *gb122 = new FXGroupBox(hf12, "set by remote", FRAME_GROOVE|LAYOUT_FILL_X);
 	prwakeup_button = new FXButton(gb122, "wakeup", NULL, this, ID_PRWAKEUP, BUTTON_NORMAL|LAYOUT_FILL_X);
-	prmacro_button = new FXButton(gb122, "macro", NULL, this, ID_PRMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	prmacro_button = new FXButton(gb122, "irdata", NULL, this, ID_PRMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
 	//get Group Box
 	FXGroupBox *gb123 = new FXGroupBox(hf12, "get", FRAME_GROOVE|LAYOUT_FILL_X);
 	gwakeup_button = new FXButton(gb123, "wakeup", NULL, this, ID_GWAKEUP, BUTTON_NORMAL|LAYOUT_FILL_X);
-	gmacro_button = new FXButton(gb123, "macro", NULL, this, ID_GMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	gmacro_button = new FXButton(gb123, "irdata", NULL, this, ID_GMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	gkey_button = new FXButton(gb123, "key", NULL, this, ID_GKEY, BUTTON_NORMAL|LAYOUT_FILL_X);
 	gcap_button = new FXButton(gb123, "caps", NULL, this, ID_GCAP, BUTTON_NORMAL|LAYOUT_FILL_X);
 	//reset Group Box
 	FXGroupBox *gb124 = new FXGroupBox(hf12, "reset", FRAME_GROOVE|LAYOUT_FILL_X);
 	rwakeup_button = new FXButton(gb124, "wakeup", NULL, this, ID_RWAKEUP, BUTTON_NORMAL|LAYOUT_FILL_X);
-	rmacro_button = new FXButton(gb124, "macro", NULL, this, ID_RMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	rmacro_button = new FXButton(gb124, "irdata", NULL, this, ID_RMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
+	rkey_button = new FXButton(gb124, "key", NULL, this, ID_RKEY, BUTTON_NORMAL|LAYOUT_FILL_X);
 	ralarm_button = new FXButton(gb124, "alarm", NULL, this, ID_RALARM, BUTTON_NORMAL|LAYOUT_FILL_X);
 
 	// horizontal frame for IR Group Box
@@ -419,14 +459,17 @@ MainWindow::MainWindow(FXApp *app)
 	rescan_button->setHelpText("rescan devices");
 	reboot_button->setHelpText("reboot device");
 	pwakeup_button->setHelpText("set wakeup");
-	pmacro_button->setHelpText("set macro");
+	pmacro_button->setHelpText("set irdata");
+	pkey_button->setHelpText("set key");
 	prwakeup_button->setHelpText("set wakeup by remote");
-	prmacro_button->setHelpText("set macro by remote");
+	prmacro_button->setHelpText("set irdata by remote");
 	gwakeup_button->setHelpText("get wakeup");
-	gmacro_button->setHelpText("get macro");
+	gmacro_button->setHelpText("get irdata");
+	gkey_button->setHelpText("get key");
 	gcap_button->setHelpText("get capabilities");
 	rwakeup_button->setHelpText("reset wakeup");
-	rmacro_button->setHelpText("reset macro");
+	rmacro_button->setHelpText("reset irdata");
+	rkey_button->setHelpText("reset key");
 	ralarm_button->setHelpText("reset alarm");
 	protocol_text->setHelpText("enter IR protocol to be set");
 	address_text->setHelpText("enter IR address to be set");
@@ -448,8 +491,8 @@ MainWindow::MainWindow(FXApp *app)
 	minutes1_text->setHelpText("alarm minutes read from device");
 	seconds1_text->setHelpText("alarm seconds read from device");
 	aget_button->setHelpText("get alarm");
-	wslistbox->setHelpText("wakeupslot to be set");
-	mnlistbox->setHelpText("macronumber to be set");
+	wslistbox->setHelpText("wakeup to be set");
+	mnlistbox->setHelpText("irdata to be set");
 	mslistbox->setHelpText("macroslot to be set");
 	output_text->setHelpText("data to be sent to device (experts only)");
 	output_button->setHelpText("send to device");
@@ -466,15 +509,18 @@ MainWindow::MainWindow(FXApp *app)
 	output_button->disable();
 	pwakeup_button->disable();
 	pmacro_button->disable();
+	pkey_button->disable();
 	prwakeup_button->disable();
 	prmacro_button->disable();
 	gwakeup_button->disable();
+	gkey_button->disable();
 	gmacro_button->disable();
 	gcap_button->disable();
 	aget_button->disable();
 	aset_button->disable();
 	rwakeup_button->disable();
 	rmacro_button->disable();
+	rkey_button->disable();
 	ralarm_button->disable();
 	send_button->disable();
 	read_cont_button->disable();
@@ -491,7 +537,7 @@ MainWindow::MainWindow(FXApp *app)
 	RepeatCounter = 0;
 	active_lines = 0;
 	wakeupslots = 0;
-	macrodepth = 0;
+	irdatanr = 0;
 	macroslots = 0;
 	protocols = "";
 	firmware = "";
@@ -574,7 +620,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	connected_label3->setText(s);
 	for(int i = 0; i < wakeupslots; i++) {
 		FXString s;
-		s = "wakeupslot";
+		s = "wakeup";
 #if (FOX_MINOR >= 7)
 		FXString t;
 		t.fromInt(i,10);
@@ -585,9 +631,9 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		wslistbox->appendItem(s);	
 	}
 	wslistbox->setNumVisible(wakeupslots);
-	for(int i = 0; i < macrodepth; i++) {
+	for(int i = 0; i < irdatanr; i++) {
 		FXString s;
-		s = "macro";
+		s = "irdata";
 #if (FOX_MINOR >= 7)
 		FXString t;
 		t.fromInt(i,10);
@@ -597,7 +643,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 #endif
 		mnlistbox->appendItem(s);	
 	}
-	mnlistbox->setNumVisible(macrodepth);
+	mnlistbox->setNumVisible(irdatanr);
 	for(int i = 0; i < macroslots; i++) {
 		FXString s;
 		s = "macroslot";
@@ -611,7 +657,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		mslistbox->appendItem(s);	
 	}
 	mslistbox->setNumVisible(macroslots);
-	for(int i = 1; i < 10; i++) {
+	for(int i = 1; i < 10; i++) { // TODO 10
 		FXString s;
 		s = "";
 #if (FOX_MINOR >= 7)
@@ -622,18 +668,22 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		s += FXStringVal(i,10);
 #endif
 	}
+	onGeeprom(NULL, 0, NULL);
 	output_button->enable();
 	pwakeup_button->enable();
 	pmacro_button->enable();
+	pkey_button->enable();
 	prwakeup_button->enable();
 	prmacro_button->enable();
 	gwakeup_button->enable();
 	gmacro_button->enable();
+	gkey_button->enable();
 	gcap_button->enable();
 	aget_button->enable();
 	aset_button->enable();
 	rwakeup_button->enable();
 	rmacro_button->enable();
+	rkey_button->enable();
 	ralarm_button->enable();
 	send_button->enable();
 	read_cont_button->enable();
@@ -653,7 +703,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 #else
 		t = FXStringVal(i,10);
 #endif
-		s = "3 0 0 5 "; // Report_ID STAT_CMD ACC_GET CMD_WAKE
+		s = "3 0 0 4 "; // Report_ID STAT_CMD ACC_GET CMD_WAKE
 		s += t;
 		output_text->setText(s);
 		Write_and_Check();
@@ -675,12 +725,12 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 			u += s;
 		}
 	}
-	output_text->setText("3 0 0 3"); // Report_ID STAT_CMD ACC_GET CMD_ALARM
+	output_text->setText("3 0 0 1"); // Report_ID STAT_CMD ACC_GET CMD_ALARM
 	Write_and_Check();
 	unsigned int alarm = *((uint32_t *)&buf[4]);
 	FXString t;	
 	s = "alarm: ";
-	t.format("%"PRIu16"", alarm/60/60/24);
+	t.format("%" PRIu16 "", alarm/60/60/24);
 	s += t;
 	s += " days, ";
 	t.format("%d", (alarm/60/60) % 24);
@@ -724,15 +774,18 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 	output_button->disable();
 	pwakeup_button->disable();
 	pmacro_button->disable();
+	pkey_button->disable();
 	prwakeup_button->disable();
 	prmacro_button->disable();
 	gwakeup_button->disable();
+	gkey_button->disable();
 	gmacro_button->disable();
 	gcap_button->disable();
 	aget_button->disable();
 	aset_button->disable();
 	rwakeup_button->disable();
 	rmacro_button->disable();
+	rkey_button->disable();
 	ralarm_button->disable();
 	send_button->disable();
 	read_cont_button->disable();
@@ -782,7 +835,7 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onReboot(FXObject *sender, FXSelector sel, void *ptr)
 {
-	output_text->setText("3 0 1 6"); // Report_ID STAT_CMD ACC_SET CMD_REBOOT
+	output_text->setText("3 0 1 5"); // Report_ID STAT_CMD ACC_SET CMD_REBOOT
 
 	FXint cur_item = device_list->getCurrentItem();
 	Write_and_Check();
@@ -953,15 +1006,18 @@ MainWindow::onReadIRcont(FXObject *sender, FXSelector sel, void *ptr)
 		output_button->disable();
 		pwakeup_button->disable();
 		pmacro_button->disable();
+		pkey_button->disable();
 		prwakeup_button->disable();
 		prmacro_button->disable();
 		gwakeup_button->disable();
 		gmacro_button->disable();
+		gkey_button->disable();
 		gcap_button->disable();
 		aget_button->disable();
 		aset_button->disable();
 		rwakeup_button->disable();
 		rmacro_button->disable();
+		rkey_button->disable();
 		ralarm_button->disable();
 		send_button->disable();
 		// timer on
@@ -986,15 +1042,18 @@ MainWindow::onReadIRcont(FXObject *sender, FXSelector sel, void *ptr)
 		output_button->enable();
 		pwakeup_button->enable();
 		pmacro_button->enable();
+		pkey_button->enable();
 		prwakeup_button->enable();
 		prmacro_button->enable();
 		gwakeup_button->enable();
 		gmacro_button->enable();
+		gkey_button->enable();
 		gcap_button->enable();
 		aget_button->enable();
 		aset_button->enable();
 		rwakeup_button->enable();
 		rmacro_button->enable();
+		rkey_button->enable();
 		ralarm_button->enable();
 		send_button->enable();
 		ReadIRcontActive = 0;
@@ -1105,8 +1164,8 @@ MainWindow::onPwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	const char *z = " ";
 	int len;
-	t.format("%d ", wslistbox->getCurrentItem());
-	s = "3 0 1 5 "; // Report_ID STAT_CMD ACC_SET CMD_WAKE
+	t.format("%x ", wslistbox->getCurrentItem());
+	s = "3 0 1 4 "; // Report_ID STAT_CMD ACC_SET CMD_WAKE
 	s += t;
 	t = protocol_text->getText();
 	len = t.length(); // don't put this into the for loop!!!
@@ -1152,10 +1211,8 @@ MainWindow::onPmacro(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	const char *z = " ";
 	int len;
-	t.format("%d ", mnlistbox->getCurrentItem());
-	s = "3 0 1 4 "; // Report_ID STAT_CMD ACC_SET CMD_MACRO
-	s += t;
-	t.format("%d ", mslistbox->getCurrentItem());
+	t.format("%x ", mnlistbox->getCurrentItem());
+	s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
 	s += t;
 	t = protocol_text->getText();
 	len = t.length(); // don't put this into the for loop!!!
@@ -1195,6 +1252,32 @@ MainWindow::onPmacro(FXObject *sender, FXSelector sel, void *ptr)
 }
 
 long
+MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
+{
+	FXString s;
+	FXString t;
+	const char *z = " ";
+	int len;
+	t.format("%x ", mnlistbox->getCurrentItem());
+	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
+	s += t;
+	t = address_text->getText();
+	len = t.length();
+	for (int i = 0; i < 4 - len; i++)
+		t.prepend("0");
+	t.insert(2, " ");
+	s += t.section(z, 0, 1);
+	s += " ";
+	s += t.section(z, 1, 1);
+	s += " ";
+	output_text->setText(s);
+
+	Write_and_Check();
+
+	return 1;
+}
+
+long
 MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
@@ -1206,14 +1289,12 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
-	ReadIRActive = 1;
-	getApp()->addTimeout(this, ID_READIR_TIMER, 5000 * timeout_scalar /*5s*/);
-	onReadIRcont(NULL, 0, NULL);
-	ReadIRActive = 0;
-	t.format("%d ", wslistbox->getCurrentItem());
-	s = "3 0 1 5 "; // Report_ID STAT_CMD ACC_SET CMD_WAKE
+	t.format("%x ", wslistbox->getCurrentItem());
+	s = "3 0 1 7 "; // Report_ID STAT_CMD ACC_SET CMD_WAKE_REMOTE
 	s += t;
 	output_text->setText(s);
+
+	Write_and_Check();
 
 	return 1;
 }
@@ -1230,16 +1311,12 @@ MainWindow::onPRmacro(FXObject *sender, FXSelector sel, void *ptr)
 	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
-	ReadIRActive = 1;
-	getApp()->addTimeout(this, ID_READIR_TIMER, 5000 * timeout_scalar /*5s*/);
-	onReadIRcont(NULL, 0, NULL);
-	ReadIRActive = 0;
-	t.format("%d ", mnlistbox->getCurrentItem());
-	s = "3 0 1 4 "; // Report_ID STAT_CMD ACC_SET CMD_MACRO
-	s += t;
-	t.format("%d ", mslistbox->getCurrentItem());
+	t.format("%x ", mnlistbox->getCurrentItem());
+	s = "3 0 1 6 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA_REMOTE
 	s += t;
 	output_text->setText(s);
+
+	Write_and_Check();
 
 	return 1;
 }
@@ -1250,8 +1327,8 @@ MainWindow::onGwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%d", wslistbox->getCurrentItem());
-	s = "3 0 0 5 "; // Report_ID STAT_CMD ACC_GET CMD_WAKE
+	t.format("%x", wslistbox->getCurrentItem());
+	s = "3 0 0 4 "; // Report_ID STAT_CMD ACC_GET CMD_WAKE
 	s += t;
 	output_text->setText(s);
 
@@ -1285,14 +1362,12 @@ MainWindow::onGwakeup(FXObject *sender, FXSelector sel, void *ptr)
 }
 
 long
-MainWindow::onGmacro(FXObject *sender, FXSelector sel, void *ptr)
+MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%d ", mnlistbox->getCurrentItem());
-	s = "3 0 0 4 "; // Report_ID STAT_CMD ACC_GET CMD_MACRO
-	s += t;
-	t.format("%d", mslistbox->getCurrentItem());
+	s = "3 0 0 2 "; //STAT_CMD ACC_GET CMD_IRDATA "; // Report_ID
+	t.format("%x", mnlistbox->getCurrentItem());
 	s += t;
 	output_text->setText(s);
 
@@ -1322,6 +1397,37 @@ MainWindow::onGmacro(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	flag1_text->setText(s);
 	
+	return 1;
+}
+
+long
+MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
+{
+	FXString s;
+	FXString t;
+	s = "3 0 0 3 "; //STAT_CMD ACC_GET CMD_KEY "; // Report_ID
+	t.format("%x", mnlistbox->getCurrentItem());
+	s += t;
+	output_text->setText(s);
+
+	Write_and_Check();
+
+	s = "";
+	protocol1_text->setText(s);
+
+	s = "";
+	t.format("%02hhx", buf[4]);
+	s += t;
+	t.format("%02hhx", buf[5]);
+	s += t;
+	address1_text->setText(s);
+
+	s = "";
+	command1_text->setText(s);
+
+	s = "";
+	flag1_text->setText(s);
+
 	return 1;
 }
 
@@ -1334,7 +1440,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 	int jump_to_firmware;
 	jump_to_firmware = 0;
 	for(int i = 0; i < 20; i++) { // for safety stop after 20 loops
-		s = "3 0 0 1 "; // Report_ID STAT_CMD ACC_GET CMD_CAPS
+		s = "3 0 0 0 "; // Report_ID STAT_CMD ACC_GET CMD_CAPS
 #if (FOX_MINOR >= 7)
 		t.fromInt(i,10);
 		s += t;
@@ -1373,10 +1479,10 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 
 		if (!i) { // first query for slots and depth
 			macroslots = buf[4];
-			s.format("macro_slots: %u\n", buf[4]);
-			macrodepth = buf[5];
-			t.format("macro_depth: %u\n", buf[5]);
-			s += t;
+			s.format("number of irdata: %u\n", buf[4]);
+			irdatanr = buf[4];
+			//t.format("macro_depth: %u\n", buf[5]);
+			//s += t;
 			wakeupslots = buf[6];
 			t.format("wakeup_slots: %u", buf[6]);
 			s += t;
@@ -1423,7 +1529,7 @@ again:	;
 long
 MainWindow::onAget(FXObject *sender, FXSelector sel, void *ptr)
 {
-	output_text->setText("3 0 0 3"); // Report_ID STAT_CMD ACC_GET CMD_ALARM
+	output_text->setText("3 0 0 1"); // Report_ID STAT_CMD ACC_GET CMD_ALARM
 
 	Write_and_Check();
 
@@ -1432,7 +1538,7 @@ MainWindow::onAget(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;	
 	s = "";
-	t.format("%"PRIu16"", alarm/60/60/24);
+	t.format("%" PRIu16 "", alarm/60/60/24);
 	s += t;
 	days1_text->setText(s);
 		
@@ -1478,7 +1584,7 @@ MainWindow::onAset(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	const char *z = " ";
-	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_ALARM
+	s = "3 0 1 1 "; // Report_ID STAT_CMD ACC_SET CMD_ALARM
 #if (FOX_MINOR >= 7)
 	t.fromInt(setalarm,16);
 #else
@@ -1514,8 +1620,8 @@ MainWindow::onRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%d", wslistbox->getCurrentItem());
-	s = "3 0 2 5 "; // Report_ID STAT_CMD ACC_RESET CMD_WAKE
+	t.format("%x", wslistbox->getCurrentItem());
+	s = "3 0 2 4 "; // Report_ID STAT_CMD ACC_RESET CMD_WAKE
 	s += t;
 	output_text->setText(s);
 
@@ -1529,10 +1635,23 @@ MainWindow::onRmacro(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%d ", mnlistbox->getCurrentItem());
-	s = "3 0 2 4 "; // Report_ID STAT_CMD ACC_RESET CMD_MACRO
+	t.format("%x ", mnlistbox->getCurrentItem());
+	s = "3 0 2 2 "; // Report_ID STAT_CMD ACC_RESET CMD_IRDATA
 	s += t;
-	t.format("%d ", mslistbox->getCurrentItem());
+	output_text->setText(s);
+
+	Write_and_Check();
+
+	return 1;
+}
+
+long
+MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
+{
+	FXString s;
+	FXString t;
+	t.format("%x ", mnlistbox->getCurrentItem());
+	s = "3 0 2 3 "; // Report_ID STAT_CMD ACC_RESET CMD_KEY
 	s += t;
 	output_text->setText(s);
 
@@ -1544,7 +1663,7 @@ MainWindow::onRmacro(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 {
-	output_text->setText("3 0 2 3"); // Report_ID STAT_CMD ACC_RESET CMD_ALARM
+	output_text->setText("3 0 2 1"); // Report_ID STAT_CMD ACC_RESET CMD_ALARM
 
 	Write_and_Check();
 
@@ -1769,6 +1888,36 @@ MainWindow::onAppend(FXObject *sender, FXSelector sel, void *ptr){
 	map_text21->appendText(s);
 	onApply(NULL, 0, NULL);
 	map_text21->setModified(1);
+
+	return 1;
+}
+
+long
+MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
+	/*if(map_text21->isModified()){
+		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+	}*/
+	map_text21->setText(NULL,0);
+	for(int i = 0; i < irdatanr; i++) {
+	    mnlistbox->setCurrentItem(i);
+	    onGirdata(NULL, 0, NULL);
+	    FXString s;
+	    FXString t;
+	    s = protocol1_text->getText();
+	    t = address1_text->getText();
+	    s += t;
+	    t = command1_text->getText();
+	    s += t;
+	    s += flag1_text->getText();
+	    s += " ";
+	    onGkey(NULL, 0, NULL);
+	    s += address1_text->getText();
+	    s += "\n";
+	    map_text21->appendText(s);
+	}
+	address1_text->setText("");
+	//onApply(NULL, 0, NULL); //////
+	map_text21->setModified(1); ////////
 
 	return 1;
 }

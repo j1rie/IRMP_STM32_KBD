@@ -292,16 +292,17 @@ void blink_LED(void)
 
 /* buf[0 ... 5] -> eeprom[virt_addr ... virt_addr + 2] */
 /* buffer: 012345 -> arguments for Write: (10)(32)(54) -> eeprom: 01,23,45 */
-void eeprom_store(uint8_t virt_addr, uint8_t *buf)
+void eeprom_store(uint16_t virt_addr, uint8_t *buf)
 {
-	EE_WriteVariable(virt_addr, (buf[1] << 8) | buf[0]);
-	EE_WriteVariable(virt_addr + 1, (buf[3] << 8) | buf[2]);
-	EE_WriteVariable(virt_addr + 2, (buf[5] << 8) | buf[4]);
+	uint8_t i;
+	for(i=0; i<3; i++) {
+		EE_WriteVariable(virt_addr + i, *(uint16_t*)&buf[2*i]);
+	}
 }
 
 /* eeprom[virt_addr ... virt_addr + 2] -> buf[0-5] */
 /* eeprom: 01,23,45 -> Read results: (10)(32)(54) -> buffer: 012345 */
-uint8_t eeprom_restore(uint8_t *buf, uint8_t virt_addr)
+uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 {
 	uint8_t i, retVal = 0;
 	for(i=0; i<3; i++) {
@@ -348,7 +349,7 @@ uint16_t get_key(uint8_t num)
 
 void store_wakeup(IRMP_DATA *ir)
 {
-	uint8_t idx;
+	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	idx = NUM_KEYS * (SIZEOF_IR/2 + 1);
@@ -418,9 +419,9 @@ void Wakeup(void)
 	send_ir_on_delay = 90;
 }
 
-uint8_t store_new_irdata(uint8_t num)
+int8_t store_new_irdata(uint16_t num)
 {
-	uint8_t loop, ret = 0;
+	int8_t loop, ret = 3;
 	IRMP_DATA new_IRData;
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
@@ -435,11 +436,11 @@ uint8_t store_new_irdata(uint8_t num)
 			/* validate stored value in eeprom */
 			eeprom_restore(tmp, num);
 			if (memcmp(&new_IRData, tmp, sizeof(tmp)))
-				ret = 1;
-			blink_LED();
+				ret = -1;
 			return ret;
 		}
 	}
+	ret = -1;
 	return ret;
 }
 
@@ -502,7 +503,7 @@ int8_t set_handler(uint8_t *buf)
 {
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 3;
-	uint8_t idx;
+	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	switch ((enum command) buf[2]) {
 	case CMD_ALARM:
@@ -516,7 +517,7 @@ int8_t set_handler(uint8_t *buf)
 		if (memcmp(&buf[4], tmp, sizeof(tmp)))
 			ret = -1;
 	case CMD_KEY:
-		put_key((buf[5] << 8) | buf[4], buf[3]);
+		put_key((buf[5] << 8) | buf[4], buf[3]); // *((uint16_t*)&buf[4])
 		/* validate stored value in eeprom */
 		if(!(get_key(buf[3]) == ((buf[5] << 8) | buf[4])))
 			ret = -1;
@@ -534,12 +535,11 @@ int8_t set_handler(uint8_t *buf)
 		break;
 	case CMD_IRDATA_REMOTE:
 		idx = SIZEOF_IR/2 * buf[3];
-		if(store_new_irdata(idx))
-			ret = -1;
+		ret = store_new_irdata(idx);
+		break;
 	case CMD_WAKE_REMOTE:
 		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[3];
-		if(store_new_irdata(idx))
-			ret = -1;
+		ret = store_new_irdata(idx);
 		break;
 	default:
 		ret = -1;
@@ -551,7 +551,7 @@ int8_t reset_handler(uint8_t *buf)
 {
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 3;
-	uint8_t idx;
+	uint16_t idx;
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	switch ((enum command) buf[2]) {
 	case CMD_ALARM:
@@ -674,6 +674,7 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
+	uint16_t key;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -733,13 +734,16 @@ int main(void)
 			}
 
 			/* send IR-data */
-			kbd_buf[0] = get_key(get_num_of_irdata(&myIRData)) >> 8; // modifier
-			kbd_buf[2] = get_key(get_num_of_irdata(&myIRData)) & 0xFF; // key
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-			delay_ms(30);
-			kbd_buf[0] = 0;
-			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
+			key = get_key(get_num_of_irdata(&myIRData));
+			if(key != 0xFFFF) {
+				kbd_buf[0] = key >> 8; // modifier
+				kbd_buf[2] = key & 0xFF; // key
+				USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+				delay_ms(30);
+				kbd_buf[0] = 0;
+				kbd_buf[2] = 0;
+				USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
+			}
 		}
 	}
 }

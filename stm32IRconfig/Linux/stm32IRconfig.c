@@ -129,7 +129,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = n;
 			printf("enter IRData (protocoladdresscommandflag)\n");
@@ -144,7 +144,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = n;
 			printf("enter IRData (protocoladdresscommandflag)\n");
@@ -159,7 +159,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
 			printf("enter key (KEY_xxx)\n");
@@ -188,30 +188,19 @@ Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote contro
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
 			outBuf[idx++] = n;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_IRDATA_REMOTE;
 			outBuf[idx++] = n;
 			break;
 		default:
 			goto Prog;
 		}
-#if 0
-		printf("enter IRData by pressing a button on the remote control\n");
-		read_stm32();
-		outBuf[idx++] = inBuf[1];
-		outBuf[idx++] = inBuf[2];
-		outBuf[idx++] = inBuf[3];
-		outBuf[idx++] = inBuf[4];
-		outBuf[idx++] = inBuf[5];
-		/* omit flags */
-		outBuf[idx++] = 0;
-#endif
 		write_and_check();
 		break;
 
@@ -224,19 +213,19 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget caps(c)\n");
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = n;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = n;
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
 			break;
@@ -294,19 +283,19 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset alarm(a)\
 		switch (d) {
 		case 'w':
 			printf("enter slot number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = n;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = n;
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNd8 "", &n);
+			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
 			break;
