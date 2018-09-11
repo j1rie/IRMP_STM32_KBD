@@ -76,28 +76,20 @@ public:
 		ID_GMACRO,
 		ID_GKEY,
 		ID_GCAP,
+		ID_GEEPROM,
+		ID_PEEPROM,
 		ID_AGET,
 		ID_ASET,
 		ID_RWAKEUP,
 		ID_RMACRO,
 		ID_RKEY,
 		ID_RALARM,
-		ID_SEND,
-		ID_READ_CONT,
 		ID_CLEAR,
-		ID_TIMER,
-		ID_READIR_TIMER,
-		ID_RED_TIMER,
 		ID_MAC_TIMER,
 		ID_LAST,
 		ID_WSLISTBOX,
-		ID_MNLISTBOX,
-		ID_MSLISTBOX,
-		ID_RPLISTBOX,
 		ID_OPEN,
 		ID_SAVE,
-		ID_APPEND,
-		ID_WRITE_IR,
 		ID_DEVLIST
 	};
 	
@@ -123,12 +115,10 @@ private:
 	FXButton *rmacro_button;
 	FXButton *rkey_button;
 	FXButton *ralarm_button;
-	FXButton *send_button;
-	FXButton *read_cont_button;
 	FXButton *open_button;
 	FXButton *save_button;
-	FXButton *append_button;
-	FXButton *write_ir_button;
+	FXButton *flash_button;
+	FXButton *get_button;
 	FXLabel *connected_label;
 	FXLabel *connected_label2;
 	FXLabel *connected_label3;
@@ -152,19 +142,16 @@ private:
 	FXText *input_text;
 	FXText *map_text21;
 	FXListBox* wslistbox;
-	FXListBox* mnlistbox;
-	FXListBox* mslistbox;
-	FXText *map_text;
+	FXTextField *modifier_text;
+	FXTextField *key_text;
+	FXTextField *line_text;
 	FXStatusBar *statusbar;
 	struct hid_device_info *devices;
 	hid_device *connected_device;
 	size_t getDataFromTextField(FXTextField *tf, char *buf, size_t len);
 	unsigned char buf[17];
-	uint8_t ReadIRcontActive;
-	uint8_t ReadIRActive;
 	int wakeupslots;
 	int irdatanr;
-	int macroslots;
 	FXString protocols;
 	FXString firmware;
 	FXColor storedShadowColor;
@@ -204,28 +191,23 @@ public:
 	long onRmacro(FXObject *sender, FXSelector sel, void *ptr);
 	long onRkey(FXObject *sender, FXSelector sel, void *ptr);
 	long onRalarm(FXObject *sender, FXSelector sel, void *ptr);
-	long onSendIR(FXObject *sender, FXSelector sel, void *ptr);
 	long onReadIR(FXObject *sender, FXSelector sel, void *ptr);
-	long onReadIRcont(FXObject *sender, FXSelector sel, void *ptr);
 	long onClear(FXObject *sender, FXSelector sel, void *ptr);
 	long onTimeout(FXObject *sender, FXSelector sel, void *ptr);
-	long onReadIRTimeout(FXObject *sender, FXSelector sel, void *ptr);
-	long onRedTimeout(FXObject *sender, FXSelector sel, void *ptr);
 	long onMacTimeout(FXObject *sender, FXSelector sel, void *ptr);
 	long onCmdwsListBox(FXObject*,FXSelector,void*);
-	long onCmdmnListBox(FXObject*,FXSelector,void*);
-	long onCmdmsListBox(FXObject*,FXSelector,void*);
 	long onNew(FXObject *sender, FXSelector sel, void *ptr);
 	long onOpen(FXObject *sender, FXSelector sel, void *ptr);
 	long onSave(FXObject *sender, FXSelector sel, void *ptr);
 	long onGeeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onPeeprom(FXObject *sender, FXSelector sel, void *ptr);
+	uint8_t get_key_nr(FXString s);
+	FXString get_key_from_nr(uint8_t nr);
 	long Write();
 	long Read();
 	long Write_and_Check();
 	long saveFile(const FXString& file);
-	long onAppend(FXObject *sender, FXSelector sel, void *ptr);
 	long onApply(FXObject *sender, FXSelector sel, void *ptr);
-	long onWrite_IR(FXObject *sender, FXSelector sel, void *ptr);
 	long onDevDClicked(FXObject *sender, FXSelector sel, void *ptr);
 	long onCmdQuit(FXObject *sender, FXSelector sel, void *ptr);
 };
@@ -257,36 +239,27 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GMACRO, MainWindow::onGirdata ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GKEY, MainWindow::onGkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GCAP, MainWindow::onGcaps ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GEEPROM, MainWindow::onGeeprom ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PEEPROM, MainWindow::onPeeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_AGET, MainWindow::onAget ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_ASET, MainWindow::onAset ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RWAKEUP, MainWindow::onRwakeup ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RMACRO, MainWindow::onRmacro ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RKEY, MainWindow::onRkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RALARM, MainWindow::onRalarm ),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SEND, MainWindow::onSendIR ),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_READ_CONT, MainWindow::onReadIRcont ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_CLEAR, MainWindow::onClear ),
-	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_TIMER, MainWindow::onTimeout ),
-	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_READIR_TIMER, MainWindow::onReadIRTimeout ),
-	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_RED_TIMER, MainWindow::onRedTimeout ),
 	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_MAC_TIMER, MainWindow::onMacTimeout ),
 	FXMAPFUNC(SEL_CHANGED, MainWindow::ID_WSLISTBOX, MainWindow::onCmdwsListBox),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_WSLISTBOX, MainWindow::onCmdwsListBox),
-	FXMAPFUNC(SEL_CHANGED, MainWindow::ID_MNLISTBOX, MainWindow::onCmdmnListBox),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_MNLISTBOX, MainWindow::onCmdmnListBox),
-	FXMAPFUNC(SEL_CHANGED, MainWindow::ID_MSLISTBOX, MainWindow::onCmdmsListBox),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_MSLISTBOX, MainWindow::onCmdmsListBox),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_OPEN, MainWindow::onOpen ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SAVE, MainWindow::onSave ),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_APPEND, MainWindow::onAppend ),
-	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_WRITE_IR, MainWindow::onWrite_IR ),
 	FXMAPFUNC(SEL_CLOSE,   0, MainWindow::onCmdQuit ),
 };
 
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 Configuration", NULL, NULL, DECOR_ALL, 275, 38, 730, 978)  // for 1280x1024
+	: FXMainWindow(app, "IRMP STM32 Configuration", NULL, NULL, DECOR_ALL, 275, 38, 780, 978)  // for 1280x1024
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -299,7 +272,7 @@ MainWindow::MainWindow(FXApp *app)
 	FXVerticalFrame *vf2 = new FXVerticalFrame(hf1, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
 
 	// second vertical frame for map_text21
-	new FXLabel(vf2, "map                                    ");
+	new FXLabel(vf2, "eeprom map                             ");
 	FXVerticalFrame *innerVF21 = new FXVerticalFrame(vf2, LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 	map_text21 = new FXText(new FXHorizontalFrame(innerVF21,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0,0,0), NULL, 0, LAYOUT_FILL_X|LAYOUT_FILL_Y/*,0,0,0,0, 0,0,0,0*/);
 
@@ -341,58 +314,53 @@ MainWindow::MainWindow(FXApp *app)
 	rkey_button = new FXButton(gb124, "key", NULL, this, ID_RKEY, BUTTON_NORMAL|LAYOUT_FILL_X);
 	ralarm_button = new FXButton(gb124, "alarm", NULL, this, ID_RALARM, BUTTON_NORMAL|LAYOUT_FILL_X);
 
-	// horizontal frame for IR Group Box
-	FXHorizontalFrame *hf13 = new FXHorizontalFrame(vf1, LAYOUT_FILL_X|PACK_UNIFORM_WIDTH); //
+	// horizontal frame for IR Group Box, alarm Group Box, select listboxes, Output Group Box and map group box
+	FXHorizontalFrame *hf14 = new FXHorizontalFrame(vf1, LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
+	// two vertical frames, left for map, right for everything else
+	FXVerticalFrame *vf141 = new FXVerticalFrame(hf14, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
+	FXVerticalFrame *vf142 = new FXVerticalFrame(hf14, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
+
+	FXHorizontalFrame *hf131 = new FXHorizontalFrame(vf141, LAYOUT_FILL_X|PACK_UNIFORM_WIDTH); //
 	//IR Group Box
-	FXGroupBox *gb13 = new FXGroupBox(hf13, "IR", FRAME_GROOVE|LAYOUT_FILL_X);
-	FXMatrix *m13 = new FXMatrix(gb13, 8, MATRIX_BY_COLUMNS);
-	new FXLabel(m13, "");
-	new FXLabel(m13, "protocol");
-	new FXLabel(m13, "address");
-	new FXLabel(m13, "command");
-	new FXLabel(m13, "flag");
-	new FXLabel(m13, "(hex)");
-	new FXLabel(m13, "");
-	new FXLabel(m13, "");
-	new FXLabel(m13, "set");
-	protocol_text = new FXTextField(m13, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	address_text = new FXTextField(m13, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	command_text = new FXTextField(m13, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	flag_text = new FXTextField(m13, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	send_button = new FXButton(m13, "send", NULL, this, ID_SEND, BUTTON_NORMAL|LAYOUT_FILL_X,0,0,0,0,0,0,0,0);
-	new FXLabel(m13, "      ",0,LABEL_NORMAL,0,0,0,0,0,0,0,0);
-	new FXLabel(m13, "      ",0,LABEL_NORMAL,0,0,0,0,0,0,0,0);
-	new FXLabel(m13, "get");
-	FXVerticalFrame *innerVF1 = new FXVerticalFrame(m13, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF2 = new FXVerticalFrame(m13, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF3 = new FXVerticalFrame(m13, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF4 = new FXVerticalFrame(m13, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	protocol1_text = new FXText(new FXHorizontalFrame(innerVF1,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	address1_text = new FXText(new FXHorizontalFrame(innerVF2,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	command1_text = new FXText(new FXHorizontalFrame(innerVF3,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	flag1_text = new FXText(new FXHorizontalFrame(innerVF4,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	read_cont_button = new FXButton(m13, " receive mode ", NULL, this, ID_READ_CONT, BUTTON_NORMAL|LAYOUT_FILL_X,0,0,0,0,0,0,0,0);
-	new FXLabel(m13, "      ",0,LABEL_NORMAL,0,0,0,0,0,0,0,0);
+	FXGroupBox *gb131 = new FXGroupBox(hf131, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X);
+	FXMatrix *m131 = new FXMatrix(gb131, 6, MATRIX_BY_COLUMNS);
+	new FXLabel(m131, "");
+	new FXLabel(m131, "protocol");
+	new FXLabel(m131, "address");
+	new FXLabel(m131, "command");
+	new FXLabel(m131, "flag");
+	new FXLabel(m131, "");
+	new FXLabel(m131, "set");
+	protocol_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	address_text = new FXTextField(m131, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	command_text = new FXTextField(m131, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	flag_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	new FXLabel(m131, "      ",0,LABEL_NORMAL,0,0,0,0,0,0,0,0);
+	new FXLabel(m131, "get");
+	FXVerticalFrame *innerVF113 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
+	FXVerticalFrame *innerVF213 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
+	FXVerticalFrame *innerVF313 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
+	FXVerticalFrame *innerVF413 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
+	protocol1_text = new FXText(new FXHorizontalFrame(innerVF113,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
+	address1_text = new FXText(new FXHorizontalFrame(innerVF213,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
+	command1_text = new FXText(new FXHorizontalFrame(innerVF313,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
+	flag1_text = new FXText(new FXHorizontalFrame(innerVF413,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
+	new FXLabel(m131, "      ",0,LABEL_NORMAL,0,0,0,0,0,0,0,0);
 	protocol1_text->setVisibleRows(1);
 	address1_text->setVisibleRows(1);
 	command1_text->setVisibleRows(1);
 	flag1_text->setVisibleRows(1);
 
-	// horizontal frame for alarm Group Box, select listboxes, Output Group Box and map group box
-	FXHorizontalFrame *hf14 = new FXHorizontalFrame(vf1, LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
-	// two vertical frames, left for map, right for everything else 
-	FXVerticalFrame *vf141 = new FXVerticalFrame(hf14, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
-	FXVerticalFrame *vf142 = new FXVerticalFrame(hf14, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
 	// horizontal frame for alarm Group Box and select listboxes
 	FXHorizontalFrame *hf143 = new FXHorizontalFrame(vf141, LAYOUT_FILL_X/*,0,0,0,0, 0,0,0,0*/);
 	//alarm Group Box
-	FXGroupBox *gb14 = new FXGroupBox(hf143, "alarm", FRAME_GROOVE|LAYOUT_FILL_X);
+	FXGroupBox *gb14 = new FXGroupBox(hf143, "alarm (dec)", FRAME_GROOVE|LAYOUT_FILL_X);
 	FXMatrix *m14 = new FXMatrix(gb14, 5, MATRIX_BY_COLUMNS|LAYOUT_FILL_X);
 	new FXLabel(m14, "days");
 	new FXLabel(m14, "hours");
 	new FXLabel(m14, "minutes");
 	new FXLabel(m14, "seconds");
-	new FXLabel(m14, "(dec)");
+	new FXLabel(m14, "");
 	days_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	hours_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	minutes_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
@@ -414,19 +382,22 @@ MainWindow::MainWindow(FXApp *app)
 	// select listboxes
 	FXGroupBox *gb143 = new FXGroupBox(hf143, "select", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
 	wslistbox=new FXListBox(gb143,this,ID_WSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
-	mnlistbox=new FXListBox(gb143,this,ID_MNLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
-	mslistbox=new FXListBox(gb143,this,ID_MSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
+
 	// map group box
-	FXGroupBox *gb142 = new FXGroupBox(vf142, "map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
-	open_button = new FXButton(gb142, "open", NULL, this, ID_OPEN, BUTTON_NORMAL|LAYOUT_FILL_X);
-	save_button = new FXButton(gb142, "save", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
-	append_button = new FXButton(gb142, "append", NULL, this, ID_APPEND, BUTTON_NORMAL|LAYOUT_FILL_X);
-	//apply_button = new FXButton(gb142, "apply", NULL, this, ID_APPLY, BUTTON_NORMAL|LAYOUT_FILL_X);
-	write_ir_button = new FXButton(gb142, "write IR", NULL, this, ID_WRITE_IR, BUTTON_NORMAL|LAYOUT_FILL_X);
-	new FXLabel(gb142, "Key");
-	FXVerticalFrame *innerVF9 = new FXVerticalFrame(gb142, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	map_text = new FXText(new FXHorizontalFrame(innerVF9,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	map_text->setVisibleRows(1);
+	FXGroupBox *gb142 = new FXGroupBox(vf142, "eeprom map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+	open_button = new FXButton(gb142, "open file", NULL, this, ID_OPEN, BUTTON_NORMAL|LAYOUT_FILL_X);
+	save_button = new FXButton(gb142, "save file", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
+	flash_button = new FXButton(gb142, "flash eeprom", NULL, this, ID_PEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	get_button = new FXButton(gb142, "get eeprom", NULL, this, ID_GEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	new FXLabel(gb142, "modifier");
+	FXVerticalFrame *innerVF10 = new FXVerticalFrame(gb142, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	modifier_text = new FXTextField(new FXHorizontalFrame(innerVF10,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
+	new FXLabel(gb142, "key");
+	FXVerticalFrame *innerVF9 = new FXVerticalFrame(gb142, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	key_text = new FXTextField(new FXHorizontalFrame(innerVF9,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
+	new FXLabel(gb142, "line");
+	FXVerticalFrame *innerVF11 = new FXVerticalFrame(gb142, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	line_text = new FXTextField(new FXHorizontalFrame(innerVF11,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, map_text21, FXText::ID_CURSOR_ROW, LAYOUT_FILL_X);
 
 	// horizontal frame for Output Group Box
 	FXHorizontalFrame *hf15 = new FXHorizontalFrame(vf141, LAYOUT_FILL_X); //
@@ -475,12 +446,10 @@ MainWindow::MainWindow(FXApp *app)
 	address_text->setHelpText("enter IR address to be set");
 	command_text->setHelpText("enter IR command to be set");
 	flag_text->setHelpText("enter IR flags to be set");
-	send_button->setHelpText("send IR");
 	protocol1_text->setHelpText("received IR protocol");
 	address1_text->setHelpText("received IR address");
 	command1_text->setHelpText("received IR command");
 	flag1_text->setHelpText("received IR flags");
-	read_cont_button->setHelpText("receive IR until pressed again");
 	days_text->setHelpText("enter days to be set");
 	hours_text->setHelpText("enter hours to be set");
 	minutes_text->setHelpText("enter minutes to be set");
@@ -492,18 +461,18 @@ MainWindow::MainWindow(FXApp *app)
 	seconds1_text->setHelpText("alarm seconds read from device");
 	aget_button->setHelpText("get alarm");
 	wslistbox->setHelpText("wakeup to be set");
-	mnlistbox->setHelpText("irdata to be set");
-	mslistbox->setHelpText("macroslot to be set");
 	output_text->setHelpText("data to be sent to device (experts only)");
 	output_button->setHelpText("send to device");
 	input_text->setHelpText("debug messages");
 	clear_button->setHelpText("clear debug messages");
 	open_button->setHelpText("open translation map");
-	map_text->setHelpText("key (translated received IR)");
+	modifier_text->setHelpText("modifier i.e. AltShift)");
+	key_text->setHelpText("key");
 	save_button->setHelpText("save translation map");
 	map_text21->setHelpText("editable translation map");
-	append_button->setHelpText("add received IR and key to translation map");
-	write_ir_button->setHelpText("overwrite IR");
+	flash_button->setHelpText("flash into eeprom");
+	get_button->setHelpText("get from eeprom");
+	line_text->setHelpText("line in eeprom map");
 
 	// disable buttons
 	output_button->disable();
@@ -522,23 +491,13 @@ MainWindow::MainWindow(FXApp *app)
 	rmacro_button->disable();
 	rkey_button->disable();
 	ralarm_button->disable();
-	send_button->disable();
-	read_cont_button->disable();
 	reboot_button->disable();
 
-	// save Colors
-	storedShadowColor = read_cont_button->getShadowColor();
-	storedBaseColor = read_cont_button->getBaseColor();
-	storedBackColor = read_cont_button->getBackColor();
-
 	// initialize
-	ReadIRcontActive = 0;
-	ReadIRActive = 0;
 	RepeatCounter = 0;
 	active_lines = 0;
 	wakeupslots = 0;
 	irdatanr = 0;
-	macroslots = 0;
 	protocols = "";
 	firmware = "";
 	max = 0;
@@ -620,54 +579,17 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	connected_label3->setText(s);
 	for(int i = 0; i < wakeupslots; i++) {
 		FXString s;
-		s = "wakeup";
+		s = (i < wakeupslots-1) ? "wakeup" : "reboot";
 #if (FOX_MINOR >= 7)
 		FXString t;
 		t.fromInt(i,10);
-		s += t;
+		s += (i > 0 && i < wakeupslots-1) ? t : "";
 #else
-		s += FXStringVal(i,10);
+		s += (i > 0 && i < wakeupslots-1) ? FXStringVal(i,10) : "";
 #endif
 		wslistbox->appendItem(s);	
 	}
 	wslistbox->setNumVisible(wakeupslots);
-	for(int i = 0; i < irdatanr; i++) {
-		FXString s;
-		s = "irdata";
-#if (FOX_MINOR >= 7)
-		FXString t;
-		t.fromInt(i,10);
-		s += t;
-#else
-		s += FXStringVal(i,10);
-#endif
-		mnlistbox->appendItem(s);	
-	}
-	mnlistbox->setNumVisible(irdatanr);
-	for(int i = 0; i < macroslots; i++) {
-		FXString s;
-		s = "macroslot";
-#if (FOX_MINOR >= 7)
-		FXString t;
-		t.fromInt(i,10);
-		s += t;
-#else
-		s += FXStringVal(i,10);
-#endif
-		mslistbox->appendItem(s);	
-	}
-	mslistbox->setNumVisible(macroslots);
-	for(int i = 1; i < 10; i++) { // TODO 10
-		FXString s;
-		s = "";
-#if (FOX_MINOR >= 7)
-		FXString t;
-		t.fromInt(i,10);
-		s += t;
-#else
-		s += FXStringVal(i,10);
-#endif
-	}
 	onGeeprom(NULL, 0, NULL);
 	output_button->enable();
 	pwakeup_button->enable();
@@ -685,8 +607,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	rmacro_button->enable();
 	rkey_button->enable();
 	ralarm_button->enable();
-	send_button->enable();
-	read_cont_button->enable();
 	connect_button->disable();
 	disconnect_button->enable();
 	reboot_button->enable();
@@ -707,7 +627,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		s += t;
 		output_text->setText(s);
 		Write_and_Check();
-		s = "wakeup: ";
+		s = "wakeup: "; // TODO reboot
 		t.format("%02hhx", buf[4]);
 		s += t;
 		t.format("%02hhx", buf[6]);
@@ -757,8 +677,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 {
-	if(ReadIRcontActive)
-		onReadIRcont(NULL, 0, NULL);
 	hid_close(connected_device);
 	connected_device = NULL;
 	connected_label->setText("Disconnected");
@@ -769,8 +687,6 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 	max = 0;
 	count = 0;
 	wslistbox->clearItems();
-	mnlistbox->clearItems();
-	mslistbox->clearItems();
 	output_button->disable();
 	pwakeup_button->disable();
 	pmacro_button->disable();
@@ -787,14 +703,9 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 	rmacro_button->disable();
 	rkey_button->disable();
 	ralarm_button->disable();
-	send_button->disable();
-	read_cont_button->disable();
 	connect_button->enable();
 	disconnect_button->disable();
 	reboot_button->disable();
-	getApp()->removeTimeout(this, ID_TIMER);
-	getApp()->removeTimeout(this, ID_READIR_TIMER);
-	getApp()->removeTimeout(this, ID_RED_TIMER);
 
 	return 1;
 }
@@ -883,8 +794,6 @@ MainWindow::Read()
 	FXString s;
 	if (!connected_device) {
 		FXMessageBox::error(this, MBOX_OK, "Device Error R", "Unable To Connect to Device");
-		getApp()->removeTimeout(this, ID_TIMER);
-		ReadIRcontActive = 0;
 		s = "Unable To Connect to Device R\n"; //
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
@@ -929,7 +838,6 @@ MainWindow::onReadIR(FXObject *sender, FXSelector sel, void *ptr)
 
 	if (buf[0] == 1) { // REPORT_ID_IR
 		// Repeat Counter
-		if(ReadIRcontActive) {
 			if (!buf[6]) {
 				RepeatCounter = 0;
 			} else {
@@ -939,10 +847,7 @@ MainWindow::onReadIR(FXObject *sender, FXSelector sel, void *ptr)
 			u.format("RepeatCounter: %d \n", RepeatCounter);
 			input_text->appendText(u);
 			input_text->setBottomLine(INT_MAX);
-			read_cont_button->setBackColor(FXRGB(255,23,23));
 			g_main_window->repaint();
-			getApp()->addTimeout(this, ID_RED_TIMER, 50 * timeout_scalar /*50ms*/); // three refreshes at 60Hz
-		}
 
 		// show received IR
 		s = "";
@@ -977,14 +882,14 @@ MainWindow::onReadIR(FXObject *sender, FXSelector sel, void *ptr)
 		t += "00";
 		s = "translated:";
 		map_text21->killHighlight();
-		map_text->killHighlight();
-		//map_text->setText("");
+		//key_text->killHighlight(); ///
+		//key_text->setText("");
 		for(int i = 0; i < active_lines; i++) {
 			if(map[i*2] == t) {
 				s += " ";
 				s += map[i*2+1];
-				map_text->setText(map[i*2+1]);
-				map_text->setHighlight(0, map_text->getLength());
+				key_text->setText(map[i*2+1]);
+				//key_text->setHighlight(0, key_text->getLength()); ///
 				k++;
 				map_text21->setHighlight(mapbeg[i], mapbeg[i+1] - mapbeg[i] - 1);
 			}
@@ -994,73 +899,6 @@ MainWindow::onReadIR(FXObject *sender, FXSelector sel, void *ptr)
 		s += "\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);		
-	}
-
-	return 1;
-}
-
-long
-MainWindow::onReadIRcont(FXObject *sender, FXSelector sel, void *ptr)
-{
-	if (!ReadIRcontActive) {
-		output_button->disable();
-		pwakeup_button->disable();
-		pmacro_button->disable();
-		pkey_button->disable();
-		prwakeup_button->disable();
-		prmacro_button->disable();
-		gwakeup_button->disable();
-		gmacro_button->disable();
-		gkey_button->disable();
-		gcap_button->disable();
-		aget_button->disable();
-		aset_button->disable();
-		rwakeup_button->disable();
-		rmacro_button->disable();
-		rkey_button->disable();
-		ralarm_button->disable();
-		send_button->disable();
-		// timer on
-		getApp()->addTimeout(this, ID_TIMER, 5 * timeout_scalar /*5ms*/);
-		ReadIRcontActive = 1;
-		read_cont_button->setBackColor(FXRGB(255,207,207));
-		read_cont_button->setBaseColor(FXRGB(0,0,255));
-		read_cont_button->setShadowColor(makeShadowColor(FXRGB(0,0,255)));
-		g_main_window->repaint();
-		FXString s;
-		if (!ReadIRActive) {
-			s = "receive IR data by pressing buttons on the remote control\n";
-			s += "stop receive mode by pressing receive mode button again\n";
-		}
-		input_text->appendText(s);
-		input_text->setBottomLine(INT_MAX);
-		RepeatCounter = 0;
-  	} else {
-		// timer off
-		getApp()->removeTimeout(this, ID_TIMER);
-		getApp()->removeTimeout(this, ID_RED_TIMER);
-		output_button->enable();
-		pwakeup_button->enable();
-		pmacro_button->enable();
-		pkey_button->enable();
-		prwakeup_button->enable();
-		prmacro_button->enable();
-		gwakeup_button->enable();
-		gmacro_button->enable();
-		gkey_button->enable();
-		gcap_button->enable();
-		aget_button->enable();
-		aset_button->enable();
-		rwakeup_button->enable();
-		rmacro_button->enable();
-		rkey_button->enable();
-		ralarm_button->enable();
-		send_button->enable();
-		ReadIRcontActive = 0;
-		read_cont_button->setBaseColor(storedBaseColor);
-		read_cont_button->setShadowColor(storedShadowColor);
-		read_cont_button->setBackColor(storedBackColor);
-		g_main_window->repaint();
 	}
 
 	return 1;
@@ -1211,7 +1049,11 @@ MainWindow::onPmacro(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	const char *z = " ";
 	int len;
-	t.format("%x ", mnlistbox->getCurrentItem()); // wird als hex gesendet! umwandeln!
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
 	s += t;
 	t = protocol_text->getText();
@@ -1248,6 +1090,23 @@ MainWindow::onPmacro(FXObject *sender, FXSelector sel, void *ptr)
 
 	Write_and_Check();
 
+	onGirdata(NULL, 0, NULL);
+
+	int i = 0;
+	FXint pos = map_text21->getCursorPos();
+	while(mapbeg[i] <= pos) {
+		i++;
+	}
+	map_text21->removeText(mapbeg[i-1], map[(i-1)*2].length());
+	s = protocol1_text->getText();
+	s += address1_text->getText();
+	s += command1_text->getText();
+	s += "00";
+	map_text21->insertText(mapbeg[i-1], s);
+	onApply(NULL, 0, NULL);
+	map_text21->setCursorPos(mapbeg[i]);
+	//map_text21->setModified(1);
+
 	return 1;
 }
 
@@ -1258,21 +1117,44 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	const char *z = " ";
 	int len;
-	t.format("%x ", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
 	s += t;
-	t = address_text->getText();
-	len = t.length();
+#if (FOX_MINOR >= 7)
+	t.fromInt(get_key_nr((key_text->getText())),16);
+#else
+	t = FXStringVal(get_key_nr((key_text->getText())),16);
+#endif
+
+	len = t.length(); // TODO modifier
 	for (int i = 0; i < 4 - len; i++)
 		t.prepend("0");
 	t.insert(2, " ");
-	s += t.section(z, 0, 1);
-	s += " ";
 	s += t.section(z, 1, 1);
+	s += " ";
+	s += t.section(z, 0, 1);
 	s += " ";
 	output_text->setText(s);
 
 	Write_and_Check();
+
+	onGkey(NULL, 0, NULL);
+
+	int i = 0;
+	FXint pos = map_text21->getCursorPos();
+	while(mapbeg[i] <= pos) {
+		i++;
+	}
+	map_text21->removeText(mapbeg[i-1]+map[(i-1)*2].length()+1, map[(i-1)*2+1].length());
+	s = key_text->getText();
+	map_text21->insertText(mapbeg[i-1]+map[(i-1)*2].length()+1, s);
+	onApply(NULL, 0, NULL);
+	map_text21->setCursorPos(mapbeg[i]);
+	//map_text21->setModified(1);
 
 	return 1;
 }
@@ -1311,12 +1193,33 @@ MainWindow::onPRmacro(FXObject *sender, FXSelector sel, void *ptr)
 	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
-	t.format("%x ", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s = "3 0 1 6 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA_REMOTE
 	s += t;
 	output_text->setText(s);
 
 	Write_and_Check();
+
+	onGirdata(NULL, 0, NULL);
+
+	int i = 0;
+	FXint pos = map_text21->getCursorPos();
+	while(mapbeg[i] <= pos) {
+		i++;
+	}
+	map_text21->removeText(mapbeg[i-1], map[(i-1)*2].length());
+	s = protocol1_text->getText();
+	s += address1_text->getText();
+	s += command1_text->getText();
+	s += "00";
+	map_text21->insertText(mapbeg[i-1], s);
+	onApply(NULL, 0, NULL);
+	map_text21->setCursorPos(mapbeg[i]);
+	//map_text21->setModified(1);
 
 	return 1;
 }
@@ -1367,7 +1270,11 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	s = "3 0 0 2 "; //STAT_CMD ACC_GET CMD_IRDATA "; // Report_ID
-	t.format("%x", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s += t;
 	output_text->setText(s);
 
@@ -1396,7 +1303,7 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 	t.format("%02hhx", buf[9]);
 	s += t;
 	flag1_text->setText(s);
-	
+
 	return 1;
 }
 
@@ -1406,7 +1313,11 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	s = "3 0 0 3 "; //STAT_CMD ACC_GET CMD_KEY "; // Report_ID
-	t.format("%x", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s += t;
 	output_text->setText(s);
 
@@ -1414,19 +1325,11 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 
 	s = "";
 	protocol1_text->setText(s);
-
-	s = "";
-	t.format("%02hhx", buf[4]);
-	s += t;
-	t.format("%02hhx", buf[5]);
-	s += t;
 	address1_text->setText(s);
-
-	s = "";
 	command1_text->setText(s);
-
-	s = "";
 	flag1_text->setText(s);
+
+	key_text->setText(get_key_from_nr(buf[4]));
 
 	return 1;
 }
@@ -1478,13 +1381,12 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 		}
 
 		if (!i) { // first query for slots and depth
-			macroslots = buf[4];
 			s.format("number of irdata: %u\n", buf[4]);
 			irdatanr = buf[4];
 			//t.format("macro_depth: %u\n", buf[5]);
 			//s += t;
 			wakeupslots = buf[6];
-			t.format("wakeup_slots: %u", buf[6]);
+			t.format("number of wakeups: %u", buf[6]);
 			s += t;
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
@@ -1635,12 +1537,33 @@ MainWindow::onRmacro(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%x ", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s = "3 0 2 2 "; // Report_ID STAT_CMD ACC_RESET CMD_IRDATA
 	s += t;
 	output_text->setText(s);
 
 	Write_and_Check();
+
+	onGirdata(NULL, 0, NULL);
+
+	int i = 0;
+	FXint pos = map_text21->getCursorPos();
+	while(mapbeg[i] <= pos) {
+		i++;
+	}
+	map_text21->removeText(mapbeg[i-1], map[(i-1)*2].length());
+	s = protocol1_text->getText();
+	s += address1_text->getText();
+	s += command1_text->getText();
+	s += flag1_text->getText();
+	map_text21->insertText(mapbeg[i-1], s);
+	onApply(NULL, 0, NULL);
+	map_text21->setCursorPos(mapbeg[i]);
+	//map_text21->setModified(1);
 
 	return 1;
 }
@@ -1650,12 +1573,30 @@ MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	t.format("%x ", mnlistbox->getCurrentItem());
+#if (FOX_MINOR >= 7)
+	t.format("%x ", line_text->getText().toInt() - 1);
+#else
+	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+#endif
 	s = "3 0 2 3 "; // Report_ID STAT_CMD ACC_RESET CMD_KEY
 	s += t;
 	output_text->setText(s);
 
 	Write_and_Check();
+
+	onGkey(NULL, 0, NULL);
+
+	int i = 0;
+	FXint pos = map_text21->getCursorPos();
+	while(mapbeg[i] <= pos) {
+		i++;
+	}
+	map_text21->removeText(mapbeg[i-1]+map[(i-1)*2].length()+1, map[(i-1)*2+1].length());
+	s = key_text->getText();
+	map_text21->insertText(mapbeg[i-1]+map[(i-1)*2].length()+1, s);
+	onApply(NULL, 0, NULL);
+	map_text21->setCursorPos(mapbeg[i]);
+	//map_text21->setModified(1);
 
 	return 1;
 }
@@ -1664,51 +1605,6 @@ long
 MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 {
 	output_text->setText("3 0 2 1"); // Report_ID STAT_CMD ACC_RESET CMD_ALARM
-
-	Write_and_Check();
-
-	return 1;
-}
-
-long
-MainWindow::onSendIR(FXObject *sender, FXSelector sel, void *ptr)
-{
-	FXString s;
-	FXString t;
-	const char *z = " ";
-	int len;
-	s = "3 0 1 0 "; // Report_ID STAT_CMD ACC_SET CMD_EMIT
-	t = protocol_text->getText();
-	len = t.length(); // don't put this into the for loop!!!
-	for (int i = 0; i < 2 - len; i++)
-		t.prepend("0");
-	s += t;
-	s += " ";
-	t = address_text->getText();
-	len = t.length();
-	for (int i = 0; i < 4 - len; i++)
-		t.prepend("0");
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
-	s += " ";
-	s += t.section(z, 0, 1);
-	s += " ";
-	t = command_text->getText();
-	len = t.length();
-	for (int i = 0; i < 4 - len; i++)
-		t.prepend("0");
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
-	s += " ";
-	s += t.section(z, 0, 1);
-	s += " ";
-	t = flag_text->getText();
-	len = t.length();
-	for (int i = 0; i < 2 - len; i++)
-		t.prepend("0");
-	s += t;
-	s += " ";
-	output_text->setText(s);
 
 	Write_and_Check();
 
@@ -1872,34 +1768,42 @@ MainWindow::saveFile(const FXString& file){
 	return saved;
 }
 
-long
-MainWindow::onAppend(FXObject *sender, FXSelector sel, void *ptr){
-	FXString s;
-	FXString t;
-	s = protocol1_text->getText();
-	t = address1_text->getText();
-	s += t;
-	t = command1_text->getText();
-	s += t;
-	s += "00";
-	s += " ";
-	s += map_text->getText();
-	s += "\n";
-	map_text21->appendText(s);
-	onApply(NULL, 0, NULL);
-	map_text21->setModified(1);
+uint8_t
+MainWindow::get_key_nr(FXString s){
+	for(int i=0; i < lines; i++) {
+		if(!compare(mapusb[i].key, s)) {
+			return mapusb[i].usb_hid_key;
+		}
+	}
+	return 0xFF;
+}
 
-	return 1;
+FXString
+MainWindow::get_key_from_nr(uint8_t nr){
+	for(int i=0; i < lines; i++) {
+		if(nr == mapusb[i].usb_hid_key) {
+			return mapusb[i].key;
+		}
+	}
+	return "ffff";
 }
 
 long
 MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
-	/*if(map_text21->isModified()){
+	if(map_text21->isModified()){
 		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
-	}*/
+	}
 	map_text21->setText(NULL,0);
 	for(int i = 0; i < irdatanr; i++) {
-	    mnlistbox->setCurrentItem(i);
+	    FXString u;
+#if (FOX_MINOR >= 7)
+	    FXString v;
+	    v.fromInt(i + 1,10);
+	    u += v;
+#else
+	    u += FXStringVal(i + 1,10);
+#endif
+	    line_text->setText(u);
 	    onGirdata(NULL, 0, NULL);
 	    FXString s;
 	    FXString t;
@@ -1911,13 +1815,67 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	    s += flag1_text->getText();
 	    s += " ";
 	    onGkey(NULL, 0, NULL);
-	    s += address1_text->getText();
+	    s += key_text->getText();
 	    s += "\n";
 	    map_text21->appendText(s);
 	}
-	address1_text->setText("");
-	//onApply(NULL, 0, NULL); //////
-	map_text21->setModified(1); ////////
+	key_text->setText("");
+	onApply(NULL, 0, NULL);
+	//map_text21->setModified(1);
+
+	return 1;
+}
+
+long
+MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
+  FXString u;
+	for(int i = 0; i < active_lines; i++) {
+    if(i >= irdatanr) {
+      u += "too many lines\n";
+		  input_text->appendText(u);
+		  input_text->setBottomLine(INT_MAX);
+      return 1;
+    }
+#if (FOX_MINOR >= 7)
+	    u.fromInt(i + 1,10);
+#else
+	    u = FXStringVal(i + 1,10);
+#endif
+	    line_text->setText(u);
+
+	FXString s;
+	map_text21->extractText(u, mapbeg[i], 2);
+	s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+2, 4);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+6, 4);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+10, 2);
+	s += u;
+	output_text->setText(s);
+	s += "\n";
+		input_text->appendText(s);
+		input_text->setBottomLine(INT_MAX);
+
+	Write_and_Check();
+
+	map_text21->extractText(u, mapbeg[i]+map[i*2].length()+1, map[i*2+1].length());
+	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
+	s += u;
+	output_text->setText(s);
+	s += "\n";
+		input_text->appendText(s);
+		input_text->setBottomLine(INT_MAX);
+
+	Write_and_Check();
+
+	//onGeeprom();
+
+  }
 
 	return 1;
 }
@@ -1970,93 +1928,9 @@ MainWindow::onApply(FXObject *sender, FXSelector sel, void *ptr){
 }
 
 long
-MainWindow::onWrite_IR(FXObject *sender, FXSelector sel, void *ptr)
-{
-	int i = 0;
-	FXint pos = map_text21->getCursorPos();
-	while(mapbeg[i] <= pos) {
-		i++;
-	}
-	map_text21->removeText(mapbeg[i-1], map[(i-1)*2].length());
-	FXString s;
-	s = protocol1_text->getText();
-	s += address1_text->getText();
-	s += command1_text->getText();
-	s += "00";
-	map_text21->insertText(mapbeg[i-1], s);
-	onApply(NULL, 0, NULL);
-	map_text21->setCursorPos(mapbeg[i]);
-	map_text21->setModified(1);
-
-	return 1;
-}
-
-long
 MainWindow::onClear(FXObject *sender, FXSelector sel, void *ptr)
 {
 	input_text->setText("");
-
-	return 1;
-}
-
-long
-MainWindow::onTimeout(FXObject *sender, FXSelector sel, void *ptr)
-{
-	onReadIR(NULL, 0, NULL);
-
-	getApp()->addTimeout(this, ID_TIMER, 5 * timeout_scalar /*5ms*/);
-
-	return 1;
-}
-
-
-long
-MainWindow::onReadIRTimeout(FXObject *sender, FXSelector sel, void *ptr)
-{
-	FXString s;
-	FXString t;
-	FXString u;
-	const char *z = " ";
-
-	// toggle onReadIRcont off
-	if (ReadIRcontActive)
-		onReadIRcont(NULL, 0, NULL);
-
-	u = "";
-	u += output_text->getText();
-	u += " ";
-	s = "";
-	s += protocol1_text->getText();
-	s += " ";
-	t = address1_text->getText();
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
-	s += " ";
-	s += t.section(z, 0, 1);
-	s += " ";
-	t = command1_text->getText();
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
-	s += " ";
-	s += t.section(z, 0, 1);
-	s += " 00 ";
-	if (s=="     00 "){
-		FXMessageBox::error(this, MBOX_OK, "IR Read Error", "No IR received");
-		return 0;
-	}
-	u += s;
-	output_text->setText(u);
-
-	Write_and_Check();
-
-	return 1;
-}
-
-long
-MainWindow::onRedTimeout(FXObject *sender, FXSelector sel, void *ptr)
-{
-	read_cont_button->setBackColor(FXRGB(255,207,207));
-	g_main_window->repaint();
 
 	return 1;
 }
@@ -2066,15 +1940,6 @@ long MainWindow::onCmdwsListBox(FXObject*,FXSelector sel,void* ptr){
 	return 1;
   }
 
-long MainWindow::onCmdmnListBox(FXObject*,FXSelector sel,void* ptr){
-	FXTRACE((1,"%s: %d (%d)\n",FXSELTYPE(sel)==SEL_COMMAND?"SEL_COMMAND":"SEL_CHANGED",(FXint)(FXival)ptr,mnlistbox->getCurrentItem()));
-	return 1;
-  }
-
-long MainWindow::onCmdmsListBox(FXObject*,FXSelector sel,void* ptr){
-	FXTRACE((1,"%s: %d (%d)\n",FXSELTYPE(sel)==SEL_COMMAND?"SEL_COMMAND":"SEL_CHANGED",(FXint)(FXival)ptr,mslistbox->getCurrentItem()));
-	return 1;
-  }
 
 long MainWindow::onDevDClicked(FXObject *sender, FXSelector sel, void *ptr){
 	onDisconnect(NULL, 0, NULL);

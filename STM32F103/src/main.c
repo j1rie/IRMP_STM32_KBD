@@ -517,9 +517,9 @@ int8_t set_handler(uint8_t *buf)
 		if (memcmp(&buf[4], tmp, sizeof(tmp)))
 			ret = -1;
 	case CMD_KEY:
-		put_key((buf[5] << 8) | buf[4], buf[3]); // *((uint16_t*)&buf[4])
+		put_key(*((uint16_t*)&buf[4]), buf[3]);
 		/* validate stored value in eeprom */
-		if(!(get_key(buf[3]) == ((buf[5] << 8) | buf[4])))
+		if(!(get_key(buf[3]) == *((uint16_t*)&buf[4])))
 			ret = -1;
 		break;
 	case CMD_WAKE:
@@ -675,6 +675,7 @@ int main(void)
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint16_t key;
+	uint8_t num;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -734,15 +735,18 @@ int main(void)
 			}
 
 			/* send IR-data */
-			key = get_key(get_num_of_irdata(&myIRData));
-			if(key != 0xFFFF) {
-				kbd_buf[0] = key >> 8; // modifier
-				kbd_buf[2] = key & 0xFF; // key
-				USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-				delay_ms(30);
-				kbd_buf[0] = 0;
-				kbd_buf[2] = 0;
-				USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
+			num = get_num_of_irdata(&myIRData);
+			if(num != 0xFF) {
+				key = get_key(num);
+				if(key != 0xFFFF) {
+					kbd_buf[0] = key >> 8; // modifier
+					kbd_buf[2] = key & 0xFF; // key
+					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+					delay_ms(30);
+					kbd_buf[0] = 0;
+					kbd_buf[2] = 0;
+					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
+				}
 			}
 		}
 	}
