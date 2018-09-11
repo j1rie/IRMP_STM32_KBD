@@ -1399,7 +1399,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 						jump_to_firmware = 1;
 						goto again;
 					}
-					t.format("%" PRIu16 " ", buf[k]);
+					t.format("%u ", buf[k]);
 					protocols += t;  // TODO line break ?
 					s += t;
 				}
@@ -1795,31 +1795,32 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	}
 	map_text21->setText(NULL,0);
 	for(int i = 0; i < irdatanr; i++) {
-		FXString u;
+	    FXString u;
 #if (FOX_MINOR >= 7)
-		FXString v;
-		v.fromInt(i + 1,10);
-		u += v;
+	    FXString v;
+	    v.fromInt(i + 1,10);
+	    u += v;
 #else
-		u += FXStringVal(i + 1,10);
+	    u += FXStringVal(i + 1,10);
 #endif
-		line_text->setText(u);
-		onGirdata(NULL, 0, NULL);
-		FXString s;
-		FXString t;
-		s = protocol1_text->getText();
-		t = address1_text->getText();
-		s += t;
-		t = command1_text->getText();
-		s += t;
-		s += flag1_text->getText();
-		s += " ";
-		onGkey(NULL, 0, NULL);
-		s += key_text->getText();
+	    line_text->setText(u);
+	    onGirdata(NULL, 0, NULL);
+	    FXString s;
+	    FXString t;
+	    s = protocol1_text->getText();
+	    t = address1_text->getText();
+	    s += t;
+	    t = command1_text->getText();
+	    s += t;
+	    s += flag1_text->getText();
+	    s += " ";
+	    onGkey(NULL, 0, NULL);
+	    s += key_text->getText();
+	    if(i < irdatanr - 1)
 		s += "\n";
-		map_text21->appendText(s);
+	    map_text21->appendText(s);
 	}
-	key_text->setText("");
+	key_text->setText("KEY_");
 	onApply(NULL, 0, NULL);
 	//map_text21->setModified(1);
 
@@ -1828,55 +1829,85 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 long
 MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
-	FXString u;
+	FXString nr, nrp;
+	const char *z = " ";
+	int len;
 	for(int i = 0; i < active_lines; i++) {
-		if(i >= irdatanr) {
-			u += "too many lines\n";
-			input_text->appendText(u);
-			input_text->setBottomLine(INT_MAX);
-			return 1;
-		}
-#if (FOX_MINOR >= 7)
-		u.fromInt(i + 1,10);
-#else
-		u = FXStringVal(i + 1,10);
-#endif
-		line_text->setText(u);
-
-		FXString s;
-		map_text21->extractText(u, mapbeg[i], 2);
-		s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
-		s += u;
-		s += " ";
-		map_text21->extractText(u, mapbeg[i]+2, 4);
-		s += u;
-		s += " ";
-		map_text21->extractText(u, mapbeg[i]+6, 4);
-		s += u;
-		s += " ";
-		map_text21->extractText(u, mapbeg[i]+10, 2);
-		s += u;
-		output_text->setText(s);
-		s += "\n";
-		input_text->appendText(s);
+	if(i >= irdatanr) {
+		nr += "too many lines\n";
+		input_text->appendText(nr);
 		input_text->setBottomLine(INT_MAX);
-
-		Write_and_Check();
-
-		map_text21->extractText(u, mapbeg[i]+map[i*2].length()+1, map[i*2+1].length());
-		s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
-		s += u;
-		output_text->setText(s);
-		s += "\n";
-		input_text->appendText(s);
-		input_text->setBottomLine(INT_MAX);
-
-		Write_and_Check();
-
-		//onGeeprom();
-
+	return 1;
 	}
 
+#if (FOX_MINOR >= 7)
+	nrp.fromInt(i + 1,10);
+#else
+	nrp = FXStringVal(i + 1,10);
+#endif
+	line_text->setText(nrp); // ??
+
+#if (FOX_MINOR >= 7)
+	nr.fromInt(i,16);
+#else
+	nr = FXStringVal(i,16);
+#endif
+
+	FXString s, u, t;
+	s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
+	s += nr;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i], 2);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+4, 2);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+2, 2);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+8, 2);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+6, 2);
+	s += u;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i]+10, 2);
+	s += u;
+	output_text->setText(s);
+	s += "\n";
+	input_text->appendText(s);
+	input_text->setBottomLine(INT_MAX);
+
+	Write_and_Check();
+
+	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
+	s += nr;
+	s += " ";
+	map_text21->extractText(u, mapbeg[i] + map[i*2].length() + 1, map[i*2+1].length());
+#if (FOX_MINOR >= 7)
+	t.fromInt(get_key_nr(u),16);
+#else
+	t = FXStringVal(get_key_nr(u),16);
+#endif
+	len = t.length(); // TODO modifier
+	for (int i = 0; i < 4 - len; i++)
+		t.prepend("f");
+	t.insert(2, " ");
+	s += t.section(z, 1, 1);
+	s += " ";
+	s += t.section(z, 0, 1);
+	s += " ";
+	output_text->setText(s);
+
+	s += "\n";
+	input_text->appendText(s);
+	input_text->setBottomLine(INT_MAX);
+
+	Write_and_Check();
+
+	//onGeeprom();
+  }
 	return 1;
 }
 
