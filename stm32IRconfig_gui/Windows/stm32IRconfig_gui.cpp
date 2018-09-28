@@ -259,7 +259,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 Configuration", NULL, NULL, DECOR_ALL, 275, 38, 780, 978)  // for 1280x1024
+	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 275, 38, 780, 978)  // for 1280x1024
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -627,7 +627,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		s += t;
 		output_text->setText(s);
 		Write_and_Check();
-		s = "wakeup: "; // TODO reboot
+		s = (i < wakeupslots-1) ? "wakeup: " : "reboot: ";
 		t.format("%02hhx", buf[4]);
 		s += t;
 		t.format("%02hhx", buf[6]);
@@ -722,15 +722,16 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 	devices = hid_enumerate(0x1209, 0x4444);
 	cur_dev = devices;	
 	while (cur_dev) {
-		// Add it to the List Box.
-		FXString s;
-		FXString usage_str;
-		s.format("%04hx:%04hx -", cur_dev->vendor_id, cur_dev->product_id);
-		s += FXString(" ") + cur_dev->manufacturer_string;
-		s += FXString(" ") + cur_dev->product_string;
-		FXListItem *li = new FXListItem(s, NULL, cur_dev);
-		device_list->appendItem(li);
-		
+		// only hidraw, not keyboard
+		if(cur_dev->usage == 0x01) {
+			// Add it to the List Box.
+			FXString s;
+			s.format("%04hx:%04hx -", cur_dev->vendor_id, cur_dev->product_id);
+			s += FXString(" ") + cur_dev->manufacturer_string;
+			s += FXString(" ") + cur_dev->product_string;
+			FXListItem *li = new FXListItem(s, NULL, cur_dev);
+			device_list->appendItem(li);
+		}
 		cur_dev = cur_dev->next;
 	}
 
@@ -1875,9 +1876,6 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	map_text21->extractText(u, mapbeg[i]+10, 2);
 	s += u;
 	output_text->setText(s);
-	s += "\n";
-	input_text->appendText(s);
-	input_text->setBottomLine(INT_MAX);
 
 	Write_and_Check();
 
@@ -1899,10 +1897,6 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	s += t.section(z, 0, 1);
 	s += " ";
 	output_text->setText(s);
-
-	s += "\n";
-	input_text->appendText(s);
-	input_text->setBottomLine(INT_MAX);
 
 	Write_and_Check();
 

@@ -52,7 +52,7 @@ diff -Nrup A/inc/usb_conf.h B/inc/usb_conf.h
  /* CTR service routines */
 diff -Nrup A/inc/usb_desc.h B/inc/usb_desc.h
 --- A/inc/usb_desc.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/usb_desc.h	2018-08-16 08:56:50.738332166 +0200
++++ B/inc/usb_desc.h	2018-09-28 23:28:19.367074300 +0200
 @@ -31,6 +31,7 @@
  #define __USB_DESC_H
  
@@ -70,7 +70,7 @@ diff -Nrup A/inc/usb_desc.h B/inc/usb_desc.h
  #define CUSTOMHID_SIZ_STRING_LANGID             4
  #define CUSTOMHID_SIZ_STRING_VENDOR             38
 -#define CUSTOMHID_SIZ_STRING_PRODUCT            32
-+#define CUSTOMHID_SIZ_STRING_PRODUCT            44
++#define CUSTOMHID_SIZ_STRING_PRODUCT            52
  #define CUSTOMHID_SIZ_STRING_SERIAL             26
  
  #define STANDARD_ENDPOINT_DESC_SIZE             0x09
@@ -271,7 +271,7 @@ diff -Nrup A/src/stm32_it.c B/src/stm32_it.c
  * Function Name  : USB_FS_WKUP_IRQHandler
 diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 --- A/src/usb_desc.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/usb_desc.c	2018-08-31 00:14:28.852343800 +0200
++++ B/src/usb_desc.c	2018-09-28 23:27:38.162674100 +0200
 @@ -49,10 +49,10 @@ const uint8_t CustomHID_DeviceDescriptor
      0x00,                       /*bDeviceSubClass*/
      0x00,                       /*bDeviceProtocol*/
@@ -399,17 +399,18 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
    }; /* CustomHID_ReportDescriptor */
  
  /* USB String Descriptors (optional) */
-@@ -270,14 +304,16 @@ const uint8_t CustomHID_StringProduct[CU
+@@ -270,14 +304,17 @@ const uint8_t CustomHID_StringProduct[CU
    {
      CUSTOMHID_SIZ_STRING_PRODUCT,          /* bLength */
      USB_STRING_DESCRIPTOR_TYPE,        /* bDescriptorType */
 -    'S', 0, 'T', 0, 'M', 0, '3', 0, '2', 0, ' ', 0, 'C', 0,
 -    'u', 0, 's', 0, 't', 0, 'm', 0, ' ', 0, 'H', 0, 'I', 0,
 -    'D', 0
-+    /* Product: "STM32 IRMP HID-Device" */
++    /* Product: "STM32 IRMP HID-KBD-Device" */
 +    'S', 0, 'T', 0, 'M', 0, '3', 0, '2', 0, ' ', 0, 'I', 0,
 +    'R', 0, 'M', 0, 'P', 0, ' ', 0, 'H', 0, 'I', 0, 'D', 0,
-+    '-', 0, 'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0
++    '-', 0, 'K', 0, 'B', 0, 'D', 0, '-', 0, 'D', 0, 'e', 0,
++    'v', 0, 'i', 0, 'c', 0, 'e', 0
    };
  uint8_t CustomHID_StringSerial[CUSTOMHID_SIZ_STRING_SERIAL] =
    {
