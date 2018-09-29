@@ -1,7 +1,7 @@
 diff -Nrup A/irmpconfig.h B/irmpconfig.h
---- A/irmpconfig.h	2018-02-19 11:30:11.000000000 +0100
-+++ B/irmpconfig.h	2018-08-28 22:12:22.455471006 +0200
-@@ -56,17 +56,17 @@
+--- A/irmpconfig.h	2018-09-10 14:26:02.000000000 +0200
++++ B/irmpconfig.h	2018-09-29 01:49:49.276908743 +0200
+@@ -54,17 +54,17 @@
  #define IRMP_SUPPORT_KASEIKYO_PROTOCOL          1       // Kaseikyo             >= 10000                 ~250 bytes
  
  // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
@@ -42,8 +42,8 @@ diff -Nrup A/irmpconfig.h B/irmpconfig.h
 +#  define IRMP_BIT_NUMBER                       IR_IN_PIN
  
  /*---------------------------------------------------------------------------------------------------------------------------------------------------
-  * Change hardware pin here for Stellaris ARM Cortex M4
-@@ -214,7 +214,7 @@
+  * Hardware pin for ARM STM32 (HAL) - don't change here, define IRMP_RECEIVE_GPIO_Port & IRMP_RECEIVE_PIN in STM32Cube (Main.h)
+@@ -232,7 +232,7 @@
   *---------------------------------------------------------------------------------------------------------------------------------------------------
   */
  #ifndef IRMP_USE_CALLBACK
@@ -51,4 +51,4 @@ diff -Nrup A/irmpconfig.h B/irmpconfig.h
 +#  define IRMP_USE_CALLBACK                     1       // 1: use callbacks. 0: do not. default is 0
  #endif
  
- #endif // _IRMPCONFIG_H_
+ /*---------------------------------------------------------------------------------------------------------------------------------------------------
