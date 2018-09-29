@@ -259,7 +259,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 275, 38, 780, 978)  // for 1280x1024
+	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 275, 38, 880, 978)  // for 1280x1024
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -272,7 +272,7 @@ MainWindow::MainWindow(FXApp *app)
 	FXVerticalFrame *vf2 = new FXVerticalFrame(hf1, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
 
 	// second vertical frame for map_text21
-	new FXLabel(vf2, "eeprom map                             ");
+	new FXLabel(vf2, "eeprom map                                       ");
 	FXVerticalFrame *innerVF21 = new FXVerticalFrame(vf2, LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
 	map_text21 = new FXText(new FXHorizontalFrame(innerVF21,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0,0,0), NULL, 0, LAYOUT_FILL_X|LAYOUT_FILL_Y/*,0,0,0,0, 0,0,0,0*/);
 
@@ -466,7 +466,7 @@ MainWindow::MainWindow(FXApp *app)
 	input_text->setHelpText("debug messages");
 	clear_button->setHelpText("clear debug messages");
 	open_button->setHelpText("open translation map");
-	modifier_text->setHelpText("modifier i.e. AltShift)");
+	modifier_text->setHelpText("modifier i.e. LeftShift)");
 	key_text->setHelpText("key");
 	save_button->setHelpText("save translation map");
 	map_text21->setHelpText("editable translation map");
@@ -1115,9 +1115,7 @@ long
 MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
-	FXString t;
-	const char *z = " ";
-	int len;
+	FXString t, u;
 #if (FOX_MINOR >= 7)
 	t.format("%x ", line_text->getText().toInt() - 1);
 #else
@@ -1130,14 +1128,14 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t = FXStringVal(get_key_nr((key_text->getText())),16);
 #endif
-
-	len = t.length(); // TODO modifier
-	for (int i = 0; i < 4 - len; i++)
-		t.prepend("0");
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
+#if (FOX_MINOR >= 7)
+	u.fromInt(get_key_nr((modifier_text->getText())),16);
+#else
+	u = FXStringVal(get_key_nr((modifier_text->getText())),16);
+#endif
+	s += t;
 	s += " ";
-	s += t.section(z, 0, 1);
+	s += u;
 	s += " ";
 	output_text->setText(s);
 
@@ -1151,7 +1149,9 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 		i++;
 	}
 	map_text21->removeText(mapbeg[i-1]+map[(i-1)*2].length()+1, map[(i-1)*2+1].length());
-	s = key_text->getText();
+	s = modifier_text->getText();
+	s += "|";
+	s += key_text->getText();
 	map_text21->insertText(mapbeg[i-1]+map[(i-1)*2].length()+1, s);
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(mapbeg[i]);
@@ -1330,6 +1330,7 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 	command1_text->setText(s);
 	flag1_text->setText(s);
 
+	modifier_text->setText(get_key_from_nr(buf[5]));
 	key_text->setText(get_key_from_nr(buf[4]));
 
 	return 1;
@@ -1786,7 +1787,7 @@ MainWindow::get_key_from_nr(uint8_t nr){
 			return mapusb[i].key;
 		}
 	}
-	return "ffff";
+	return "ff";
 }
 
 long
@@ -1816,12 +1817,15 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	    s += flag1_text->getText();
 	    s += " ";
 	    onGkey(NULL, 0, NULL);
+	    s += modifier_text->getText();
+	    s += "|";
 	    s += key_text->getText();
 	    if(i < irdatanr - 1)
 		s += "\n";
 	    map_text21->appendText(s);
 	}
 	key_text->setText("KEY_");
+	modifier_text->setText("ff");
 	onApply(NULL, 0, NULL);
 	//map_text21->setModified(1);
 
@@ -1831,8 +1835,6 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 long
 MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	FXString nr, nrp;
-	const char *z = " ";
-	int len;
 	for(int i = 0; i < active_lines; i++) {
 	if(i >= irdatanr) {
 		nr += "too many lines\n";
@@ -1883,18 +1885,21 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	s += nr;
 	s += " ";
 	map_text21->extractText(u, mapbeg[i] + map[i*2].length() + 1, map[i*2+1].length());
+	// split KEY_X|KEY_Y
+	const char *z = "|";
 #if (FOX_MINOR >= 7)
-	t.fromInt(get_key_nr(u),16);
+	t.fromInt(get_key_nr(u.section(z, 1, 1)),16);
 #else
-	t = FXStringVal(get_key_nr(u),16);
+	t = FXStringVal(get_key_nr(u.section(z, 1, 1)),16);
 #endif
-	len = t.length(); // TODO modifier
-	for (int i = 0; i < 4 - len; i++)
-		t.prepend("f");
-	t.insert(2, " ");
-	s += t.section(z, 1, 1);
+	s += t;
 	s += " ";
-	s += t.section(z, 0, 1);
+#if (FOX_MINOR >= 7)
+	t.fromInt(get_key_nr(u.section(z, 0, 1)),16);
+#else
+	t = FXStringVal(get_key_nr(u.section(z, 0, 1)),16);
+#endif
+	s += t;
 	s += " ";
 	output_text->setText(s);
 

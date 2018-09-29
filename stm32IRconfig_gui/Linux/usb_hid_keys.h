@@ -4,7 +4,7 @@ struct mapline {
     uint8_t usb_hid_key;
 };
 
-const uint8_t lines = 169;
+const uint8_t lines = 171;
 
 struct mapline mapusb[lines] =
 {
@@ -167,8 +167,8 @@ struct mapline mapusb[lines] =
 //{ "KEY_OUT",         0xA0},  // Keyboard Out
 //{ "KEY_OPER",        0xA1},  // Keyboard Oper
 //{ "KEY_CLRAGAIN",    0xA2},  // Keyboard Clear/Again
-//{ "KEY_CRSEL",       0xA3},  // Keyboard CrSel/Props
-//{ "KEY_EXSEL",       0xA4},  // Keyboard ExSel
+//{ "KEY_CRSEL",       0xA3},  // Keyboard CrSel/Props ?
+//{ "KEY_EXSEL",       0xA4},  // Keyboard ExSel ?
 //{ "KEY_KP00",        0xB0},  // Keypad 00
 //{ "KEY_KP000",       0xB1},  // Keypad 000
 //{ "KEY_THOUSANDSEP", 0xB2},  // Thousands separator, depends on Locale either . or ,
@@ -245,4 +245,6 @@ struct mapline mapusb[lines] =
 { "KEY_COFFEE",	0xF9}, // OK?
 { "KEY_REFRESH",	0xFA}, // OK
 { "KEY_CALC",	0xFB},  // OK
+{ "ff",	0x00},  // for modifier, necessary for Windows
+{ "",	0x00},  // for modifier, necessary for Windows
 };
