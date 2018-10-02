@@ -731,6 +731,7 @@ int main(void)
 
 		/* poll IR-data */
 		if (irmp_get_data(&myIRData)) {
+			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 			if (!(myIRData.flags)) {
 				repeat_timer = 0;
 				last_time = 0;
