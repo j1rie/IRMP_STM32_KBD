@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Joerg Riechardt
+ * Copyright (C) 2014-2018 Joerg Riechardt
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -10,13 +10,14 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* MACRO_SLOTS x (MACRO_DEPTH + 1) + WAKE_SLOTS < 170
- * Eeprom page size = 2kB - 4, 511 pairs of 16bit variable + address,
- * IRdata needs 3 variables, 511 / 3 = 170
- */
-#define MACRO_SLOTS	8
-#define MACRO_DEPTH	8
-#define WAKE_SLOTS	8
+/* NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 <= 511
+ * Eeprom page size = 2kB - 4, 511 pairs of 16bit variable + address
+* Eeprom partition 1: NUM_KEYS IRMP_DATA
+* Eeprom partition 2: NUM_KEYS keys
+* Eeprom partition 3: WAKE_SLOTS IRMP_DATA
+*/
+#define NUM_KEYS   62
+#define WAKE_SLOTS	2 // at least 2: wakeup and reboot
 #define SIZEOF_IR	6
 
 /* uncomment below for CooCox */
