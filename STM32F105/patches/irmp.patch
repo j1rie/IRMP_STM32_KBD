@@ -1,7 +1,7 @@
-diff -Nrup irmp.orig/irmpconfig.h irmp.new/irmpconfig.h
---- irmp.orig/irmpconfig.h	2018-02-19 11:30:11.000000000 +0100
-+++ irmp.new/irmpconfig.h	2018-02-20 15:43:24.000000000 +0100
-@@ -56,17 +56,17 @@
+diff -Nrup A/irmpconfig.h B/irmpconfig.h
+--- A/irmpconfig.h	2018-09-10 14:26:02.000000000 +0200
++++ B/irmpconfig.h	2018-10-03 16:39:28.448378634 +0200
+@@ -54,17 +54,17 @@
  #define IRMP_SUPPORT_KASEIKYO_PROTOCOL          1       // Kaseikyo             >= 10000                 ~250 bytes
  
  // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
@@ -41,8 +41,8 @@ diff -Nrup irmp.orig/irmpconfig.h irmp.new/irmpconfig.h
 +#  define IRMP_BIT_NUMBER                       6
  
  /*---------------------------------------------------------------------------------------------------------------------------------------------------
-  * Change hardware pin here for Stellaris ARM Cortex M4
-@@ -214,7 +214,7 @@
+  * Hardware pin for ARM STM32 (HAL) - don't change here, define IRMP_RECEIVE_GPIO_Port & IRMP_RECEIVE_PIN in STM32Cube (Main.h)
+@@ -232,7 +232,7 @@
   *---------------------------------------------------------------------------------------------------------------------------------------------------
   */
  #ifndef IRMP_USE_CALLBACK
@@ -50,35 +50,4 @@ diff -Nrup irmp.orig/irmpconfig.h irmp.new/irmpconfig.h
 +#  define IRMP_USE_CALLBACK                     1       // 1: use callbacks. 0: do not. default is 0
  #endif
  
- #endif // _IRMPCONFIG_H_
-diff -Nrup irmp.orig/irsndconfig.h irmp.new/irsndconfig.h
---- irmp.orig/irsndconfig.h	2018-02-19 11:30:11.000000000 +0100
-+++ irmp.new/irsndconfig.h	2018-02-20 00:32:14.000000000 +0100
-@@ -47,17 +47,17 @@
- #define IRSND_SUPPORT_KASEIKYO_PROTOCOL         1       // Kaseikyo             >= 10000                 ~300 bytes
- 
- // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
--#define IRSND_SUPPORT_DENON_PROTOCOL            0       // DENON, Sharp         >= 10000                 ~200 bytes
-+#define IRSND_SUPPORT_DENON_PROTOCOL            1       // DENON, Sharp         >= 10000                 ~200 bytes
- #define IRSND_SUPPORT_RC5_PROTOCOL              1       // RC5                  >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_RC6_PROTOCOL              0       // RC6                  >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_RC6A_PROTOCOL             0       // RC6A                 >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_JVC_PROTOCOL              0       // JVC                  >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_NEC16_PROTOCOL            0       // NEC16                >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_NEC42_PROTOCOL            0       // NEC42                >= 10000                 ~150 bytes
--#define IRSND_SUPPORT_IR60_PROTOCOL             0       // IR60 (SDA2008)       >= 10000                 ~250 bytes
--#define IRSND_SUPPORT_GRUNDIG_PROTOCOL          0       // Grundig              >= 10000                 ~300 bytes
--#define IRSND_SUPPORT_SIEMENS_PROTOCOL          0       // Siemens, Gigaset     >= 15000                 ~150 bytes
--#define IRSND_SUPPORT_NOKIA_PROTOCOL            0       // Nokia                >= 10000                 ~400 bytes
-+#define IRSND_SUPPORT_RC6_PROTOCOL              1       // RC6                  >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_RC6A_PROTOCOL             1       // RC6A                 >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_JVC_PROTOCOL              1       // JVC                  >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_NEC16_PROTOCOL            1       // NEC16                >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_NEC42_PROTOCOL            1       // NEC42                >= 10000                 ~150 bytes
-+#define IRSND_SUPPORT_IR60_PROTOCOL             1       // IR60 (SDA2008)       >= 10000                 ~250 bytes
-+#define IRSND_SUPPORT_GRUNDIG_PROTOCOL          1       // Grundig              >= 10000                 ~300 bytes
-+#define IRSND_SUPPORT_SIEMENS_PROTOCOL          1       // Siemens, Gigaset     >= 15000                 ~150 bytes
-+#define IRSND_SUPPORT_NOKIA_PROTOCOL            1       // Nokia                >= 10000                 ~400 bytes
- 
- // exotic protocols, enable here!               Enable  Remarks                 F_INTERRUPTS            Program Space
- #define IRSND_SUPPORT_BOSE_PROTOCOL             0       // BOSE                 >= 10000                 ~100 bytes
+ /*---------------------------------------------------------------------------------------------------------------------------------------------------

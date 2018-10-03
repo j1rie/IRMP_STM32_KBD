@@ -202,6 +202,7 @@ uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int systicks = 0;
 volatile unsigned int sof_timeout = 0;
 volatile unsigned int i = 0;
+volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile int send_ir_on_delay = -1;
@@ -348,6 +349,7 @@ void Systick_Init(void)
 void SysTick_Handler(void)
 {
 	systicks++;
+	repeat_timer++;
 	if (sof_timeout != SOF_TIMEOUT)
 		sof_timeout++;
 	if (i == 999) {
@@ -637,8 +639,11 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
-	uint16_t key;
-	uint8_t num;
+	uint16_t key, repeat_delay, repeat_period, last_sent, repeat_timeout, last_received;
+	uint8_t num, release_needed;
+	repeat_delay = 250; // TODO make configurable
+	repeat_period = 150; // TODO make configurable
+	repeat_timeout = 120;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -692,12 +697,22 @@ int main(void)
 		if (irmp_get_data(&myIRData)) {
 			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 			if (!(myIRData.flags)) {
+				repeat_timer = 0;
+				last_sent = 0;
+				last_received = 0;
 				store_wakeup(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
+			} else {
+				last_received = repeat_timer;
+				if((repeat_timer < repeat_delay) || (repeat_timer - last_sent) < repeat_period) {
+					continue; // don't send key
+				} else {
+					last_sent = repeat_timer;
+				}
 			}
 
-			/* send IR-data */
+			/* send key corresponding to IR-data */
 			num = get_num_of_irdata(&myIRData);
 			if(num != 0xFF) {
 				key = get_key(num);
@@ -705,12 +720,16 @@ int main(void)
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-					delay_ms(30);
-					kbd_buf[0] = 0;
-					kbd_buf[2] = 0;
-					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release TODO implement better repeat
+					release_needed = 1;
 				}
 			}
+		}
+
+		if((repeat_timer - last_received >= repeat_timeout) && release_needed) {
+			release_needed = 0;
+			kbd_buf[0] = 0;
+			kbd_buf[2] = 0;
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release
 		}
 	}
 }

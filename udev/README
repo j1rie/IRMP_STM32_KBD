@@ -1,0 +1,1 @@
+put the udev rule '70-irmp.rules' into your udev rules directory (/etc/udev/rules.d/)

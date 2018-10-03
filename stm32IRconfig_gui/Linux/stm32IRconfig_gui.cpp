@@ -723,7 +723,7 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 	cur_dev = devices;	
 	while (cur_dev) {
 		// only hidraw, not keyboard
-		if(cur_dev->usage == 0x00) {
+		//if(cur_dev->usage == 0x00) {
 			// Add it to the List Box.
 			FXString s;
 			s.format("%04hx:%04hx -", cur_dev->vendor_id, cur_dev->product_id);
@@ -731,7 +731,7 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 			s += FXString(" ") + cur_dev->product_string;
 			FXListItem *li = new FXListItem(s, NULL, cur_dev);
 			device_list->appendItem(li);
-		}
+		//}
 		cur_dev = cur_dev->next;
 	}
 

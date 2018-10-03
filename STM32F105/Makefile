@@ -18,7 +18,7 @@ INCLUDES = -Icmsis -Icmsis_boot -Istm_lib/inc -Iusb_hid/inc -Iirmp -Isrc
 DEFINES = -D$(PLATFORM) -DSTM32F10X_CL -DUSE_STDPERIPH_DRIVER
 
 OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
-       irmp/irmp.o irmp/irsnd.o\
+       irmp/irmp.o\
        cmsis_boot/startup/startup_stm32f10x_cl.o cmsis_boot/system_stm32f10x.o\
        stm_lib/src/misc.o\
        stm_lib/src/stm32f10x_flash.o stm_lib/src/stm32f10x_gpio.o\

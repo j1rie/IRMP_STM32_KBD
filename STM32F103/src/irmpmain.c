@@ -47,5 +47,5 @@ void IRMP_Init(void)
 void TIM2_IRQHandler(void)
 {
 	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-		irmp_ISR(); /* if not busy call irmp ISR */
+	irmp_ISR();
 }
