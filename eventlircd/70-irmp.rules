@@ -1,0 +1,3 @@
+KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4444", SYMLINK+="irmp_stm32", MODE="0666"
+SUBSYSTEM=="input", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4444", SYMLINK+="irmp_stm32_kbd", MODE="0666", TAG+="uaccess"
+#, RUN+="/usr/bin/ir-keytable -D 335 -P 220 -d /dev/irmp_stm32_kbd"

@@ -675,11 +675,15 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
-	uint16_t key, repeat_delay, repeat_period, last_time, repeat_timeout, last_received;
-	uint8_t num, release_needed;
+	uint16_t key, repeat_delay, repeat_period, last_sent;
+	uint8_t num;
 	repeat_delay = 250; // TODO make configurable
 	repeat_period = 150; // TODO make configurable
-	repeat_timeout = 120;
+#ifdef USE_REPEAT_TIMEOUT
+	uint16_t repeat_timeout, last_received;
+	uint8_t release_needed;
+	repeat_timeout = 130;
+#endif
 
 	LED_Switch_init();
 	Systick_Init();
@@ -734,17 +738,21 @@ int main(void)
 			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 			if (!(myIRData.flags)) {
 				repeat_timer = 0;
-				last_time = 0;
+				last_sent = 0;
+#ifdef USE_REPEAT_TIMEOUT
 				last_received = 0;
+#endif
 				store_wakeup(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
 			} else {
+#ifdef USE_REPEAT_TIMEOUT
 				last_received = repeat_timer;
-				if((repeat_timer < repeat_delay) || (repeat_timer - last_time) < repeat_period) {
+#endif
+				if((repeat_timer < repeat_delay) || (repeat_timer - last_sent) < repeat_period) {
 					continue; // don't send key
 				} else {
-					last_time = repeat_timer;
+					last_sent = repeat_timer;
 				}
 			}
 
@@ -756,16 +764,27 @@ int main(void)
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+#ifdef USE_REPEAT_TIMEOUT
 					release_needed = 1;
+#else
+					/* send release */
+					delay_ms(1);
+					kbd_buf[0] = 0;
+					kbd_buf[2] = 0;
+					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+#endif
 				}
 			}
 		}
 
+#ifdef USE_REPEAT_TIMEOUT
+		/* send release */
 		if((repeat_timer - last_received >= repeat_timeout) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 		}
+#endif
 	}
 }

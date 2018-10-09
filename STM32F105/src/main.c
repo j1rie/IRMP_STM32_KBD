@@ -220,53 +220,32 @@ void LED_Switch_init(void)
 	/* start with wakeup and reset switch off */
 #ifdef SimpleCircuit
 	GPIO_WriteBit(WAKEUP_PORT, WAKEUP_PIN, Bit_SET);
-#ifdef RESET_PORT
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_SET);
-#endif
 #else
 	GPIO_WriteBit(WAKEUP_PORT, WAKEUP_PIN, Bit_RESET);
-#ifdef RESET_PORT
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_RESET);
-#endif
 #endif /* SimpleCircuit */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_InitStructure.GPIO_Pin = LED_PIN;
 	GPIO_Init(LED_PORT, &GPIO_InitStructure);
-#ifdef EXTLED_PORT
 	GPIO_InitStructure.GPIO_Pin = EXTLED_PIN;
 	GPIO_Init(EXTLED_PORT, &GPIO_InitStructure);
-#endif
 	GPIO_InitStructure.GPIO_Pin = WAKEUP_PIN;
 #ifdef SimpleCircuit
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
 #endif /* SimpleCircuit */
 	GPIO_Init(WAKEUP_PORT, &GPIO_InitStructure);
-#ifdef RESET_PORT
-	GPIO_InitStructure.GPIO_Pin = RESET_PIN;
-	GPIO_Init(RESET_PORT, &GPIO_InitStructure);
-#endif
-	//GPIO_InitStructure.GPIO_Pin = WAKEUP_RESET_PIN;
-	//GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	//GPIO_Init(WAKEUP_RESET_PORT, &GPIO_InitStructure);
 	/* start with LED off */
 	GPIO_WriteBit(LED_PORT, LED_PIN, Bit_RESET);
-#ifdef EXTLED_PORT
 	GPIO_WriteBit(EXTLED_PORT, EXTLED_PIN, Bit_RESET);
-#endif
 }
 
 void blink_LED(void)
 {
 	LED_PORT->ODR ^= LED_PIN;
-#ifdef EXTLED_PORT
 	EXTLED_PORT->ODR ^= EXTLED_PIN;
-#endif
 	delay_ms(25);
 	LED_PORT->ODR ^= LED_PIN;
-#ifdef EXTLED_PORT
 	EXTLED_PORT->ODR ^= EXTLED_PIN;
-#endif
 }
 
 /* buf[0 ... 5] -> eeprom[virt_addr ... virt_addr + 2] */
@@ -621,9 +600,7 @@ void USB_Reset(void)
 void led_callback (uint_fast8_t on)
 {
 		LED_PORT->ODR ^= LED_PIN;
-#ifdef EXTLED_PORT
 		EXTLED_PORT->ODR ^= EXTLED_PIN;
-#endif
 }
 
 void send_magic(void)
@@ -639,11 +616,15 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
-	uint16_t key, repeat_delay, repeat_period, last_sent, repeat_timeout, last_received;
-	uint8_t num, release_needed;
+	uint16_t key, repeat_delay, repeat_period, last_sent;
+	uint8_t num;
 	repeat_delay = 250; // TODO make configurable
 	repeat_period = 150; // TODO make configurable
-	repeat_timeout = 120;
+#ifdef USE_REPEAT_TIMEOUT
+	uint16_t repeat_timeout, last_received;
+	uint8_t release_needed;
+	repeat_timeout = 130;
+#endif
 
 	LED_Switch_init();
 	Systick_Init();
@@ -699,12 +680,16 @@ int main(void)
 			if (!(myIRData.flags)) {
 				repeat_timer = 0;
 				last_sent = 0;
+#ifdef USE_REPEAT_TIMEOUT
 				last_received = 0;
+#endif
 				store_wakeup(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
 			} else {
+#ifdef USE_REPEAT_TIMEOUT
 				last_received = repeat_timer;
+#endif
 				if((repeat_timer < repeat_delay) || (repeat_timer - last_sent) < repeat_period) {
 					continue; // don't send key
 				} else {
@@ -720,16 +705,27 @@ int main(void)
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+#ifdef USE_REPEAT_TIMEOUT
 					release_needed = 1;
+#else
+					/* send release */
+					delay_ms(1);
+					kbd_buf[0] = 0;
+					kbd_buf[2] = 0;
+					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+#endif
 				}
 			}
 		}
 
+#ifdef USE_REPEAT_TIMEOUT
+		/* send release */
 		if((repeat_timer - last_received >= repeat_timeout) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf)); // release
+			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 		}
+#endif
 	}
 }

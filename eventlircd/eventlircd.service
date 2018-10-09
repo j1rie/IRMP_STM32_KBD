@@ -1,0 +1,13 @@
+[Unit]
+Description="eventlircd reads from kernel input devices and generates key presses on a lircd socket"
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/eventlircd -f --socket=/var/run/lirc/lircd
+Restart=on-failure
+RestartSec=1s
+KillMode=process
+TimeoutStopSec=1s
+
+[Install]
+WantedBy=multi-user.target

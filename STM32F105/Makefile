@@ -34,7 +34,7 @@ OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
 CFLAGS = -Wall -ffunction-sections -fno-builtin $(ARCH) $(COMMON) $(INCLUDES) $(DEFINES)
 
 DATE := $(shell date +"%F_%H-%M")
-TARGET := $(DATE)_$(TARGET)
+TARGET := $(DATE)_$(TARGET)_KBD
 
 IRMP_VERSION := $(shell grep -e "Version IRMP" irmp/README.txt | awk '{print $$3}')
 DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version:_$(IRMP_VERSION)\""
