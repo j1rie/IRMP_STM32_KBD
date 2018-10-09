@@ -19,7 +19,7 @@
 #define NUM_KEYS   62
 #define WAKE_SLOTS	2 // at least 2: wakeup and reboot
 #define SIZEOF_IR	6
-//#define USE_REPEAT_TIMEOUT
+#define USE_REPEAT_TIMEOUT
 
 /* uncomment below for CooCox */
 //#define FW_STR "2017-04-20_00-00_MapleMini_BL_SC-jrie   IRMP-Version: 3.08"
