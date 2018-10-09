@@ -1834,6 +1834,9 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 long
 MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
+	if(map_text21->isModified()){
+		onApply(NULL, 0, NULL);
+	}
 	FXString nr, nrp;
 	for(int i = 0; i < active_lines; i++) {
 	if(i >= irdatanr) {
@@ -1857,47 +1860,55 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 #endif
 
 	FXString s, u, t;
-	s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
-	s += nr;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i], 2);
-	s += u;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i]+4, 2);
-	s += u;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i]+2, 2);
-	s += u;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i]+8, 2);
-	s += u;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i]+6, 2);
-	s += u;
-	s += " ";
-	map_text21->extractText(u, mapbeg[i]+10, 2);
-	s += u;
-	output_text->setText(s);
+	map_text21->extractText(u, mapbeg[i], 12);
+	if(compare(u, "ffffffffffff")) { // flash only if not ffffffffffff
+		s = "3 0 1 2 "; // Report_ID STAT_CMD ACC_SET CMD_IRDATA
+		s += nr;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i], 2);
+		s += u;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i]+4, 2);
+		s += u;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i]+2, 2);
+		s += u;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i]+8, 2);
+		s += u;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i]+6, 2);
+		s += u;
+		s += " ";
+		map_text21->extractText(u, mapbeg[i]+10, 2);
+		s += u;
+		output_text->setText(s);
 
-	Write_and_Check();
+		Write_and_Check();
+	}
 
 	s = "3 0 1 3 "; // Report_ID STAT_CMD ACC_SET CMD_KEY
 	s += nr;
 	s += " ";
 	map_text21->extractText(u, mapbeg[i] + map[i*2].length() + 1, map[i*2+1].length());
+	// remove #comment from KEY_X|KEY_Y#comment
+	const char *z = "#";
+	u = u.section(z, 0, 1);
 	// split KEY_X|KEY_Y
-	const char *z = "|";
+	const char *y = "|";
 #if (FOX_MINOR >= 7)
-	t.fromInt(get_key_nr(u.section(z, 1, 1)),16);
+	t.fromInt(get_key_nr(u.section(y, 1, 1)),16);
 #else
-	t = FXStringVal(get_key_nr(u.section(z, 1, 1)),16);
+	t = FXStringVal(get_key_nr(u.section(y, 1, 1)),16);
 #endif
+	if(!compare(t, "0")) // flash only if not ff or empty
+		return 1;
 	s += t;
 	s += " ";
 #if (FOX_MINOR >= 7)
-	t.fromInt(get_key_nr(u.section(z, 0, 1)),16);
+	t.fromInt(get_key_nr(u.section(y, 0, 1)),16);
 #else
-	t = FXStringVal(get_key_nr(u.section(z, 0, 1)),16);
+	t = FXStringVal(get_key_nr(u.section(y, 0, 1)),16);
 #endif
 	s += t;
 	s += " ";
