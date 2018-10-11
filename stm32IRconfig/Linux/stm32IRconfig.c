@@ -1,5 +1,5 @@
 /**********************************************************************************************************
-	stm32config: configure and monitor IRMP_STM32_KBD
+	stm32IRconfig: configure and monitor IRMP_STM32_KBD
 
 	Copyright (C) 2014-2018 Jörg Riechardt
 
@@ -165,8 +165,8 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 			printf("enter key (KEY_xxx)\n");
 			scanf("%s", &c);
 			for(l=0; l < lines; l++) {
-			    if(!strcmp(map[l].key, &c)) {
-				kk = map[l].usb_hid_key;
+			    if(!strcmp(mapusb[l].key, &c)) {
+				kk = mapusb[l].usb_hid_key;
 				break;
 			    }
 			}

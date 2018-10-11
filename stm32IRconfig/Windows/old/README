@@ -1,12 +1,6 @@
-configure and monitor STM32IR
+configure IRMP_STM32_KBD
 
-Usage:
-stm32IRconfig
-
-program and read the eeprom (wakeups, macros and capabilities)
-reset wakeups, macros and alarm
+program and read the eeprom (wakeups, irdata, keys and capabilities)
+reset wakeups, irdata, keys and alarm
 set and get the alarm
-reboot
-send IR
-monitor (read) STM32IR, stop with ^C
-
+reboot the device
