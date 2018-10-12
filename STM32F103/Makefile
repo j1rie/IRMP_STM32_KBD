@@ -92,7 +92,7 @@ TARGET = MapleMini_2k_ExtBd
 endif
 
 DATE := $(shell date +"%F_%H-%M")
-TARGET := $(DATE)_$(TARGET)_KBD
+TARGET := $(DATE)_$(TARGET)
 
 IRMP_VERSION := $(shell grep -e "Version IRMP" irmp/README.txt | awk '{print $$3}')
 DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version: $(IRMP_VERSION)\""
@@ -120,19 +120,16 @@ DEFINES += -DPulldown
 TARGET := $(TARGET)_PD
 endif
 
-ifdef EXTLED
-DEFINES += -DEXTLED
-#TARGET := $(TARGET)_
-endif
-
-ifdef SHORTFLASH
-DEFINES += -DSHORTFLASH
-#TARGET := $(TARGET)_
-endif
-
 ifdef DEBUG
 DEFINES += -DDEBUG
 TARGET := $(TARGET)_DBG
+endif
+
+TARGET := $(TARGET)_KBD
+
+ifdef RPT
+DEFINES += -DUSE_REPEAT_TIMEOUT
+TARGET := $(TARGET)_RPT
 endif
 
 COMPILED_BY = jrie
@@ -153,7 +150,7 @@ flash: $(TARGET).bin
 	stm32flash -v -w $(TARGET).bin /dev/ttyUSB0
 
 clean-objects:
-	rm -f $(OBJS) $(TARGET).{bin,elf,map}
+	rm -f $(OBJS) $(TARGET).{elf,map}
 
 clean: clean-objects
 	rm -rf cmsis cmsis_boot irmp stm_lib usb_hid ext_src/prepared

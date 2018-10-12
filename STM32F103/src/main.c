@@ -682,7 +682,7 @@ int main(void)
 #ifdef USE_REPEAT_TIMEOUT
 	uint16_t repeat_timeout, last_received;
 	uint8_t release_needed;
-	repeat_timeout = 130;
+	repeat_timeout = 130; // TODO make configurable
 #endif
 
 	LED_Switch_init();

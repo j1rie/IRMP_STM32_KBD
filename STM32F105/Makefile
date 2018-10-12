@@ -34,7 +34,7 @@ OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
 CFLAGS = -Wall -ffunction-sections -fno-builtin $(ARCH) $(COMMON) $(INCLUDES) $(DEFINES)
 
 DATE := $(shell date +"%F_%H-%M")
-TARGET := $(DATE)_$(TARGET)_KBD
+TARGET := $(DATE)_$(TARGET)
 
 IRMP_VERSION := $(shell grep -e "Version IRMP" irmp/README.txt | awk '{print $$3}')
 DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version:_$(IRMP_VERSION)\""
@@ -52,6 +52,12 @@ ifdef SimpleCircuit_F105
 DEFINES += -DSimpleCircuit_F105
 TARGET := $(TARGET)_SC
 endif
+
+TARGET := $(TARGET)_KBD
+
+ifdef RPT
+DEFINES += -DUSE_REPEAT_TIMEOUT
+TARGET := $(TARGET)_RPT
 
 COMPILED_BY = jrie
 TARGET := $(TARGET)_$(COMPILED_BY)
