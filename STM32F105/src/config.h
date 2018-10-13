@@ -15,11 +15,11 @@
 * Eeprom partition 1: NUM_KEYS IRMP_DATA
 * Eeprom partition 2: NUM_KEYS keys
 * Eeprom partition 3: WAKE_SLOTS IRMP_DATA
+ * Eeprom partition 4: repeat_delay, repeat_period, repeat_timeout
 */
-#define NUM_KEYS   62
+#define NUM_KEYS   61
 #define WAKE_SLOTS	2 // at least 2: wakeup and reboot
 #define SIZEOF_IR	6
-//#define USE_REPEAT_TIMEOUT
 
 /* uncomment below for CooCox */
 //#define FW_STR "2015-10-26_00-00_F105_jrie   IRMP-Version: 3.07"

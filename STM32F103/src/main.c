@@ -38,7 +38,8 @@ enum __attribute__ ((__packed__)) command {
 	CMD_WAKE,
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
-	CMD_WAKE_REMOTE
+	CMD_WAKE_REMOTE,
+	CMD_REPEAT
 };
 
 enum __attribute__ ((__packed__)) status {
@@ -209,6 +210,7 @@ volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile int send_ir_on_delay = -1;
+uint16_t repeat_default[3] = {250, 150, 0};
 
 void delay_ms(unsigned int msec)
 {
@@ -346,6 +348,23 @@ uint16_t get_key(uint8_t num)
 		key = 0xFFFF;
 	}
 	return key;
+}
+
+/* put repeat into eeprom at address num */
+void put_repeat(uint16_t repeat, uint8_t num)
+{
+	EE_WriteVariable(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, repeat);
+}
+
+/* get repeat at address num from eeprom */
+uint16_t get_repeat(uint8_t num)
+{
+	uint16_t repeat;
+	if (EE_ReadVariable(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, &repeat)) {
+		/* the variable was not found or no valid page was found */
+		repeat = repeat_default[num];
+	}
+	return repeat;
 }
 
 void store_wakeup(IRMP_DATA *ir)
@@ -495,6 +514,10 @@ int8_t get_handler(uint8_t *buf)
 		eeprom_restore(&buf[3], idx);
 		ret += SIZEOF_IR;
 		break;
+	case CMD_REPEAT:
+		*((uint16_t*)&buf[3]) = get_repeat(buf[3]);
+		ret += 2;
+		break;
 	default:
 		ret = -1;
 	}
@@ -543,6 +566,12 @@ int8_t set_handler(uint8_t *buf)
 		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[3];
 		ret = store_new_irdata(idx);
 		break;
+	case CMD_REPEAT:
+		put_repeat(*((uint16_t*)&buf[4]), buf[3]);
+		/* validate stored value in eeprom */
+		if(!(get_repeat(buf[3]) == *((uint16_t*)&buf[4])))
+			ret = -1;
+		break;
 	default:
 		ret = -1;
 	}
@@ -568,6 +597,9 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_WAKE:
 		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[3];
 		eeprom_store(idx, zeros);
+		break;
+	case CMD_REPEAT:
+		put_repeat(0xFFFF, buf[3]);
 		break;
 	default:
 		ret = -1;
@@ -675,15 +707,8 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
-	uint16_t key, repeat_delay, repeat_period, last_sent;
-	uint8_t num;
-	repeat_delay = 250; // TODO make configurable
-	repeat_period = 150; // TODO make configurable
-#ifdef USE_REPEAT_TIMEOUT
-	uint16_t repeat_timeout, last_received;
-	uint8_t release_needed;
-	repeat_timeout = 130; // TODO make configurable
-#endif
+	uint16_t key, last_sent, last_received;
+	uint8_t num, release_needed;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -739,17 +764,13 @@ int main(void)
 			if (!(myIRData.flags)) {
 				repeat_timer = 0;
 				last_sent = 0;
-#ifdef USE_REPEAT_TIMEOUT
 				last_received = 0;
-#endif
 				store_wakeup(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
 			} else {
-#ifdef USE_REPEAT_TIMEOUT
 				last_received = repeat_timer;
-#endif
-				if((repeat_timer < repeat_delay) || (repeat_timer - last_sent) < repeat_period) {
+				if((repeat_timer < get_repeat[0]) || (repeat_timer - last_sent) < get_repeat[1]) {
 					continue; // don't send key
 				} else {
 					last_sent = repeat_timer;
@@ -764,27 +785,17 @@ int main(void)
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-#ifdef USE_REPEAT_TIMEOUT
 					release_needed = 1;
-#else
-					/* send release */
-					delay_ms(1);
-					kbd_buf[0] = 0;
-					kbd_buf[2] = 0;
-					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-#endif
 				}
 			}
 		}
 
-#ifdef USE_REPEAT_TIMEOUT
 		/* send release */
-		if((repeat_timer - last_received >= repeat_timeout) && release_needed) {
+		if((repeat_timer - last_received >= get_repeat[2]) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
 			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 		}
-#endif
 	}
 }
