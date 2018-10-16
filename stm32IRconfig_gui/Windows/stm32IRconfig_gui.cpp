@@ -139,14 +139,6 @@ private:
 	FXTextField *hours_text;
 	FXTextField *minutes_text;
 	FXTextField *seconds_text;
-	//FXText *protocol1_text;
-	//FXText *address1_text;
-	//FXText *command1_text;
-	//FXText *flag1_text;
-	//FXText *days1_text;
-	//FXText *hours1_text;
-	//FXText *minutes1_text;
-	//FXText *seconds1_text;
 	FXText *input_text;
 	FXText *map_text21;
 	FXListBox* wslistbox;
@@ -341,77 +333,48 @@ MainWindow::MainWindow(FXApp *app)
 	// horizontal frame for IR Group Box, repeat Group Box, alarm Group Box, select listboxes and map group box
 	FXHorizontalFrame *hf13 = new FXHorizontalFrame(vf1, LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
 	// two vertical frames, left for map, right for everything else
-	FXSpring *s5 = new FXSpring(hf13, LAYOUT_FILL_X, 300, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXVerticalFrame *vf131 = new FXVerticalFrame(s5/*hf13*/, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
-	FXSpring *s6 = new FXSpring(hf13, LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXVerticalFrame *vf132 = new FXVerticalFrame(s6/*hf13*/, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
+	FXSpring *s131 = new FXSpring(hf13, LAYOUT_FILL_X, 300, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXVerticalFrame *vf131 = new FXVerticalFrame(s131, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
+	FXSpring *s132 = new FXSpring(hf13, LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXVerticalFrame *vf132 = new FXVerticalFrame(s132, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
 
 	// horizontal frame for IR Group Box and repeat Group Box
 	FXHorizontalFrame *hf131 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X);
 	//IR Group Box
-	FXSpring *s3 = new FXSpring(hf131,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb1311 = new FXGroupBox(s3/*hf131*/, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X);
-	FXMatrix *m131 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,0);
-	//new FXLabel(m131, "");
-	new FXLabel(m131, "protocol");
-	new FXLabel(m131, "address");
-	new FXLabel(m131, "command");
-	new FXLabel(m131, "flag");
-	//new FXLabel(m131, "set");
-	protocol_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	address_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	command_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	flag_text = new FXTextField(m131, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	//new FXLabel(m131, "get");
-	FXVerticalFrame *innerVF113 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF213 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF313 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF413 = new FXVerticalFrame(m131, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	//protocol1_text = new FXText(new FXHorizontalFrame(innerVF113,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	//address1_text = new FXText(new FXHorizontalFrame(innerVF213,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	//command1_text = new FXText(new FXHorizontalFrame(innerVF313,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	//flag1_text = new FXText(new FXHorizontalFrame(innerVF413,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	//protocol1_text->setVisibleRows(1);
-	//address1_text->setVisibleRows(1);
-	//command1_text->setVisibleRows(1);
-	//flag1_text->setVisibleRows(1);
+	FXSpring *s1311 = new FXSpring(hf131,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXGroupBox *gb1311 = new FXGroupBox(s1311, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X);
+	FXMatrix *m1311 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,0);
+	new FXLabel(m1311, "protocol");
+	new FXLabel(m1311, "address");
+	new FXLabel(m1311, "command");
+	new FXLabel(m1311, "flag");
+	protocol_text = new FXTextField(m1311, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	address_text = new FXTextField(m1311, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	command_text = new FXTextField(m1311, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+	flag_text = new FXTextField(m1311, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+
 	// repeat Group Box
-	FXSpring *s4 = new FXSpring(hf131,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb1312 = new FXGroupBox(s4/*hf131*/, "repeat", FRAME_GROOVE|LAYOUT_FILL_X, 0,0,0,0, 0,0,0,32, 0,0);
+	FXSpring *s1312 = new FXSpring(hf131,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXGroupBox *gb1312 = new FXGroupBox(s1312, "repeat", FRAME_GROOVE|LAYOUT_FILL_X, 0,0,0,0, 0,0,0,32, 0,0);
 	repeat_text = new FXTextField(gb1312, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 
 	// horizontal frame for alarm Group Box and select listboxes
 	FXHorizontalFrame *hf132 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X/*,0,0,0,0, 0,0,0,0*/);
 	//alarm Group Box
-	FXSpring *s1 = new FXSpring(hf132,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb14 = new FXGroupBox(s1/*hf132*/, "alarm (dec)", FRAME_GROOVE|LAYOUT_FILL_X);
+	FXSpring *s1321 = new FXSpring(hf132,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXGroupBox *gb14 = new FXGroupBox(s1321, "alarm (dec)", FRAME_GROOVE|LAYOUT_FILL_X);
 	FXMatrix *m14 = new FXMatrix(gb14, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X, 0,0,0,0, 2,2,2,4, 2,2);
 	new FXLabel(m14, "days");
 	new FXLabel(m14, "hours");
 	new FXLabel(m14, "minutes");
 	new FXLabel(m14, "seconds");
-	//new FXLabel(m14, "");
 	days_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	hours_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	minutes_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	seconds_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
-	//aset_button = new FXButton(m14, "set", NULL, this, ID_ASET, BUTTON_NORMAL|LAYOUT_FILL_X);
-	/*FXVerticalFrame *innerVF5 = new FXVerticalFrame(m14, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF6 = new FXVerticalFrame(m14, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF7 = new FXVerticalFrame(m14, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	FXVerticalFrame *innerVF8 = new FXVerticalFrame(m14, LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 0,0,0,0);
-	days1_text = new FXText(new FXHorizontalFrame(innerVF5,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	hours1_text = new FXText(new FXHorizontalFrame(innerVF6,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	minutes1_text = new FXText(new FXHorizontalFrame(innerVF7,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	seconds1_text = new FXText(new FXHorizontalFrame(innerVF8,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), NULL, 0, LAYOUT_FILL_X);
-	//aget_button = new FXButton(m14, "get", NULL, this, ID_AGET, BUTTON_NORMAL|LAYOUT_FILL_X);
-	//days1_text->setVisibleRows(1);
-	//hours1_text->setVisibleRows(1);
-	//minutes1_text->setVisibleRows(1);
-	//seconds1_text->setVisibleRows(1);*/
 	// select listboxes
-	FXSpring *s2 = new FXSpring(hf132,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb143 = new FXGroupBox(s2/*hf132*/, "select", FRAME_GROOVE|LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/);
+	FXSpring *s1322 = new FXSpring(hf132,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXGroupBox *gb143 = new FXGroupBox(s1322, "select", FRAME_GROOVE|LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/);
 	wslistbox=new FXListBox(gb143,this,ID_WSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
 	rslistbox=new FXListBox(gb143,this,ID_RSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
 
@@ -477,24 +440,16 @@ MainWindow::MainWindow(FXApp *app)
 	protocol_text->setHelpText("IR protocol");
 	address_text->setHelpText("IR address");
 	command_text->setHelpText("IR command");
-	flag_text->setHelpText("enter IR flags to be set");
-	//protocol1_text->setHelpText("received IR protocol");
-	//address1_text->setHelpText("received IR address");
-	//command1_text->setHelpText("received IR command");
-	//flag1_text->setHelpText("received IR flags");
-	days_text->setHelpText("enter days to be set");
-	hours_text->setHelpText("enter hours to be set");
-	minutes_text->setHelpText("enter minutes to be set");
-	seconds_text->setHelpText("enter seconds to be set");
+	flag_text->setHelpText("IR flags");
+	days_text->setHelpText("days");
+	hours_text->setHelpText("hours");
+	minutes_text->setHelpText("minutes");
+	seconds_text->setHelpText("seconds");
 	aset_button->setHelpText("set alarm");
-	//days1_text->setHelpText("alarm days read from device");
-	//hours1_text->setHelpText("alarm hours read from device");
-	//minutes1_text->setHelpText("alarm minutes read from device");
-	//seconds1_text->setHelpText("alarm seconds read from device");
 	aget_button->setHelpText("get alarm");
 	wslistbox->setHelpText("wakeup to be set");
 	rslistbox->setHelpText("repeat to be set");
-	repeat_text->setHelpText("enter repeat value to be set");
+	repeat_text->setHelpText("repeat");
 	output_text->setHelpText("data to be sent to device (experts only)");
 	output_button->setHelpText("send to device");
 	input_text->setHelpText("debug messages");
@@ -507,6 +462,9 @@ MainWindow::MainWindow(FXApp *app)
 	flash_button->setHelpText("flash into eeprom");
 	get_button->setHelpText("get from eeprom");
 	line_text->setHelpText("line in eeprom map");
+	prepeat_button->setHelpText("set repeat");
+	grepeat_button->setHelpText("get repeat");
+	rrepeat_button->setHelpText("reset repeat");
 
 	// disable buttons
 	output_button->disable();
@@ -1697,7 +1655,9 @@ MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
 		i++;
 	}
 	map_text21->removeText(mapbeg[i-1]+map[(i-1)*2].length()+1, map[(i-1)*2+1].length());
-	s = key_text->getText();
+	s = modifier_text->getText();
+	s += "|";
+	s += key_text->getText();
 	map_text21->insertText(mapbeg[i-1]+map[(i-1)*2].length()+1, s);
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(mapbeg[i]);

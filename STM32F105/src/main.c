@@ -711,7 +711,7 @@ int main(void)
 				check_reboot(&myIRData);
 			} else {
 				last_received = repeat_timer;
-				if((repeat_timer < get_repeat[0]) || (repeat_timer - last_sent) < get_repeat[1]) {
+				if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
 					continue; // don't send key
 				} else {
 					last_sent = repeat_timer;
@@ -732,7 +732,7 @@ int main(void)
 		}
 
 		/* send release */
-		if((repeat_timer - last_received >= get_repeat[2]) && release_needed) {
+		if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
