@@ -6,3 +6,8 @@ put the systemd service 'eventlircd.service' into your services directory (/etc/
 put the systemd service 'eventlircd.socket' into your services directory (/etc/systemd/system/)
 put the systemd-tmpfiles config file 'eventlircd.conf' into your tmpfiles directory (/etc/tmpfiles.d/)
 and run "systemctl enable eventlircd.service eventlircd.socket" once
+
+if you build your own kernel, you may patch it with hid_irmp.diff, with that repeats work perfectly, when
+repeat_timeout is set to e.g. 130
+it may be necessary to rmmod hid_irmp and modprobe hid_irmp, look for "irmp configured" in dmesg
+without the patch you need to have repeat_timeout set to 0, and all key presses are new keys
