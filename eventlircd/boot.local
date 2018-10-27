@@ -1,0 +1,3 @@
+#! /bin/sh
+rmmod hid_irmp
+modprobe hid_irmp

@@ -52,8 +52,8 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 --- A/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
-+++ B/drivers/hid/hid-irmp.c	2018-10-20 20:05:01.250283536 +0200
-@@ -0,0 +1,160 @@
++++ B/drivers/hid/hid-irmp.c	2018-10-27 02:29:21.143510201 +0200
+@@ -0,0 +1,129 @@
 +/*
 + *  HID driver for IRMP STM32 KBD remote
 + *
@@ -78,81 +78,50 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +	struct input_dev *input;
 +};
 +
++/* copy of hid_keyboard[] from hid-input.c */
++#define unk	KEY_UNKNOWN
++
++static const unsigned char hid_keyboard[256] = {
++	  0,  0,  0,  0, 30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38,
++	 50, 49, 24, 25, 16, 19, 31, 20, 22, 47, 17, 45, 21, 44,  2,  3,
++	  4,  5,  6,  7,  8,  9, 10, 11, 28,  1, 14, 15, 57, 12, 13, 26,
++	 27, 43, 43, 39, 40, 41, 51, 52, 53, 58, 59, 60, 61, 62, 63, 64,
++	 65, 66, 67, 68, 87, 88, 99, 70,119,110,102,104,111,107,109,106,
++	105,108,103, 69, 98, 55, 74, 78, 96, 79, 80, 81, 75, 76, 77, 71,
++	 72, 73, 82, 83, 86,127,116,117,183,184,185,186,187,188,189,190,
++	191,192,193,194,134,138,130,132,128,129,131,137,133,135,136,113,
++	115,114,unk,unk,unk,121,unk, 89, 93,124, 92, 94, 95,unk,unk,unk,
++	122,123, 90, 91, 85,unk,unk,unk,unk,unk,unk,unk,111,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,179,180,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,111,unk,unk,unk,unk,unk,unk,unk,
++	 29, 42, 56,125, 97, 54,100,126,164,166,165,163,161,115,114,113,
++	150,158,159,128,136,177,178,176,142,152,173,140,unk,unk,unk,unk
++};
++
 +static int irmp_raw_event(struct hid_device *hdev, struct hid_report *report,
 +							u8 *raw_data, int size)
 +{
 +	struct irmp_data *hdata = hid_get_drvdata(hdev);
 +	struct input_dev *input = hdata->input;
-+	static unsigned int last_key = 0;
-+	static unsigned int key;
-+	static unsigned int key_mapped = 0;
-+	key = ((raw_data[1]&0xFF) << 8) + (raw_data[3]&0xFF);
-+	if(raw_data[3]&0xFF){
++	static unsigned int key, last_key = 0;
++	key = (raw_data[1] << 8) + raw_data[3];
++	if(key){
 +		if (key == last_key) {
-+			switch(raw_data[3]&0xFF) { // map usb_hid_keys.h <> input-event-codes.h max 194?!
-+				case 0x1e: key_mapped = 2;	break; // KEY_1
-+				case 0x1f: key_mapped = 3;	break; // KEY_2
-+				case 0x20: key_mapped = 4;	break; // KEY_3
-+				case 0x21: key_mapped = 5;	break; // KEY_4
-+				case 0x22: key_mapped = 6;	break; // KEY_5
-+				case 0x23: key_mapped = 7;	break; // KEY_6
-+				case 0x24: key_mapped = 8;	break; // KEY_7
-+				case 0x25: key_mapped = 9;	break; // KEY_8
-+				case 0x26: key_mapped = 10;	break; // KEY_9
-+				case 0x27: key_mapped = 11;	break; // KEY_0
-+				case 0x10: key_mapped = 50;	break; // KEY_M
-+				case 0x0c: key_mapped = 23;	break; // KEY_I
-+				case 0x52: key_mapped = 103;	break; // KEY_UP
-+				case 0x51: key_mapped = 108;	break; // KEY_DOWN
-+				case 0x4f: key_mapped = 106;	break; // KEY_RIGHT
-+				case 0x50: key_mapped = 105;	break; // KEY_LEFT
-+				case 0x56: key_mapped = 74;	break; // KEY_KPMINUS
-+				case 0x57: key_mapped = 78;	break; // KEY_KPPLUS
-+				case 0x28: key_mapped = 28;	break; // KEY_ENTER
-+				case 0x2a: key_mapped = 14;	break; // KEY_BACKSPACE
-+				case 0x66: key_mapped = 116;	break; // KEY_POWER
-+				case 0x41: key_mapped = 66;	break; // KEY_F8
-+				case 0x44: key_mapped = 87;	break; // KEY_F11
-+				case 0x45: key_mapped = 88;	break; // KEY_F12
-+				case 0x68: key_mapped = 183;	break; // KEY_F13
-+				case 0x69: key_mapped = 184;	break; // KEY_F14
-+				case 0x6a: key_mapped = 185;	break; // KEY_F15
-+				case 0x6b: key_mapped = 186;	break; // KEY_F16
-+				case 0x6c: key_mapped = 187;	break; // KEY_F17
-+				case 0x6d: key_mapped = 188;	break; // KEY_F18
-+				case 0x6e: key_mapped = 189;	break; // KEY_F19
-+				case 0x6f: key_mapped = 190;	break; // KEY_F20
-+				case 0x70: key_mapped = 191;	break; // KEY_F21
-+				case 0x71: key_mapped = 192;	break; // KEY_F22
-+				case 0x67: key_mapped = 117;	break; // KEY_KPEQUAL
-+				case 0x17: key_mapped = 20;  break; // KEY_T
-+				case 0x08: key_mapped = 18;	 break; // KEY_E
-+				default:
-+					key_mapped = raw_data[3]&0xFF;
++			if(raw_data[3]){
++				input_event(input, EV_KEY, hid_keyboard[raw_data[3]], 2);
++				input_sync(input);
 +			}
-+			input_event(input, EV_KEY, key_mapped, 2);
-+			input_sync(input);
++			if(raw_data[1]){
++				input_event(input, EV_KEY, hid_keyboard[raw_data[1]], 2);
++				input_sync(input);
++			}
 +		} else {
 +			last_key = key;
 +		}
 +	} else {
 +		last_key = 0;
-+	}
-+
-+	if(raw_data[1]&0xFF){
-+		if (key == last_key) {
-+			switch(raw_data[1]&0xFF) { // map usb_hid_keys.h <> input-event-codes.h max 194?!
-+				case 0xe0: key_mapped = 29;	break; // KEY_LEFTCTRL
-+				case 0xe4: key_mapped = 97;	break; // KEY_KEY_RIGHTCTRL
-+				case 0xe1: key_mapped = 42;	break; // KEY_KEY_LEFTSHIFT
-+				case 0xe5: key_mapped = 54;	break; // KEY_RIGHTSHIFT
-+				case 0xe2: key_mapped = 56;	break; // KEY_LEFTALT
-+				default:
-+					key_mapped = raw_data[1]&0xFF;
-+			}
-+			input_event(input, EV_KEY, key_mapped, 2);
-+			input_sync(input);
-+		}
 +	}
 +
 +	return 1;
