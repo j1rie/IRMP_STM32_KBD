@@ -52,8 +52,8 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 --- A/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
-+++ B/drivers/hid/hid-irmp.c	2018-10-27 02:29:21.143510201 +0200
-@@ -0,0 +1,129 @@
++++ B/drivers/hid/hid-irmp.c	2018-10-27 02:47:12.668800800 +0200
+@@ -0,0 +1,130 @@
 +/*
 + *  HID driver for IRMP STM32 KBD remote
 + *
@@ -105,7 +105,8 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +{
 +	struct irmp_data *hdata = hid_get_drvdata(hdev);
 +	struct input_dev *input = hdata->input;
-+	static unsigned int key, last_key = 0;
++	static unsigned int last_key = 0;
++	unsigned int key;
 +	key = (raw_data[1] << 8) + raw_data[3];
 +	if(key){
 +		if (key == last_key) {
