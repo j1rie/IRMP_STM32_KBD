@@ -1,7 +1,7 @@
 for automatic start and stop of eventlircd during boot and on device dis/reconnect
 put the udev rule '70-irmp.rules' into your udev rules directory (/etc/udev/rules.d/)
 put the udev rule '98-eventlircd.rules' into your udev rules directory (/etc/udev/rules.d/)
-put the evmap '03_1209_4444.evmap' into your evmap directory (/usr/etc/eventlircd.d/)
+put the evmap '03_1209_4445.evmap' into your evmap directory (/usr/etc/eventlircd.d/)
 put the systemd service 'eventlircd.service' into your services directory (/etc/systemd/system/)
 put the systemd service 'eventlircd.socket' into your services directory (/etc/systemd/system/)
 put the systemd-tmpfiles config file 'eventlircd.conf' into your tmpfiles directory (/etc/tmpfiles.d/)

@@ -32,7 +32,7 @@ unsigned char outBuf[17];
 
 static bool open_stm32() {
 	// Open the device using the VID, PID.
-	handle = hid_open(0x1209, 0x4444, NULL);
+	handle = hid_open(0x1209, 0x4445, NULL);
 	if (!handle) {
 		printf("error opening stm32 device\n");
 		return false;

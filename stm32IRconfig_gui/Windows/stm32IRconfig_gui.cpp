@@ -737,7 +737,7 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 	
 	// List the Devices
 	hid_free_enumeration(devices);
-	devices = hid_enumerate(0x1209, 0x4444);
+	devices = hid_enumerate(0x1209, 0x4445);
 	cur_dev = devices;	
 	while (cur_dev) {
 		// only hidraw, not keyboard

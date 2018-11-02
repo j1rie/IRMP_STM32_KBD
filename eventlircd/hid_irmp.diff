@@ -47,7 +47,7 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  
 +#define USB_VENDOR_ID_IRMP		0x1209
-+#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4444
++#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4445
 +
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c

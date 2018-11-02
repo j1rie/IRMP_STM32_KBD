@@ -282,7 +282,7 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 -    0x57,
 +    0x09,                       /*idVendor (0x1209)*/
 +    0x12,
-+    0x44,                       /*idProduct = 0x4444*/
++    0x45,                       /*idProduct = 0x4445*/
 +    0x44,
      0x00,                       /*bcdDevice rel. 2.00*/
      0x02,
