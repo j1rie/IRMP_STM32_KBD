@@ -47,17 +47,31 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  
 +#define USB_VENDOR_ID_IRMP		0x1209
-+#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4445
++#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4444
 +
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 --- A/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
-+++ B/drivers/hid/hid-irmp.c	2018-10-27 02:47:12.668800800 +0200
-@@ -0,0 +1,130 @@
++++ B/drivers/hid/hid-irmp.c	2018-11-03 12:37:36.777386457 +0100
+@@ -0,0 +1,147 @@
 +/*
-+ *  HID driver for IRMP STM32 KBD remote
++ *  HID driver for IRMP STM32 KBD remote control receiver
 + *
 + *  Copyright (c) 2018 Joerg Riechardt
++ *
++ * There are remote control receivers, which register as an USB HID keyboard and
++ * receive and decode signals from many IR remote controls with all kinds of IR
++ * protocols (for instance IRMP, the Infra Red Multi Protocol library). Most of
++ * those IR remote controls only send keys on key press, but not on key release.
++ * Because of that, the receiver sends either a release after each key press or
++ * after a timeout, when no key was pressed any more. The first has the
++ * disadvantage, that each key is processed as new, even if it is a repeat. The
++ * second has the disadvatage, that the autorepeat feature of the input core
++ * may generate keys during the timeout, while the user actually already has
++ * taken his  finger of the remote control button.
++ * In order to solve the problem, this driver was made. It processes keys
++ * exactly as they were sent. Autorepeat is turned of and key repeats are taken
++ * from raw events, get translated and passed on to input.
 + */
 +
 +/*
@@ -110,12 +124,14 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +	key = (raw_data[1] << 8) + raw_data[3];
 +	if(key){
 +		if (key == last_key) {
-+			if(raw_data[3]){
-+				input_event(input, EV_KEY, hid_keyboard[raw_data[3]], 2);
-+				input_sync(input);
-+			}
++			/* modifier */
 +			if(raw_data[1]){
 +				input_event(input, EV_KEY, hid_keyboard[raw_data[1]], 2);
++				input_sync(input);
++			}
++			/* key */
++			if(raw_data[3]){
++				input_event(input, EV_KEY, hid_keyboard[raw_data[3]], 2);
 +				input_sync(input);
 +			}
 +		} else {
@@ -133,7 +149,8 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +	struct irmp_data *irmp_data = hid_get_drvdata(hdev);
 +	struct input_dev *input = hidinput->input;
 +	irmp_data->input = input;
-+	__clear_bit(EV_REP, input->evbit); // turn off repeat
++	/* turn off repeat */
++	__clear_bit(EV_REP, input->evbit);
 +	hid_set_drvdata(hdev, irmp_data);
 +	printk(KERN_ALERT "irmp configured\n");
 +
