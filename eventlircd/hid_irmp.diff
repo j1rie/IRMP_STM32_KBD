@@ -41,13 +41,13 @@ diff -Nrup A/drivers/hid/hid-core.c B/drivers/hid/hid-core.c
  #endif
 diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
 --- A/drivers/hid/hid-ids.h	2018-10-10 22:17:19.862057017 +0200
-+++ B/drivers/hid/hid-ids.h	2018-10-16 23:23:38.618508200 +0200
++++ B/drivers/hid/hid-ids.h	2018-11-02 20:36:35.517507526 +0100
 @@ -1176,4 +1176,7 @@
  #define USB_VENDOR_ID_UGTIZER			0x2179
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  
 +#define USB_VENDOR_ID_IRMP		0x1209
-+#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4444
++#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4445
 +
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
