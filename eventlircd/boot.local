@@ -1,3 +1,4 @@
 #! /bin/sh
 rmmod hid_irmp
+rmmod hid_generic
 modprobe hid_irmp
