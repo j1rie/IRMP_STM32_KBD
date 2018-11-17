@@ -1,4 +1,4 @@
-# IRMP on STM32 - a USB Keyboard IR receiver/sender/powerswitch with wakeup-timer
+# IRMP on STM32 - a USB Keyboard IR receiver + powerswitch with wakeup-timer
 
 A remote control receiver with many functions based on cheap hardware.
  

@@ -458,7 +458,7 @@ MainWindow::MainWindow(FXApp *app)
 	modifier_text->setHelpText("modifier i.e. LeftShift)");
 	key_text->setHelpText("key");
 	save_button->setHelpText("save translation map");
-	map_text21->setHelpText("editable translation map");
+	map_text21->setHelpText("eeprom translation map");
 	flash_button->setHelpText("flash into eeprom");
 	get_button->setHelpText("get from eeprom");
 	line_text->setHelpText("line in eeprom map");
@@ -1360,12 +1360,6 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 
 	Write_and_Check();
 
-	s = "";
-	protocol_text->setText(s);
-	address_text->setText(s);
-	command_text->setText(s);
-	flag_text->setText(s);
-
 	modifier_text->setText(get_key_from_nr(buf[5]));
 	key_text->setText(get_key_from_nr(buf[4]));
 
@@ -1901,6 +1895,10 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 		s += "\n";
 	    map_text21->appendText(s);
 	}
+	protocol_text->setText("");
+	address_text->setText("");
+	command_text->setText("");
+	flag_text->setText("");
 	key_text->setText("KEY_");
 	modifier_text->setText("ff");
 	onApply(NULL, 0, NULL);

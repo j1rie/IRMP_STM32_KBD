@@ -321,6 +321,10 @@ uint16_t get_repeat(uint8_t num)
 		/* the variable was not found or no valid page was found */
 		repeat = repeat_default[num];
 	}
+	if (repeat == 0xFFFF) {
+		/* after reset */
+		repeat = repeat_default[num];
+	}
 	return repeat;
 }
 

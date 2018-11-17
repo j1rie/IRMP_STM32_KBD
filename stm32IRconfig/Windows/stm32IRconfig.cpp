@@ -44,7 +44,8 @@ enum __attribute__ ((__packed__)) command {
 	CMD_WAKE,
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
-	CMD_WAKE_REMOTE
+	CMD_WAKE_REMOTE,
+	CMD_REPEAT
 };
 
 enum __attribute__ ((__packed__)) status {
@@ -136,13 +137,13 @@ int main(int argc, char* argv[])
 	outBuf[0] = 0x03; // Report ID Configuration, PC->STM32
 	outBuf[1] = STAT_CMD;
 
-cont:	printf("program eeprom: wakeups, IR-data and keys (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys and capabilities (g)\nreset: wakeups, IR-data, keys and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nexit (x)\n");
+cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 'p':
-prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
+prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
@@ -195,6 +196,17 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\n");
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check();
 			break;
+		case 'r':
+			printf("set repeat delay(0)\nset repeat period(1)\nset repeat timeout(2)\n");
+			scanf("%u", &n);
+			outBuf[idx++] = CMD_REPEAT;
+			outBuf[idx++] = n;
+			printf("enter value (dec)\n");
+			scanf("%"u", &kk);
+			outBuf[idx++] = kk & 0xFF;
+			outBuf[idx++] = (kk>>8) & 0xFF;
+			write_and_check();
+			break;
 		default:
 			goto prog;
 		}
@@ -226,7 +238,7 @@ Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote contro
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget caps(c)\n");
+get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
@@ -248,6 +260,12 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget caps(c)\n");
 			printf("enter key number (starting with 0)\n");
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_KEY;
+			outBuf[idx++] = n;
+			break;
+		case 'r':
+			printf("get repeat delay(0)\nget repeat period(1)\nget repeat timeout(2)\n");
+			scanf("%u", &n);
+			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
 			break;
 		case 'c':
@@ -300,7 +318,7 @@ again:			;
 out:		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset alarm(a)\n");
+reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, 15);
 		idx = 2;
@@ -322,6 +340,12 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset alarm(a)\
 			printf("enter key number (starting with 0)\n");
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_KEY;
+			outBuf[idx++] = n;
+			break;
+		case 'r':
+			printf("reset repeat delay(0)\nreset repeat period(1)\nreset repeat timeout(2)\n");
+			scanf("%u", &n);
+			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
 			break;
 		case 'a':

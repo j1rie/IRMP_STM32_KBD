@@ -15,11 +15,11 @@ The PC sends obligatory bytes:
 
 byte 1: status: STAT_CMD (command PC->µC), STAT_SUCCESS (success report µC->PC), STAT_FAILURE (error report µC->PC)
 byte 2: access: ACC_GET (query value from µC), ACC_SET (set value in µC), ACC_RESET (reset value in µC)
-byte 3: command: CMD_EMIT (transmit IR data), CMD_CAPS (capabilities of µC), CMD_FW (firmware), CMD_ALARM (alarm timer), CMD_MACRO (macro), CMD_WAKE (wakeup), CMD_REBOOT (restart µC)
+byte 3: command: CMD_CAPS (capabilities of µC), CMD_ALARM (alarm timer), CMD_WAKE (wakeup), CMD_REBOOT (restart µC), ...
 
 and optional bytes:
 
-byte 4, (5): possible arguments, e.g. number of macro (and content of macro)
+byte 4, (5): possible arguments
 following bytes: for ACC_SET: value to be set
 
 
@@ -30,14 +30,6 @@ Query the alarmtimer (in 60 seconds WakeUp):
 PC->µC: STAT_CMD ACC_GET CMD_ALARM
 µC->PC: STAT_SUCCESS ACC_GET CMD_ALARM 0x00 0x00 0x00 0x3C
 
-Set first (slot 0) wakeup IR data to 0x112233445566:
+Set first wakeup IR data to 0x112233445566:
 PC->µC: STAT_CMD ACC_SET CMD_WAKE 0x00 0x11 0x22 0x33 0x44 0x55 0x66
 µC->PC: STAT_SUCCESS ACC_SET CMD_WAKE
-
-Set third (slot 2) macro trigger (slot 0) to 0x112233445566:
-PC->µC: STAT_CMD ACC_SET CMD_MACRO 0x02 0x00 0x11 0x22 0x33 0x44 0x55 0x66
-µC->PC: STAT_SUCCESS ACC_SET CMD_MACRO
-
-Query the fourth (slot 4) IR data of the third (slot 2) macro:
-PC->µC: STAT_CMD ACC_GET CMD_MACRO 0x02 0x04
-µC->PC: STAT_SUCCESS ACC_GET CMD_MACRO 0x77 0x88 0x99 0xAA 0xBB 0xCC
