@@ -4,7 +4,7 @@ struct mapline {
     uint8_t usb_hid_key;
 };
 
-const uint8_t lines = 171;
+const uint8_t lines = 164;
 
 struct mapline mapusb[lines] =
 {
@@ -54,7 +54,7 @@ struct mapline mapusb[lines] =
 { "KEY_LEFTBRACE", 0x2f }, // Keyboard [ and { OK
 { "KEY_RIGHTBRACE", 0x30 }, // Keyboard ] and } OK
 { "KEY_BACKSLASH", 0x31 }, // Keyboard \ and | OK
-//{ "KEY_NONUSHASH", 0x32 }, // Keyboard Non-US # and ~ NOK
+//{ "KEY_NONUSHASH", 0x32 }, // Keyboard Non-US # and ~ KEY_BACKSLASH dupl
 { "KEY_SEMICOLON", 0x33 }, // Keyboard ; and : OK
 { "KEY_APOSTROPHE", 0x34 }, // Keyboard ' and " OK
 { "KEY_GRAVE", 0x35 }, // Keyboard ` and ~ OK
@@ -134,34 +134,34 @@ struct mapline mapusb[lines] =
 { "KEY_MUTE", 0x7f }, // Keyboard Mute OK
 { "KEY_VOLUMEUP", 0x80 }, // Keyboard Volume Up OK
 { "KEY_VOLUMEDOWN", 0x81 }, // Keyboard Volume Down OK
-{ "KEY_CAPSLOCK", 0x82 }, // Keyboard Locking Caps Lock OK?
-{ "KEY_NUMLOCK", 0x83 },  // Keyboard Locking Num Lock OK?
-{ "KEY_SCROLLLOCK", 0x84 },  // Keyboard Locking Scroll Lock OK?
+//{ "KEY_CAPSLOCK", 0x82 }, // Keyboard Locking Caps Lock unk
+//{ "KEY_NUMLOCK", 0x83 },  // Keyboard Locking Num Lock unk
+//{ "KEY_SCROLLLOCK", 0x84 },  // Keyboard Locking Scroll Lock unk
 { "KEY_KPCOMMA", 0x85 }, // Keypad Comma OK
-// Keypad Equal Sign 0x86 NOK
+// Keypad Equal Sign 0x86 unk
 { "KEY_RO", 0x87 }, // Keyboard International1 OK
 { "KEY_KATAKANAHIRAGANA", 0x88 }, // Keyboard International2 OK
 { "KEY_YEN", 0x89 }, // Keyboard International3 OK
 { "KEY_HENKAN", 0x8a }, // Keyboard International4 OK
 { "KEY_MUHENKAN", 0x8b }, // Keyboard International5 OK
 { "KEY_KPJPCOMMA", 0x8c }, // Keyboard International6 OK
-//  0x8d Keyboard International7 NOK
-//  0x8e Keyboard International8
-//  0x8f Keyboard International9
+//  0x8d Keyboard International7 unk
+//  0x8e Keyboard International8 unk
+//  0x8f Keyboard International9 unk
 { "KEY_HANGEUL", 0x90 }, // Keyboard LANG1 OK
 { "KEY_HANJA", 0x91 }, // Keyboard LANG2 OK
 { "KEY_KATAKANA", 0x92 }, // Keyboard LANG3 OK
 { "KEY_HIRAGANA", 0x93 }, // Keyboard LANG4 OK
 { "KEY_ZENKAKUHANKAKU", 0x94 }, // Keyboard LANG5 OK
-//{ "KEY_LANG6", 0x95 }, // Keyboard LANG6  NOK
-//{ "KEY_LANG7", 0x96 }, // Keyboard LANG7
-//{ "KEY_LANG8", 0x97 }, // Keyboard LANG8 ?
-// KEY_LANG9 0x98  Keyboard LANG9
-{ "KEY_ALTERASE",  0x99},  // Keyboard alternate erase OK
-//{ "KEY_SYSREQATTN",  0x9A},  // Keyboard SysReq/Attention NOK
-{ "KEY_CANCEL",      0x9B},  // Keyboard Cancel OK
-{ "KEY_CLEAR",       0x9C},  // Keyboard Clear OK
-//{ "KEY_PRIOR",       0x9D},  // Keyboard Prior NOK
+//{ "KEY_LANG6", 0x95 }, // Keyboard LANG6 unk
+//{ "KEY_LANG7", 0x96 }, // Keyboard LANG7 unk
+//{ "KEY_LANG8", 0x97 }, // Keyboard LANG8 unk
+// KEY_LANG9 0x98  Keyboard LANG9 unk
+//{ "KEY_ALTERASE",  0x99},  // Keyboard alternate erase unk
+//{ "KEY_SYSREQATTN",  0x9A},  // Keyboard SysReq/Attention unk
+//{ "KEY_CANCEL",      0x9B},  // Keyboard Cancel unk
+//{ "KEY_CLEAR",       0x9C},  // Keyboard Clear KEY_DELETE dupl
+//{ "KEY_PRIOR",       0x9D},  // Keyboard Prior unk
 //{ "KEY_RETURN",      0x9E},  // Keyboard Return
 //{ "KEY_SEPARATOR",   0x9F},  // Keyboard Separator
 //{ "KEY_OUT",         0xA0},  // Keyboard Out
@@ -174,10 +174,10 @@ struct mapline mapusb[lines] =
 //{ "KEY_THOUSANDSEP", 0xB2},  // Thousands separator, depends on Locale either . or ,
 //{ "KEY_DECIMALSEP",  0xB3},  // Decimal separator, depends on Locale, either , or .
 //{ "KEY_CURRENCY",    0xB4},  // Currency Unit, depends on locale e.g. $
-//{ "KEY_CURRENCYSUB", 0xB5},  // Currency sub-unit, depends on locale e.g. ¢
+//{ "KEY_CURRENCYSUB", 0xB5},  // Currency sub-unit, depends on locale e.g. ¢ unk
 { "KEY_KPLEFTPAREN", 0xb6 }, // Keypad ( OK
 { "KEY_KPRIGHTPAREN", 0xb7 }, // Keypad ) OK
-//{ "KEY_KPLCURLY",    0xB8},  // Keypad { NOK
+//{ "KEY_KPLCURLY",    0xB8},  // Keypad { unk
 //{ "KEY_KPRCURLY",    0xB9},  // Keypad },
 //{ "KEY_KPTAB",       0xBA},  // Keypad Tab
 //{ "KEY_KPBACKSPACE", 0xBB},  // Keypad Backspace
@@ -207,16 +207,16 @@ struct mapline mapusb[lines] =
 //{ "KEY_KPMEMADD",    0xD3},  // Keypad memory add
 //{ "KEY_KPMEMSUB",    0xD4},  // Keypad Memory Subtract
 //{ "KEY_KPMEMMULT",   0xD5},  // Keypad Memory Multiply
-//{ "KEY_KPMEMDIV",    0xD6},  // Keypad Memory Divide NOK
-{ "KEY_KPPLUSMINUS",  0xD7},  // Keypad +/- OK
-//{ "KEY_KPCLEAR",     0xD8}, // Keypad Clear KEY_DELETE NOK
-//{ "KEY_KPCLEARENT",  0xD9},  // Keypad Clear Entry
+//{ "KEY_KPMEMDIV",    0xD6},  // Keypad Memory Divide
+//{ "KEY_KPPLUSMINUS",  0xD7},  // Keypad +/- unk
+//{ "KEY_KPCLEAR",     0xD8}, // Keypad Clear KEY_DELETE dupl
+//{ "KEY_KPCLEARENT",  0xD9},  // Keypad Clear Entry unk
 //{ "KEY_KPBINARY",    0xDA},  // Keypad Binary
 //{ "KEY_KPOCTAL",     0xDB},  // keypad Octal
 //{ "KEY_KPDECIMAL",   0xDC},  // Keypad Decimal
-//{ "KEY_KPHEX",       0xDD},  // Keypad Hexadecimal NOK
+//{ "KEY_KPHEX",       0xDD},  // Keypad Hexadecimal unk
 // 0xDE // reserved
-// 0xDF // reserved NOK
+// 0xDF // reserved unk
 { "KEY_LEFTCTRL", 0xe0 }, // Keyboard Left Control OK
 { "KEY_LEFTSHIFT", 0xe1 }, // Keyboard Left Shift OK
 { "KEY_LEFTALT", 0xe2 }, // Keyboard Left Alt OK
@@ -230,19 +230,19 @@ struct mapline mapusb[lines] =
 { "KEY_PREVIOUSSONG",  0xEA}, // OK
 { "KEY_NEXTSONG",	0xEB}, // OK
 { "KEY_EJECTCD",	0xEC}, // OK
-//KEY_VOLUMEUP  0xed NOK
-//KEY_VOLUMEDOWN 0xee
-//KEY_MUTE 0xef
+//KEY_VOLUMEUP  0xed dupl
+//KEY_VOLUMEDOWN 0xee dupl
+//KEY_MUTE 0xef dupl
 { "KEY_WWW",	        0xF0}, // OK
 { "KEY_BACK",	0xF1}, // OK
 { "KEY_FORWARD",	0xF2}, // OK
-// KEY_STOP 0xf3
-// KEY_FIND 0xf4 NOK
+// KEY_STOP 0xf3 dupl
+// KEY_FIND 0xf4 dupl
 { "KEY_SCROLLUP",	0xF5}, // OK
 { "KEY_SCROLLDOWN",	0xF6}, // OK
 { "KEY_EDIT",	0xF7}, // OK
 { "KEY_SLEEP",	0xF8}, // OK
-{ "KEY_COFFEE",	0xF9}, // OK?
+{ "KEY_SCREENLOCK",	0xF9}, // KEY_COFFEE -> KEY_SCREENLOCK OK
 { "KEY_REFRESH",	0xFA}, // OK
 { "KEY_CALC",	0xFB},  // OK
 { "ff",	0x00},  // for modifier, necessary for Windows
