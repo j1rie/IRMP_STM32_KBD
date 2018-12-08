@@ -1,4 +1,4 @@
-# IRMP on STM32 - a USB Keyboard IR receiver + powerswitch with wakeup-timer
+# IRMP on STM32 - an USB-HID-Keyboard IR receiver + powerswitch with wakeup-timer
 
 A remote control receiver with many functions based on cheap hardware.
 
@@ -20,12 +20,12 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 
 ## Software Linux
 * GUI config-tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages.
-* command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control.
+* interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control.
 * stm32kbdIRalarm for setting and reading alarm time via script
 
 ## Software Windows
 * GUI config-tool stm32kbdIRconfig_gui (same as linux)
-* command line programm stm32kbdIRconfig (same as linux)
+* interactive command line programm stm32kbdIRconfig (same as linux)
 * stm32kbdIRalarm for setting and reading alarm time via script
 
 ## Creating an eeprom map
@@ -66,7 +66,7 @@ Uwe Becker for adapting IRMP to the STM32F4xx and his USB-HID for the STM32F4xx.
 His work helped me in getting started with the STM32F105.  
 Andrew Kambaroff for his USB-HID for the STM32F103. [3]  
 His work helped me in getting started with the STM32F103.  
-Ole Ernst for code review, linux Makefile and linux download-extract-patch-script, much better macro implementation and new protocol. [4]  
+Ole Ernst for code review, linux Makefile and linux download-extract-patch-script and new protocol. [4]  
 Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host running. [5]  
 
 [1] https://www.mikrocontroller.net/articles/IRMP  
@@ -79,7 +79,7 @@ Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host running. [5]
 For comments, questions, suggestions go to https://www.vdr-portal.de/forum/index.php?thread/123572-irmp-auf-stm32-ein-usb-ir-empf%C3%A4nger-sender-einschalter-mit-wakeup-timer/ .
 
 ## Find more information on
-https://www.mikrocontroller.net/articles/IRMP_auf_STM32_-_ein_USB_IR_Empf%C3%A4nger/Sender/Einschalter_mit_Wakeup-Timer
+https://www.vdr-portal.de/forum/index.php?thread/132289-irmp-auf-stm32-ein-usb-hid-keyboard-ir-empf%C3%A4nger-einschalter-mit-wakeup-timer/
 
 Much fun with IRMP on STM32!
 
