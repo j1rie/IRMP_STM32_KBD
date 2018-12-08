@@ -31,11 +31,12 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 ## Creating an eeprom map
 The stm32kbdIRconfig_gui can be used for building an eeprom map with the remote control.  
 There are two methods.  
-*.jpg  
-First method: Open the template keymap.  
-Click the line with the key's name, click "set by remote - irdata", press the button on the remote - repeat this for all buttons.
+![setting irdata into template map](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/setting_irdata_into_template map.jpg) 
+First method: Open the template keymap. Remove lines with keys you don't need.  
+Click the line with the key's name, click "set by remote - irdata", press the button on the remote - repeat this for all buttons.  
+Click "flash eeprom".  
 
-*.jpg  
+![building eeprom map](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/building_eeprom_map.jpg)
 Second method: Click a line, click "set by remote - irdata", press the button on the remote.  
 Click a line, enter key (and modifier), click "set - key".  
 Repeat this as often as needed.  
