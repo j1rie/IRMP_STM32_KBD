@@ -6,10 +6,10 @@ diff -Nrup A/drivers/hid/Kconfig B/drivers/hid/Kconfig
  	and want support for its special functionalities.
  
 +config HID_IRMP
-+	tristate "IRMP KBD HID device support"
++	tristate "IRMP USB-HID-keyboard support"
 +	depends on HID
 +	---help---
-+	Support for IRMP STM32 KBD HID remote control receivers.
++	Support for IRMP STM32 KBD remote control receivers.
 +	Say Y here if you have a IRMP STM32 KBD.
 +
  endmenu

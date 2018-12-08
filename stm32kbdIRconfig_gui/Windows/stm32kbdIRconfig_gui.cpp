@@ -455,7 +455,7 @@ MainWindow::MainWindow(FXApp *app)
 	input_text->setHelpText("debug messages");
 	clear_button->setHelpText("clear debug messages");
 	open_button->setHelpText("open translation map");
-	modifier_text->setHelpText("modifier i.e. LeftShift)");
+	modifier_text->setHelpText("modifier i.e. LeftShift");
 	key_text->setHelpText("key");
 	save_button->setHelpText("save translation map");
 	map_text21->setHelpText("eeprom translation map");

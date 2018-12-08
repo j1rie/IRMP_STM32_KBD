@@ -3,10 +3,10 @@
 A remote control receiver with many functions based on cheap hardware.
 
 ![Stick](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/Stick.jpg)
-![Stick](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/Stick_am_Board.jpg)
+![Stick am Board](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/Stick_am_Board.jpg)
  
 ## Introduction
-For 2 - 4 € you can buy on ebay a ST-Link emulator or a STM32F103 development board, manufactured in China usually. Onto the STM32F103 mikrocontroller on it an open source firmware with many functions will be flashed. 
+For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development board, manufactured in China usually. Onto the STM32F103 mikrocontroller on it an open source firmware with many functions will be flashed.
 
 ## Functions
 * connection via USB 
@@ -41,7 +41,6 @@ Click a line, enter key (and modifier), click "set - key".
 Repeat this as often as needed.  
 
 You can test the keymap immediately with evtest: After pressing the button on the remote, evtest should show the corresponding key.
-At the end you may save the eeprom map as a backup.
 
 ## Lerning wakeup
 If the wakeup is empty, the first received IR data will be stored into the wakeup.  
@@ -56,7 +55,7 @@ It is easier to see, what has been changed, too.
 Compile with arm-none-eabi-gcc.  
 
 ## Pin-Out
-See config.h.
+See /STM32F10x/src/config.h.
 
 ## eventlircd, udev and systemd
 See /eventlircd/README.
@@ -85,4 +84,3 @@ https://www.mikrocontroller.net/articles/IRMP_auf_STM32_-_ein_USB_IR_Empf%C3%A4n
 Much fun with IRMP on STM32!
 
 Copyright (C) 2018 Jörg Riechardt
-
