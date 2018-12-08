@@ -44,14 +44,14 @@ Repeat this as often as needed.
 
 You can test the keymap immediately with evtest: After pressing the button on the remote, evtest should show the corresponding key.
 
-## Lerning wakeup
+## Learning wakeup
 If the wakeup is empty, the first received IR data will be stored into the wakeup.  
 Change wakeup: press set by remote - wakeup, press button on remote control, finished.  
 Important for testing: wakeup happens only, if the PC is powered off.  
 If the PC is powered on, only the key is send to the PC (so you can use the same button for power on and power off).  
 
 ## Building from source
-The sources are complete only after running the prepare script, the script downloads the ST- and IRMP-sources, extracts and patches them.  
+The sources are complete only after running the prepare script, the script downloads the IRMP sources, extracts and patches the sources. You have to download the ST sources manually, because you have to register unfortunately.  
 This makes it possible to put the patches under GPL, without interfering with the original licences.  
 It is easier to see, what has been changed, too.  
 Compile with arm-none-eabi-gcc.  
