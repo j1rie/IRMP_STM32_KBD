@@ -73,7 +73,7 @@ Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host running. [5]
 
 [1] https://www.mikrocontroller.net/articles/IRMP  
 [2] http://mikrocontroller.bplaced.net/wordpress/?page_id=744  
-[3] http://sysmagazine.com/posts/208026/  
+[3] https://habr.com/post/208026/  
 [4] https://github.com/olebowle  
 [5] https://github.com/M-Reimer  
 
