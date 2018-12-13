@@ -10,6 +10,6 @@ and run "systemctl enable eventlircd.service eventlircd.socket" once.
 If you build your own kernel, you may patch it with hid_irmp.diff, with that repeats work perfectly, when
 repeat_timeout is set to e.g. 130.
 It may be necessary to put 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' in /etc/init.d/boot.local (look
-for "irmp configured" in dmesg).
+for "irmp configured" in dmesg) with kernel 4.14.
 Without the patch you need to have repeat_timeout set to 0, and all key presses are new keys, so
 long key presses in kodi are not working.

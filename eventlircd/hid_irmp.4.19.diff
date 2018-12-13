@@ -1,7 +1,7 @@
 diff -Nrup A/drivers/hid/Kconfig B/drivers/hid/Kconfig
---- A/drivers/hid/Kconfig	2018-10-20 16:19:27.231458801 +0200
-+++ B/drivers/hid/Kconfig	2018-10-15 11:51:12.317478400 +0200
-@@ -1028,6 +1028,13 @@ config HID_ALPS
+--- A/drivers/hid/Kconfig	2018-12-08 12:59:10.000000000 +0100
++++ B/drivers/hid/Kconfig	2018-12-13 01:06:32.788691021 +0100
+@@ -1079,6 +1079,13 @@ config HID_ALPS
  	Say Y here if you have a Alps touchpads over i2c-hid or usbhid
  	and want support for its special functionalities.
  
@@ -16,9 +16,9 @@ diff -Nrup A/drivers/hid/Kconfig B/drivers/hid/Kconfig
  
  endif # HID
 diff -Nrup A/drivers/hid/Makefile B/drivers/hid/Makefile
---- A/drivers/hid/Makefile	2017-12-14 09:53:15.000000000 +0100
-+++ B/drivers/hid/Makefile	2018-11-04 00:02:33.261096424 +0100
-@@ -114,6 +114,7 @@ obj-$(CONFIG_HID_WALTOP)	+= hid-waltop.o
+--- A/drivers/hid/Makefile	2018-12-08 12:59:10.000000000 +0100
++++ B/drivers/hid/Makefile	2018-12-13 01:06:32.798690461 +0100
+@@ -120,6 +120,7 @@ obj-$(CONFIG_HID_WALTOP)	+= hid-waltop.o
  obj-$(CONFIG_HID_WIIMOTE)	+= hid-wiimote.o
  obj-$(CONFIG_HID_SENSOR_HUB)	+= hid-sensor-hub.o
  obj-$(CONFIG_HID_SENSOR_CUSTOM_SENSOR)	+= hid-sensor-custom.o
@@ -26,23 +26,10 @@ diff -Nrup A/drivers/hid/Makefile B/drivers/hid/Makefile
  
  obj-$(CONFIG_USB_HID)		+= usbhid/
  obj-$(CONFIG_USB_MOUSE)		+= usbhid/
-diff -Nrup A/drivers/hid/hid-core.c B/drivers/hid/hid-core.c
---- A/drivers/hid/hid-core.c	2018-10-20 20:46:04.437594289 +0200
-+++ B/drivers/hid/hid-core.c	2018-10-20 18:23:50.815154601 +0200
-@@ -2076,6 +2076,9 @@ static const struct hid_device_id hid_ha
- #if IS_ENABLED(CONFIG_HID_ICADE)
- 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_ION, USB_DEVICE_ID_ICADE) },
- #endif
-+#if IS_ENABLED(CONFIG_HID_IRMP)
-+	{ HID_USB_DEVICE(USB_VENDOR_ID_IRMP, USB_DEVICE_ID_IRMP_STM32_KBD) },
-+#endif
- #if IS_ENABLED(CONFIG_HID_ITE)
- 	{ HID_USB_DEVICE(USB_VENDOR_ID_ITE, USB_DEVICE_ID_ITE8595) },
- #endif
 diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
---- A/drivers/hid/hid-ids.h	2018-10-10 22:17:19.862057017 +0200
-+++ B/drivers/hid/hid-ids.h	2018-11-02 20:36:35.517507526 +0100
-@@ -1176,4 +1176,7 @@
+--- A/drivers/hid/hid-ids.h	2018-12-08 12:59:10.000000000 +0100
++++ B/drivers/hid/hid-ids.h	2018-12-13 01:06:32.802690237 +0100
+@@ -1216,4 +1216,7 @@
  #define USB_VENDOR_ID_UGTIZER			0x2179
  #define USB_DEVICE_ID_UGTIZER_TABLET_GP0610	0x0053
  
@@ -52,8 +39,8 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 --- A/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
-+++ B/drivers/hid/hid-irmp.c	2018-11-03 12:37:36.777386457 +0100
-@@ -0,0 +1,147 @@
++++ B/drivers/hid/hid-irmp.c	2018-12-13 01:06:32.803690181 +0100
+@@ -0,0 +1,149 @@
 +/*
 + *  HID driver for IRMP STM32 KBD remote control receiver
 + *
@@ -71,7 +58,7 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 + * taken his  finger of the remote control button.
 + * In order to solve the problem, this driver was made. It processes keys
 + * exactly as they were sent. Autorepeat is turned off and key repeats are taken
-+ * from raw events, get translated and passed on to input.
++ * from raw events, get translated and are passed on to input.
 + */
 +
 +/*
@@ -119,18 +106,19 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +{
 +	struct irmp_data *hdata = hid_get_drvdata(hdev);
 +	struct input_dev *input = hdata->input;
-+	static unsigned int last_key = 0;
++	static unsigned int last_key;
 +	unsigned int key;
++
 +	key = (raw_data[1] << 8) + raw_data[3];
-+	if(key){
++	if (key) {
 +		if (key == last_key) {
 +			/* modifier */
-+			if(raw_data[1]){
++			if (raw_data[1]) {
 +				input_event(input, EV_KEY, hid_keyboard[raw_data[1]], 2);
 +				input_sync(input);
 +			}
 +			/* key */
-+			if(raw_data[3]){
++			if (raw_data[3]) {
 +				input_event(input, EV_KEY, hid_keyboard[raw_data[3]], 2);
 +				input_sync(input);
 +			}
@@ -148,11 +136,12 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +{
 +	struct irmp_data *irmp_data = hid_get_drvdata(hdev);
 +	struct input_dev *input = hidinput->input;
++
 +	irmp_data->input = input;
 +	/* turn off repeat */
 +	__clear_bit(EV_REP, input->evbit);
 +	hid_set_drvdata(hdev, irmp_data);
-+	printk(KERN_ALERT "irmp configured\n");
++	printk(KERN_INFO "irmp configured\n");
 +
 +	return 0;
 +}
@@ -200,4 +189,17 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 +};
 +module_hid_driver(irmp_driver);
 +
-+MODULE_LICENSE("GPL");
++MODULE_LICENSE("GPL v2");
+diff -Nrup A/drivers/hid/hid-quirks.c B/drivers/hid/hid-quirks.c
+--- A/drivers/hid/hid-quirks.c	2018-12-08 12:59:10.000000000 +0100
++++ B/drivers/hid/hid-quirks.c	2018-12-13 01:14:36.116209628 +0100
+@@ -394,6 +394,9 @@ static const struct hid_device_id hid_ha
+ #if IS_ENABLED(CONFIG_HID_ICADE)
+ 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_ION, USB_DEVICE_ID_ICADE) },
+ #endif
++#if IS_ENABLED(CONFIG_HID_IRMP)
++	{ HID_USB_DEVICE(USB_VENDOR_ID_IRMP, USB_DEVICE_ID_IRMP_STM32_KBD) },
++#endif
+ #if IS_ENABLED(CONFIG_HID_JABRA)
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_JABRA, HID_ANY_ID) },
+ #endif
