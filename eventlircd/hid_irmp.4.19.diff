@@ -39,7 +39,7 @@ diff -Nrup A/drivers/hid/hid-ids.h B/drivers/hid/hid-ids.h
  #endif
 diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 --- A/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
-+++ B/drivers/hid/hid-irmp.c	2018-12-13 01:06:32.803690181 +0100
++++ B/drivers/hid/hid-irmp.c	2018-12-13 16:38:46.256191697 +0100
 @@ -0,0 +1,149 @@
 +/*
 + *  HID driver for IRMP STM32 KBD remote control receiver
@@ -53,7 +53,7 @@ diff -Nrup A/drivers/hid/hid-irmp.c B/drivers/hid/hid-irmp.c
 + * Because of that, the receiver sends either a release after each key press or
 + * after a timeout, when no key was pressed any more. The first has the
 + * disadvantage, that each key is processed as new, even if it is a repeat. The
-+ * second has the disadvatage, that the autorepeat feature of the input core
++ * second has the disadvantage, that the autorepeat feature of the input core
 + * may generate keys during the timeout, while the user actually already has
 + * taken his  finger of the remote control button.
 + * In order to solve the problem, this driver was made. It processes keys

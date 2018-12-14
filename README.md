@@ -46,7 +46,7 @@ You can test the keymap immediately with evtest: After pressing the button on th
 
 ## Learning wakeup
 If the wakeup is empty, the first received IR data will be stored into the wakeup.  
-Change wakeup: press set by remote - wakeup, press button on remote control, finished.  
+Change wakeup with stm32kbdIRconfig_gui: press set by remote - wakeup, press button on remote control.  
 Important for testing: wakeup happens only, if the PC is powered off.  
 If the PC is powered on, only the key is send to the PC (so you can use the same button for power on and power off).  
 
