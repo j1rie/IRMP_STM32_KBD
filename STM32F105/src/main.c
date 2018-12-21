@@ -207,7 +207,7 @@ volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile int send_ir_on_delay = -1;
-uint16_t repeat_default[3] = {250, 150, 5};
+uint16_t repeat_default[3] = {250, 150, 15};
 
 void delay_ms(unsigned int msec)
 {
