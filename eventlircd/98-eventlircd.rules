@@ -19,6 +19,10 @@ KERNEL!="event[0-9]*", GOTO="end"
 # eventlircd ignores devices created by eventlircd.
 ATTRS{name}=="eventlircd", GOTO="end"
 
+ATTRS{name}=="STMicroelectronics STM32 IRMP HID-KBD-Device", \
+  ENV{eventlircd_enable}="true", \
+  ENV{eventlircd_evmap}="03_1209_4445.evmap"
+
 #-------------------------------------------------------------------------------
 # Ask eventlircd to handle input event devices created by lircd. For this to
 # work, lircd must be configured to output Linux input events and must be
@@ -85,10 +89,6 @@ ENV{ID_VENDOR_ID}=="1241", ENV{ID_MODEL_ID}=="e000", \
   ENV{eventlircd_evmap}="03_$env{ID_VENDOR_ID}_$env{ID_MODEL_ID}.evmap"
 
 ENV{ID_VENDOR_ID}=="147a", ENV{ID_MODEL_ID}=="e02d", \
-  ENV{eventlircd_enable}="true", \
-  ENV{eventlircd_evmap}="03_$env{ID_VENDOR_ID}_$env{ID_MODEL_ID}.evmap"
-
-ENV{ID_VENDOR_ID}=="1209", ENV{ID_MODEL_ID}=="4445", \
   ENV{eventlircd_enable}="true", \
   ENV{eventlircd_evmap}="03_$env{ID_VENDOR_ID}_$env{ID_MODEL_ID}.evmap"
 

@@ -19,4 +19,3 @@ repeat_timeout stays default (15), repeat_delay and repeat_period are 100 (or le
 
 Known problems:
 With kernel 4.19 there are two input devices instead of one. The symlink irmp_stm32_kbd may be wrong.
-eventlircd does not open the uinput device created by stm32kbd2uinput (evtest does).
