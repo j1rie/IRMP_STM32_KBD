@@ -1,7 +1,7 @@
 [Unit]
 Description="stm32kbd2uinput reads from irmp_stm32_kbd and writes key presses to uinput"
-Requisite=dev-irmp_stm32_kbd
-After=dev-irmp_stm32_kbd
+Requisite=dev-irmp_stm32_kbd.device
+After=dev-irmp_stm32_kbd.device
 
 [Service]
 Type=forking
@@ -12,5 +12,4 @@ KillMode=process
 TimeoutStopSec=1s
 
 [Install]
-#WantedBy=dev-irmp_stm32_kbd
-WantedBy=multi-user.target
+WantedBy=dev-irmp_stm32_kbd.device
