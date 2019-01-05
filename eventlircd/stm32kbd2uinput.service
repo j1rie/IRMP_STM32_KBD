@@ -4,8 +4,8 @@ Requisite=dev-irmp_stm32_kbd.device
 After=dev-irmp_stm32_kbd.device
 
 [Service]
-Type=forking
-ExecStart=/z/stm32kbd2uinput/stm32kbd2uinput
+Type=simple
+ExecStart=/usr/bin/stm32kbd2uinput
 Restart=on-failure
 RestartSec=1s
 KillMode=process
