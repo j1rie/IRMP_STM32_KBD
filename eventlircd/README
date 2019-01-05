@@ -11,11 +11,9 @@ If you build your own kernel, you may patch it with hid_irmp.diff, with that rep
 repeat_timeout is set to e.g. 130.
 It may be necessary to put 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' in /etc/init.d/boot.local (look
 for "irmp configured" in dmesg) with kernel 4.14.
+
 Without the patch you need to have repeat_timeout set to 15 (default), and all key presses are new keys, so
 long key presses in kodi and acceleration are not working.
 
-Instead of hid_irmp.diff you can try stm32kbd2uinput. With stm32kbd2uinput repeats work almost perfectly.
+Instead of hid_irmp.diff you can try stm32kbd2uinput. With stm32kbd2uinput repeats work perfectly.
 repeat_timeout stays default (15), repeat_delay and repeat_period are 100 (or less).
-
-Known problems:
-With kernel 4.19 there are two input devices instead of one. The symlink irmp_stm32_kbd may be wrong.
