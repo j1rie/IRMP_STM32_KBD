@@ -1,0 +1,4 @@
+KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4444", SYMLINK+="irmp_stm32", MODE="0666"
+KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4445", SYMLINK+="irmp_stm32", MODE="0666"
+#SUBSYSTEM=="input", ATTRS{name}=="STMicroelectronics STM32 IRMP HID-KBD-Device Keyboard", SYMLINK+="irmp_stm32_kbd", MODE="0666", TAG+="uaccess", TAG+="systemd"
+SUBSYSTEM=="input", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4445", SYMLINK+="irmp_stm32_kbd", MODE="0666", TAG+="uaccess", TAG+="systemd"
