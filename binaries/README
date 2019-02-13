@@ -1,2 +1,4 @@
 The compiler is from
 https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+
+For complete eeprom reset flash the file "ZEROS".
