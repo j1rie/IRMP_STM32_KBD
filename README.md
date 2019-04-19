@@ -82,4 +82,4 @@ For comments, questions, suggestions go to https://www.vdr-portal.de/forum/index
 
 Much fun with IRMP on STM32!
 
-Copyright (C) 2018 Jörg Riechardt
+Copyright (C) 2018-2019 Jörg Riechardt

@@ -1,7 +1,7 @@
 /*
  *  GUI Config Tool for IRMP STM32 KBD devices
  *
- *  Copyright (C) 2015-2018 Joerg Riechardt
+ *  Copyright (C) 2015-2019 Joerg Riechardt
  *
  *  based on work by Alan Ott
  *  Copyright 2010  Alan Ott
@@ -81,6 +81,7 @@ public:
 		ID_GCAP,
 		ID_GEEPROM,
 		ID_PEEPROM,
+		ID_REEPROM,
 		ID_AGET,
 		ID_ASET,
 		ID_RWAKEUP,
@@ -127,6 +128,7 @@ private:
 	FXButton *save_button;
 	FXButton *flash_button;
 	FXButton *get_button;
+	FXButton *reset_button;
 	FXLabel *connected_label;
 	FXLabel *connected_label2;
 	FXLabel *connected_label3;
@@ -207,6 +209,7 @@ public:
 	long onSave(FXObject *sender, FXSelector sel, void *ptr);
 	long onGeeprom(FXObject *sender, FXSelector sel, void *ptr);
 	long onPeeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onReeprom(FXObject *sender, FXSelector sel, void *ptr);
 	uint8_t get_key_nr(FXString s);
 	FXString get_key_from_nr(uint8_t nr);
 	long Write();
@@ -249,6 +252,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GCAP, MainWindow::onGcaps ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GEEPROM, MainWindow::onGeeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PEEPROM, MainWindow::onPeeprom ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_REEPROM, MainWindow::onReeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_AGET, MainWindow::onAget ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_ASET, MainWindow::onAset ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_RWAKEUP, MainWindow::onRwakeup ),
@@ -384,6 +388,7 @@ MainWindow::MainWindow(FXApp *app)
 	save_button = new FXButton(gb132, "save file", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
 	flash_button = new FXButton(gb132, "flash eeprom", NULL, this, ID_PEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
 	get_button = new FXButton(gb132, "get eeprom", NULL, this, ID_GEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	reset_button = new FXButton(gb132, "reset eeprom", NULL, this, ID_REEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
 	new FXLabel(gb132, "modifier");
 	FXVerticalFrame *innerVF10 = new FXVerticalFrame(gb132, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
 	modifier_text = new FXTextField(new FXHorizontalFrame(innerVF10,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
@@ -461,6 +466,7 @@ MainWindow::MainWindow(FXApp *app)
 	map_text21->setHelpText("eeprom translation map");
 	flash_button->setHelpText("flash into eeprom");
 	get_button->setHelpText("get from eeprom");
+	reset_button->setHelpText("reset eeprom");
 	line_text->setHelpText("line in eeprom map");
 	prepeat_button->setHelpText("set repeat");
 	grepeat_button->setHelpText("get repeat");
@@ -491,6 +497,7 @@ MainWindow::MainWindow(FXApp *app)
 	save_button->disable();
 	flash_button->disable();
 	get_button->disable();
+	reset_button->disable();
 
 	// initialize
 	RepeatCounter = 0;
@@ -620,6 +627,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	save_button->enable();
 	flash_button->enable();
 	get_button->enable();
+	reset_button->enable();
 	input_text->setText("");
 	output_text->setText("");
 
@@ -724,6 +732,7 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 	save_button->disable();
 	flash_button->disable();
 	get_button->disable();
+	reset_button->disable();
 
 	return 1;
 }
@@ -1993,6 +2002,42 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 	//onGeeprom();
   }
+	return 1;
+}
+
+long
+MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
+	if(map_text21->isModified()){
+		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+	}
+	if(FXMessageBox::question(this,MBOX_YES_NO,tr("reset eeprom"),tr("really reset eeprom?"))==MBOX_CLICKED_NO) return 1;
+
+	for(int i = 0; i < irdatanr; i++) {
+	    FXString s;
+	    FXString u;
+#if (FOX_MINOR >= 7)
+	    FXString v;
+	    v.fromInt(i,16);
+	    u += v;
+#else
+	    u += FXStringVal(i,16);
+#endif
+
+	s = "3 0 2 2 "; // Report_ID STAT_CMD ACC_RESET CMD_IRDATA
+	s += u;
+	output_text->setText(s);
+
+	Write_and_Check();
+
+	s = "3 0 2 3 "; // Report_ID STAT_CMD ACC_RESET CMD_KEY
+	s += u;
+	output_text->setText(s);
+
+	Write_and_Check();
+	}
+
+	onGeeprom(NULL, 0, NULL);
+
 	return 1;
 }
 
