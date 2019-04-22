@@ -1859,6 +1859,10 @@ MainWindow::get_key_nr(FXString s){
 			return mapusb[i].usb_hid_key;
 		}
 	}
+	FXString t;
+	t = "invalid key ";
+	t += s;
+	FXMessageBox::error(this, MBOX_OK, t.text(), "only keyboard keys are possible");
 	return 0xFF;
 }
 
