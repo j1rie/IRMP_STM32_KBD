@@ -82,6 +82,7 @@ int main(void)
 	sleep(1);
 
 	while(1){
+		usleep(1000); // don't eat too much cpu
 		if (read(fd, &event, sizeof(event)) != -1) {
 		if (event.type == EV_KEY && event.value == 1) {
 			clock_gettime(CLOCK_MONOTONIC, &now);
