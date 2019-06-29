@@ -209,7 +209,7 @@ volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
-volatile int send_ir_on_delay = -1;
+volatile unsigned int send_ir_on_delay = 0;
 uint16_t repeat_default[3] = {250, 150, 15};
 
 void delay_ms(unsigned int msec)
@@ -698,9 +698,11 @@ void led_callback (uint_fast8_t on)
 
 void send_magic(void)
 {
-	uint8_t magic[SIZEOF_IR] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00};
-	USB_HID_SendData(REPORT_ID_IR, magic, SIZEOF_IR);
-	send_ir_on_delay = -1;
+	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
+	uint8_t release[3] = {0x00, 0x00, 0x00};
+	USB_HID_SendData(REPORT_ID_IR, magic, sizeof(magic));
+	delay_ms(get_repeat(2));
+	USB_HID_SendData(REPORT_ID_IR, release, sizeof(release));
 }
 
 int main(void)
