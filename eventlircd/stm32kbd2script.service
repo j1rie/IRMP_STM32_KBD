@@ -1,0 +1,13 @@
+[Unit]
+Description="reads from IRMP_STM32_KBD and executes scripts or commands"
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/stm32kbd2script
+Restart=on-failure
+RestartSec=1s
+KillMode=process
+TimeoutStopSec=1s
+
+[Install]
+WantedBy=multi-user.target

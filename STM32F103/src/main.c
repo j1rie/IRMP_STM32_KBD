@@ -400,7 +400,7 @@ void SysTick_Handler(void)
 	if (i == 999) {
 		if (AlarmValue)
 			AlarmValue--;
-		if (send_ir_on_delay > 0)
+		if (send_ir_on_delay)
 			send_ir_on_delay--;
 		i = 0;
 	} else {
@@ -423,8 +423,6 @@ uint8_t host_running(void)
 void Wakeup(void)
 {
 	AlarmValue = 0xFFFFFFFF;
-	if(host_running())
-		return;
 	/* USB wakeup */
 	Resume(RESUME_START);
 	/* motherboard power switch: WAKEUP_PIN short high (resp. low in case of SimpleCircuit) */
@@ -711,6 +709,7 @@ int main(void)
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
+	uint8_t last_magic_sent = 0;
 	uint16_t key, last_sent, last_received;
 	uint8_t num, release_needed;
 
@@ -725,11 +724,13 @@ int main(void)
 	irmp_set_callback_ptr (led_callback);
 
 	while (1) {
-		if (!AlarmValue)
+		if (!AlarmValue && !host_running())
 			Wakeup();
 
-		if (!send_ir_on_delay)
+		if (send_ir_on_delay > 0 && last_magic_sent != send_ir_on_delay) {
 			send_magic();
+			last_magic_sent = send_ir_on_delay;
+		}
 
 		/* test if USB is connected to PC, sendtransfer is complete and configuration command is received */
 		if (USB_HID_GetStatus() == CONFIGURED && PrevXferComplete && USB_HID_ReceiveData(buf) == RX_READY && buf[0] == STAT_CMD) {
