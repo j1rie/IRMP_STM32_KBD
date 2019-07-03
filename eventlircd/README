@@ -19,11 +19,9 @@ Instead of hid_irmp.diff you can try stm32kbd2uinput. With stm32kbd2uinput repea
 repeat_timeout stays default (15), repeat_delay and repeat_period are 100 (or less).
 
 You want to know, if the computer was started by the receiver?
-Put the systemd service 'stm32kbd2script.service' into your services directory (/etc/systemd/system/),
-and run "systemctl enable stm32kbd2script.service" once.
-This will write each start by the receiver into the log file /var/log/started_by_IRMP_STM32_KBD.
+stm32kbd2uinput writes each start by the receiver into the log file /var/log/started_by_IRMP_STM32_KBD.
 If 'stat -c %Y /var/log/started_by_IRMP_STM32_KBD' is greater than 'stat -c %Y /var/log/boot.msg', the
 computer was started by the receiver.
-You may use this in VDR's shutdownscript to not shut down on the first power key press, if the computer is already running.
+You may use this in VDR's shutdownscript in order to not shut down on the first power key press, if the computer is already running.
 This is handy if you have a remote control with macros as the logitech and use one button to power
 on not only VDR but other devices as well.

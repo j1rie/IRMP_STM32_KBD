@@ -8,6 +8,8 @@
 #include <time.h>
 
 uint8_t debug = 0; // TODO make configuable
+uint8_t magic_key = 173; // TODO make configuable
+uint8_t only_once = 1;
 
 const char* kbd_device = "/dev/irmp_stm32_kbd"; // TODO make configuable
 //const char* kbd_device = "/dev/input/event4"; // TODO make configuable
@@ -88,6 +90,14 @@ int main(void)
 			clock_gettime(CLOCK_MONOTONIC, &now);
 			this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
 			pair = (this_time - last_received < 10)? 1 : 0; // modifier+key
+			if(only_once && event.code == magic_key) {
+				FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
+				time_t date = time(NULL);
+				struct tm *ts = localtime(&date);
+				fprintf(out, "%s", asctime(ts));
+				fclose(out);
+				only_once = 0;
+			}
 			if(debug) printf("r %ld %d %d --- ", this_time, event.code, pair);
 			if(!pair){
 				if(this_time - last_received > timeout) { // new key
