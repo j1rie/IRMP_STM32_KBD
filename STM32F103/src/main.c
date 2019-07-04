@@ -729,7 +729,7 @@ int main(void)
 		if (!AlarmValue && !host_running())
 			Wakeup();
 
-		if (send_ir_on_delay > 0 && last_magic_sent != send_ir_on_delay) {
+		if (send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}

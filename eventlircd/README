@@ -22,6 +22,7 @@ You want to know, if the computer was started by the receiver?
 stm32kbd2uinput writes each start by the receiver into the log file /var/log/started_by_IRMP_STM32_KBD.
 If 'stat -c %Y /var/log/started_by_IRMP_STM32_KBD' is greater than 'stat -c %Y /var/log/boot.msg', the
 computer was started by the receiver.
-You may use this in VDR's shutdownscript in order to not shut down on the first power key press, if the computer is already running.
+You may use this in VDR's shutdownscript in order to not shut down on the first power key press, if the
+computer is already running. See the example script.
 This is handy if you have a remote control with macros as the logitech and use one button to power
 on not only VDR but other devices as well.
