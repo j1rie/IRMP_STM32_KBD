@@ -1,6 +1,5 @@
 #!/bin/bash
 
-NVRAMCMD=/path/nvram-wakeup
 SVDRPCMD=/path/svdrpsend
 
 skipmsg=skip
@@ -13,7 +12,9 @@ exit 0
 }
 fi;
 
-msg=wakeup.nvram
+msg=shutdown
 $SVDRPCMD MESG $msg &
 
-other needed stuff
+/path/stm32kbdIRalarm -s $(($2 - 300))
+
+shutdown -h now
