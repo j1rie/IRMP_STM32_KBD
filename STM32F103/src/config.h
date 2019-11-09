@@ -30,6 +30,9 @@
 /* uncomment this, if you use the red ST-Link or a ST-Link USB stick with two LEDs */
 //#define RedLink
 
+/* uncomment this, if you use a ST-Link USB stick with unconnected PB11 and two LEDs */
+//#define RedLinkCrap
+
 /* uncomment this, if you use a ST-Link USB stick with only one LED */
 //#define StickLink
 
@@ -67,7 +70,7 @@
 //#define PullDown
 
 /* for ST-Link USB sticks with only one LED no extra LED handling is needed */
-#if defined(BlueLink) || defined(RedLink)
+#if defined(BlueLink) || defined(RedLink) || defined(RedLinkCrap)
 	#define ST_Link
 #endif
 #if defined(MapleMini) || defined(MapleMini_2k) || defined(MapleMini_ExtBd) || defined(MapleMini_2k_ExtBd)
@@ -97,6 +100,16 @@
 	#define EXTLED_PIN		GPIO_Pin_13 /* CLK */
 	#define IR_IN_PORT		B
 	#define IR_IN_PIN		11 /* SWIM */
+	#define USB_DISC_PORT		GPIOA
+	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOA /* TODO use concat */
+	#define USB_DISC_PIN		GPIO_Pin_13
+#elif defined(RedLinkCrap) /* red ST-Link without PB11 connection */
+	#define WAKEUP_PORT		GPIOB
+	#define WAKEUP_PIN		GPIO_Pin_14 /* DIO */
+	#define EXTLED_PORT		GPIOB
+	#define EXTLED_PIN		GPIO_Pin_13 /* CLK */
+	#define IR_IN_PORT		B
+	#define IR_IN_PIN		8 /* SWIM */
 	#define USB_DISC_PORT		GPIOA
 	#define USB_DISC_RCC_APB2Periph	RCC_APB2Periph_GPIOA /* TODO use concat */
 	#define USB_DISC_PIN		GPIO_Pin_13
