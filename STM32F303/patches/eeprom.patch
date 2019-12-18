@@ -1,6 +1,6 @@
-diff -Nrup C/inc/eeprom.h D/inc/eeprom.h
---- C/inc/eeprom.h	2009-08-04 16:25:00.000000000 +0200
-+++ D/inc/eeprom.h	2019-12-03 22:26:44.283699406 +0100
+diff -Nrup A/inc/eeprom.h B/inc/eeprom.h
+--- A/inc/eeprom.h	2009-08-04 16:25:00.000000000 +0200
++++ B/inc/eeprom.h	2019-12-17 22:16:47.353397811 +0100
 @@ -24,7 +24,7 @@
  #define __EEPROM_H
  
@@ -31,13 +31,13 @@ diff -Nrup C/inc/eeprom.h D/inc/eeprom.h
  
  /* Variables' number */
 -#define NumbOfVar               ((uint8_t)0x03)
-+#define NumbOfVar ((uint8_t) (((MACRO_DEPTH + 1) * MACRO_SLOTS + WAKE_SLOTS) * SIZEOF_IR/2))
++#define NumbOfVar ((uint8_t) (NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2))
  
  /* Exported types ------------------------------------------------------------*/
  /* Exported macro ------------------------------------------------------------*/
-diff -Nrup C/src/eeprom.c D/src/eeprom.c
---- C/src/eeprom.c	2009-08-04 16:25:00.000000000 +0200
-+++ D/src/eeprom.c	2019-12-03 21:17:50.197487438 +0100
+diff -Nrup A/src/eeprom.c B/src/eeprom.c
+--- A/src/eeprom.c	2009-08-04 16:25:00.000000000 +0200
++++ B/src/eeprom.c	2019-12-14 17:28:45.151665480 +0100
 @@ -111,19 +111,19 @@ uint16_t EE_Init(void)
          /* Transfer data from Page1 to Page0 */
          for (VarIdx = 0; VarIdx < NumbOfVar; VarIdx++)

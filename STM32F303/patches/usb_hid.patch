@@ -1,4 +1,4 @@
- *  Copyright (C) 2014-2019 Joerg Riechardt
+/*  Copyright (C) 2014-2019 Joerg Riechardt
  *
  *  inspired by work from Andrew Kambaroff - http://sysmagazine.com/posts/208026
  *
@@ -9,7 +9,7 @@
  */
 diff -Nrup A/inc/platform_config.h B/inc/platform_config.h
 --- A/inc/platform_config.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/platform_config.h	2019-12-03 23:23:11.952809951 +0100
++++ B/inc/platform_config.h	2019-12-14 17:28:45.146665752 +0100
 @@ -48,7 +48,7 @@
   #elif defined (USE_STM3210E_EVAL)
    #include "stm3210e_eval.h"
@@ -39,7 +39,7 @@ diff -Nrup A/inc/platform_config.h B/inc/platform_config.h
  /*Unique Devices IDs register set*/
 diff -Nrup A/inc/usb_conf.h B/inc/usb_conf.h
 --- A/inc/usb_conf.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/usb_conf.h	2019-12-03 21:17:50.193487655 +0100
++++ B/inc/usb_conf.h	2019-12-14 17:28:45.146665752 +0100
 @@ -57,7 +57,7 @@
  /* EP1  */
  /* tx buffer base address */
@@ -60,7 +60,7 @@ diff -Nrup A/inc/usb_conf.h B/inc/usb_conf.h
  /* CTR service routines */
 diff -Nrup A/inc/usb_desc.h B/inc/usb_desc.h
 --- A/inc/usb_desc.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/usb_desc.h	2019-12-03 21:17:50.194487601 +0100
++++ B/inc/usb_desc.h	2019-12-17 22:47:17.641301175 +0100
 @@ -31,6 +31,7 @@
  #define __USB_DESC_H
  
@@ -74,17 +74,17 @@ diff -Nrup A/inc/usb_desc.h B/inc/usb_desc.h
  #define CUSTOMHID_SIZ_DEVICE_DESC               18
  #define CUSTOMHID_SIZ_CONFIG_DESC               41
 -#define CUSTOMHID_SIZ_REPORT_DESC               163
-+#define CUSTOMHID_SIZ_REPORT_DESC               39
++#define CUSTOMHID_SIZ_REPORT_DESC               56
  #define CUSTOMHID_SIZ_STRING_LANGID             4
  #define CUSTOMHID_SIZ_STRING_VENDOR             38
 -#define CUSTOMHID_SIZ_STRING_PRODUCT            32
-+#define CUSTOMHID_SIZ_STRING_PRODUCT            44
++#define CUSTOMHID_SIZ_STRING_PRODUCT            52
  #define CUSTOMHID_SIZ_STRING_SERIAL             26
  
  #define STANDARD_ENDPOINT_DESC_SIZE             0x09
 diff -Nrup A/inc/usb_pwr.h B/inc/usb_pwr.h
 --- A/inc/usb_pwr.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/usb_pwr.h	2019-12-03 21:17:50.194487601 +0100
++++ B/inc/usb_pwr.h	2019-12-14 17:28:45.147665698 +0100
 @@ -30,6 +30,7 @@
  #define __USB_PWR_H
  
@@ -95,7 +95,7 @@ diff -Nrup A/inc/usb_pwr.h B/inc/usb_pwr.h
  {
 diff -Nrup A/inc/usb_regs.h B/inc/usb_regs.h
 --- A/inc/usb_regs.h	2013-01-21 19:27:00.000000000 +0100
-+++ B/inc/usb_regs.h	2019-12-03 21:17:50.194487601 +0100
++++ B/inc/usb_regs.h	2019-12-14 17:28:45.147665698 +0100
 @@ -651,8 +651,8 @@ void ClearDTOG_RX(uint8_t /*bEpNum*/);
  void ClearDTOG_TX(uint8_t /*bEpNum*/);
  void SetEPAddress(uint8_t /*bEpNum*/, uint8_t /*bAddr*/);
@@ -109,7 +109,7 @@ diff -Nrup A/inc/usb_regs.h B/inc/usb_regs.h
  void SetEPCountRxReg(uint32_t * /*pdwReg*/, uint16_t /*wCount*/);
 diff -Nrup A/src/hw_config.c B/src/hw_config.c
 --- A/src/hw_config.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/hw_config.c	2019-12-03 23:33:45.914352805 +0100
++++ B/src/hw_config.c	2019-12-14 17:28:45.148665643 +0100
 @@ -78,10 +78,10 @@ void Set_System(void)
    
  #if !defined(STM32L1XX_MD) && !defined(STM32L1XX_HD) && !defined(STM32L1XX_MD_PLUS) && !defined(STM32F37X) && !defined(STM32F30X)
@@ -276,7 +276,7 @@ diff -Nrup A/src/hw_config.c B/src/hw_config.c
  #endif
 diff -Nrup A/src/stm32_it.c B/src/stm32_it.c
 --- A/src/stm32_it.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/stm32_it.c	2019-12-03 21:17:50.194487601 +0100
++++ B/src/stm32_it.c	2019-12-14 17:28:45.148665643 +0100
 @@ -71,6 +71,7 @@ void NMI_Handler(void)
  * Output         : None
  * Return         : None
@@ -324,7 +324,7 @@ diff -Nrup A/src/stm32_it.c B/src/stm32_it.c
  * Function Name  : USB_FS_WKUP_IRQHandler
 diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 --- A/src/usb_desc.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/usb_desc.c	2019-12-03 21:17:50.195487546 +0100
++++ B/src/usb_desc.c	2019-12-17 22:50:37.982458444 +0100
 @@ -49,10 +49,10 @@ const uint8_t CustomHID_DeviceDescriptor
      0x00,                       /*bDeviceSubClass*/
      0x00,                       /*bDeviceProtocol*/
@@ -335,12 +335,12 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 -    0x57,
 +    0x09,                       /*idVendor (0x1209)*/
 +    0x12,
-+    0x44,                       /*idProduct = 0x4444*/
++    0x45,                       /*idProduct = 0x4445*/
 +    0x44,
      0x00,                       /*bcdDevice rel. 2.00*/
      0x02,
      1,                          /*Index of string descriptor describing
-@@ -79,7 +79,7 @@ const uint8_t CustomHID_ConfigDescriptor
+@@ -79,10 +79,10 @@ const uint8_t CustomHID_ConfigDescriptor
      0x01,         /* bConfigurationValue: Configuration value */
      0x00,         /* iConfiguration: Index of string descriptor describing
                                   the configuration*/
@@ -348,8 +348,36 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 +    0xE0,         /* bmAttributes: Self powered */
      0x32,         /* MaxPower 100 mA: this current is used for detecting Vbus */
  
-     /************** Descriptor of Custom HID interface ****************/
-@@ -111,9 +111,9 @@ const uint8_t CustomHID_ConfigDescriptor
+-    /************** Descriptor of Custom HID interface ****************/
++    /************** Descriptor of HID Keyboard interface ****************/
+     /* 09 */
+     0x09,         /* bLength: Interface Descriptor size */
+     USB_INTERFACE_DESCRIPTOR_TYPE,/* bDescriptorType: Interface descriptor type */
+@@ -91,29 +91,29 @@ const uint8_t CustomHID_ConfigDescriptor
+     0x02,         /* bNumEndpoints */
+     0x03,         /* bInterfaceClass: HID */
+     0x00,         /* bInterfaceSubClass : 1=BOOT, 0=no boot */
+-    0x00,         /* nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse */
++    0x01,         /* nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse */
+     0,            /* iInterface: Index of string descriptor */
+-    /******************** Descriptor of Custom HID HID ********************/
++    /******************** Descriptor of HID Keyboard ********************/
+     /* 18 */
+     0x09,         /* bLength: HID Descriptor size */
+     HID_DESCRIPTOR_TYPE, /* bDescriptorType: HID */
+-    0x10,         /* bcdHID: HID Class Spec release number */
++    0x11,         /* bcdHID: HID Class Spec release number */
+     0x01,
+     0x00,         /* bCountryCode: Hardware target country */
+     0x01,         /* bNumDescriptors: Number of HID class descriptors to follow */
+     0x22,         /* bDescriptorType */
+     CUSTOMHID_SIZ_REPORT_DESC,/* wItemLength: Total length of Report descriptor */
+     0x00,
+-    /******************** Descriptor of Custom HID endpoints ******************/
++    /******************** Descriptor of HID Keyboard endpoints ******************/
+     /* 27 */
+     0x07,          /* bLength: Endpoint Descriptor size */
+     USB_ENDPOINT_DESCRIPTOR_TYPE, /* bDescriptorType: */
  
      0x81,          /* bEndpointAddress: Endpoint Address (IN) */
      0x03,          /* bmAttributes: Interrupt endpoint */
@@ -381,49 +409,61 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
      /* Led 1 */        
      0x85, 0x01,            /*     REPORT_ID (1)		     */
      0x09, 0x01,            /*     USAGE (LED 1)	             */
-@@ -242,6 +243,31 @@ const uint8_t CustomHID_ReportDescriptor
+@@ -242,8 +243,41 @@ const uint8_t CustomHID_ReportDescriptor
      0x09, 0x07,            /*     USAGE (ADC in)             */                     
      0xb1, 0x82,            /*     FEATURE (Data,Var,Abs,Vol) */                                 
      /* 161 */
 +#endif
-+
+ 
+-    0xc0 	          /*     END_COLLECTION	             */
 +    /* common global */
 +    0x15, 0x00,            /*     LOGICAL_MINIMUM (0)        */
 +    0x26, 0xff, 0x00,      /*     LOGICAL_MAXIMUM (255)      */
 +    0x75, 0x08,            /*     REPORT_SIZE (8)            */
 +
-+    /* STM32->PC */
-+    0x85, 0x01,            /*     REPORT_ID (1)              */
-+    0x09, 0x02,            /*     USAGE (2)                  */
-+    0x95, HID_IN_BUFFER_SIZE-1, /* REPORT_COUNT              */
-+    0x81, 0x82,            /*     INPUT (Data,Var,Abs,Vol)   */
-+
-+    /* STM32->PC */
++    /* STM32->PC, HID raw */
 +    0x85, 0x02,            /*     REPORT_ID (2)              */
 +    0x09, 0x03,            /*     USAGE (3)                  */
 +    0x95, HID_IN_BUFFER_SIZE-1, /* REPORT_COUNT              */
 +    0x81, 0x82,            /*     INPUT (Data,Var,Abs,Vol)   */
 +
-+    /* PC->STM32 */
++    /* PC->STM32, HID raw */
 +    0x85, 0x03,            /*     REPORT_ID (3)              */
 +    0x09, 0x04,            /*     USAGE (4)                  */
 +    0x95, HID_OUT_BUFFER_SIZE-1, /* REPORT_COUNT             */
 +    0x91, 0x82,            /*     OUTPUT (Data,Var,Abs,Vol)  */
-+    /* 38 */
- 
-     0xc0 	          /*     END_COLLECTION	             */
++    0xc0,                  /*     END_COLLECTION             */
++
++    /* STM32->PC, Keyboard */
++    0x05, 0x01,            /*  USAGE_PAGE (Generic Desktop)  */
++    0x09, 0x06,            /*     USAGE (Keyboard)           */
++    0xa1, 0x01,            /*     COLLECTION (Application)   */
++    0x05, 0x07,            /*     USAGE_PAGE (Keyboard)      */
++    0x19, 0x00,            /*     Usage Minimum (0x00)       */
++    0x29, 0xFF,            /*     Usage Maximum (255)        */
++    0x15, 0x00,            /*     LOGICAL_MINIMUM (0)        */
++    0x25, 0xFF,            /*     LOGICAL_MAXIMUM (255)      */
++    0x85, 0x01,            /*     REPORT_ID (1)              */
++    0x95, HID_IN_BUFFER_SIZE-1, /* REPORT_COUNT              */
++    0x75, 0x08,            /*     REPORT_SIZE (8)            */
++    0x81, 0x00,            /*     INPUT (Data,Ary,Abs)       */
++    0xc0                   /*     END_COLLECTION             */
++    /* 56 */
    }; /* CustomHID_ReportDescriptor */
-@@ -270,14 +296,16 @@ const uint8_t CustomHID_StringProduct[CU
+ 
+ /* USB String Descriptors (optional) */
+@@ -270,14 +304,17 @@ const uint8_t CustomHID_StringProduct[CU
    {
      CUSTOMHID_SIZ_STRING_PRODUCT,          /* bLength */
      USB_STRING_DESCRIPTOR_TYPE,        /* bDescriptorType */
 -    'S', 0, 'T', 0, 'M', 0, '3', 0, '2', 0, ' ', 0, 'C', 0,
 -    'u', 0, 's', 0, 't', 0, 'm', 0, ' ', 0, 'H', 0, 'I', 0,
 -    'D', 0
-+    /* Product: "STM32 IRMP HID-Device" */
++    /* Product: "STM32 IRMP HID-KBD-Device" */
 +    'S', 0, 'T', 0, 'M', 0, '3', 0, '2', 0, ' ', 0, 'I', 0,
 +    'R', 0, 'M', 0, 'P', 0, ' ', 0, 'H', 0, 'I', 0, 'D', 0,
-+    '-', 0, 'D', 0, 'e', 0, 'v', 0, 'i', 0, 'c', 0, 'e', 0
++    '-', 0, 'K', 0, 'B', 0, 'D', 0, '-', 0, 'D', 0, 'e', 0,
++    'v', 0, 'i', 0, 'c', 0, 'e', 0
    };
  uint8_t CustomHID_StringSerial[CUSTOMHID_SIZ_STRING_SERIAL] =
    {
@@ -435,7 +475,7 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
  
 diff -Nrup A/src/usb_endp.c B/src/usb_endp.c
 --- A/src/usb_endp.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/usb_endp.c	2019-12-03 21:17:50.195487546 +0100
++++ B/src/usb_endp.c	2019-12-14 17:28:45.149665589 +0100
 @@ -29,6 +29,7 @@
  /* Includes ------------------------------------------------------------------*/
  
@@ -487,7 +527,7 @@ diff -Nrup A/src/usb_endp.c B/src/usb_endp.c
  }
 diff -Nrup A/src/usb_prop.c B/src/usb_prop.c
 --- A/src/usb_prop.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/usb_prop.c	2019-12-03 23:34:50.758828360 +0100
++++ B/src/usb_prop.c	2019-12-14 17:28:45.149665589 +0100
 @@ -43,7 +43,7 @@
  uint32_t ProtocolValue;
  __IO uint8_t EXTI_Enable;
@@ -556,7 +596,7 @@ diff -Nrup A/src/usb_prop.c B/src/usb_prop.c
    }
 diff -Nrup A/src/usb_regs.c B/src/usb_regs.c
 --- A/src/usb_regs.c	2013-01-21 19:27:00.000000000 +0100
-+++ B/src/usb_regs.c	2019-12-03 21:17:50.195487546 +0100
++++ B/src/usb_regs.c	2019-12-14 17:28:45.149665589 +0100
 @@ -476,7 +476,7 @@ uint8_t GetEPAddress(uint8_t bEpNum)
  * Output         : None.
  * Return         : None.
@@ -575,5 +615,3 @@ diff -Nrup A/src/usb_regs.c B/src/usb_regs.c
  {
    _SetEPRxAddr(bEpNum, wAddr);
  }
-/*
- 
