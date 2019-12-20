@@ -327,7 +327,8 @@ uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 /* which address has the received ir-code in eeprom? */
 uint8_t get_num_of_irdata(IRMP_DATA *ir)
 {
-	uint8_t i, idx;
+	uint8_t i;
+	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	for (i=0; i < NUM_KEYS; i++) {
 		idx = SIZEOF_IR/2 * i;
@@ -477,7 +478,7 @@ int8_t get_handler(uint8_t *buf)
 {
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 3;
-	uint8_t idx;
+	uint16_t idx;
 	switch ((enum command) buf[2]) {
 	case CMD_CAPS:
 		/* in first query we give information about slots and depth */
@@ -620,7 +621,8 @@ void check_wakeups(IRMP_DATA *ir)
 {
 	if(host_running())
 		return;
-	uint8_t i, idx;
+	uint8_t i;
+	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	for (i=0; i < WAKE_SLOTS - 1; i++) {
 		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + i * SIZEOF_IR/2;
@@ -641,7 +643,7 @@ void reboot(void)
 /* is received ir-code in the last wakeup-slot? reboot µC if true */
 void check_reboot(IRMP_DATA *ir)
 {
-	uint8_t idx;
+	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + (WAKE_SLOTS - 1) * SIZEOF_IR/2;
 	if (!eeprom_restore(buf, idx)) {
