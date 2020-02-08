@@ -1,0 +1,14 @@
+Nochmal zur oft auftretenden Frage, ob ein Tastaturfernbedienungsempfänger ootb funktioniert oder Zusatzsoftware braucht.
+
+Die Erwartung, dass ein Fernbedienungsempfänger, der sich als Tastatur anmeldet, keine Zusatzsoftware braucht, haben zwar Viele, aber sie trügt.
+Denn ein Tastaturfernbedienungsempfänger ohne Zusatzsoftware hat entweder Nachlauf oder ein langer Tastendruck wird als viele Einzelne erkannt.
+Wenn man das in Kauf nimmt, kommt man natürlich auch ohne Zusatzsoftware aus.
+
+Eine Tastatur sendet beim Drücken Key-Press und beim Loslassen Key-Release und die Wiederholung wird nicht in der Tastatur, sondern vom Autorepeat  im Kernel erzeugt. Nach Press kommen so lange Autorepeats bis zum Release.
+Eine Fernbedienung sendet periodisch ein Signal, kennt aber keinen Key-Release.
+Deswegen wird der Release nach einem Timeout vom Empfänger erzeugt. 
+Wenn die Firmware den Release gleich nach dem Press generiert, werden lange Tastendrücke nicht als Wiederholung, sondern als neue Tastendrücke erkannt.
+Wenn die Firmware abwartet, ob noch was kommt, kommt der Release möglicherweise zu spät, denn der Autorepeat im Kernel hat eventuell in der Zwischenzeit Wiederholungen erzeugt. Dann gibt es Nachlauf.
+Das grundsätzliche Problem hat jeder Tastaturfernbedienungsempfänger.
+Diese Nebenwirkungen können nur von Zusatzsoftware kompensiert werden, weil linux-input nur für echte Tastaturen mit Release gemacht ist.
+Das wird von Vielen übersehen, und darauf wollte ich hinweisen.
