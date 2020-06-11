@@ -19,14 +19,16 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 * bootloader for comfortable firmware update
 
 ## Software Linux
-* GUI config-tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages.
+* GUI config-tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.
 * interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control.
 * stm32kbdIRalarm for setting and reading alarm time via script
+* stm32FWupgrade for firmware update on the command line
 
 ## Software Windows
 * GUI config-tool stm32kbdIRconfig_gui (same as linux)
 * interactive command line programm stm32kbdIRconfig (same as linux)
 * stm32kbdIRalarm for setting and reading alarm time via script
+* stm32FWupgrade for firmware update on the command line
 
 ## Creating an eeprom map
 The stm32kbdIRconfig_gui can be used for building an eeprom map with the remote control.  
