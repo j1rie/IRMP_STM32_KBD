@@ -77,7 +77,7 @@ https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze#bootlo
 Disconnect from USB.  
 Linux: Start ./stm32FWupgrade ./2019-07-06_16-32_blackDev_BL_SC_jrie.bin  
 Windows: Start stm32FWupgrade.exe 2020-02-15_00-29_blueDev_BL_SC_jrie.bin  
-Instead of stm32FWupgrade you can use stm32IRconfig_gui.
+Instead of stm32FWupgrade you can use stm32IRconfig_gui.  
 Attach to USB.  
 https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze#firmware-flashen  
 
