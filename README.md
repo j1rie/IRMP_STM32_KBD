@@ -61,6 +61,31 @@ Compile with arm-none-eabi-gcc.
 ## Pin-Out
 See /STM32F10x/src/config.h.
 
+## Flashing the bootloader with a ST-Link
+Get the STM32 ST-Link Utility.  
+Connect  
+Programmer SWDIO -> IO  
+Programmer SWCLK -> CLK  
+Programmer GND -> G  
+Programmer 3V3 -> V3  
+File - Open File - boot.blackDev.bin (https://github.com/j1rie/STM32F103-bootloader/tree/master/binaries
+)  
+Target - Program & Verify (confirm a message about read out protection, if it appears)  
+https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze#bootloader-flashen  
+
+## Flashing the firmware
+Disconnect from USB.  
+Linux: Start ./stm32FWupgrade ./2019-07-06_16-32_blackDev_BL_SC_jrie.bin  
+Windows: Start stm32FWupgrade.exe 2020-02-15_00-29_blueDev_BL_SC_jrie.bin  
+Instead of stm32FWupgrade you can use stm32IRconfig_gui.
+Attach to USB.  
+https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze#firmware-flashen  
+
+## Other ways how to flash
+Flashing with an USB-serial-TTL is possible on the developer boards.  
+Flashing over USB is possible on those boards, which support it.  
+See https://www.mikrocontroller.net/articles/IRMP_auf_STM32_-_ein_USB_IR_Empf%C3%A4nger/Sender/Einschalter_mit_Wakeup-Timer#Firmware_Flashing  
+
 ## eventlircd, udev and systemd
 See /eventlircd/README.
 
@@ -71,7 +96,7 @@ His work helped me in getting started with the STM32F105.
 Andrew Kambaroff for his USB-HID for the STM32F103. [3]  
 His work helped me in getting started with the STM32F103.  
 Ole Ernst for code review, linux Makefile and linux download-extract-patch-script and new protocol. [4]  
-Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host running. [5]  
+Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host is running. [5]  
 
 [1] https://www.mikrocontroller.net/articles/IRMP  
 [2] http://mikrocontroller.bplaced.net/wordpress/?page_id=744  
@@ -89,4 +114,4 @@ https://www.mikrocontroller.net/articles/IRMP_auf_STM32_-_Bauanleitung
 
 Much fun with IRMP on STM32!
 
-Copyright (C) 2018-2019 Jörg Riechardt
+Copyright (C) 2018-2020 Jörg Riechardt
