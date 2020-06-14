@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32IRconfig: configure IRMP_STM32_KBD
 
-	Copyright (C) 2014-2018 Joerg Riechardt
+	Copyright (C) 2014-2020 Joerg Riechardt
 
 	based on work by Alan Ott
 	Copyright 2010  Alan Ott
@@ -30,13 +30,13 @@
 #endif
 #include "usb_hid_keys.h"
 
-enum __attribute__ ((__packed__)) access {
+enum access {
 	ACC_GET,
 	ACC_SET,
 	ACC_RESET
 };
 
-enum __attribute__ ((__packed__)) command {
+enum command {
 	CMD_CAPS,
 	CMD_ALARM,
 	CMD_IRDATA,
@@ -48,10 +48,17 @@ enum __attribute__ ((__packed__)) command {
 	CMD_REPEAT
 };
 
-enum __attribute__ ((__packed__)) status {
+enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
+};
+
+
+enum report_id {
+	REPORT_ID_IR = 1,
+	REPORT_ID_CONFIG_IN = 2,
+	REPORT_ID_CONFIG_OUT = 3
 };
 
 hid_device *handle;
@@ -70,28 +77,26 @@ static bool open_stm32() {
 }
 
 static void read_stm32() {
-	int i;
 	int retVal;
 	retVal = hid_read(handle, inBuf, sizeof(inBuf));
 	if (retVal < 0) {
 		printf("read error\n");
 	} else {
 		printf("read %d bytes:\n\t", retVal);
-		for (i = 0; i < retVal; i++)
+		for (int i = 0; i < retVal; i++)
 			printf("%02hx ", inBuf[i]);
 		puts("\n");
 	}
 } 
 
 static void write_stm32() {
-	int i;
 	int retVal;
 	retVal = hid_write(handle, outBuf, sizeof(outBuf));
 	if (retVal < 0) {
 		printf("write error: %ls\n", hid_error(handle));
 	} else {
 		printf("written %d bytes:\n\t", retVal);
-		for (i = 0; i < retVal; i++)
+		for (int i = 0; i < retVal; i++)
 			printf("%02hx ", outBuf[i]);
 		puts("\n");
 	}
