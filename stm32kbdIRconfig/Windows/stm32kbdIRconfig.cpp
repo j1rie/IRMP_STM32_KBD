@@ -54,7 +54,6 @@ enum status {
 	STAT_FAILURE
 };
 
-
 enum report_id {
 	REPORT_ID_IR = 1,
 	REPORT_ID_CONFIG_IN = 2,
@@ -207,7 +206,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
 			printf("enter value (dec)\n");
-			scanf("%"u", &kk);
+			scanf("%u", &kk);
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check();
