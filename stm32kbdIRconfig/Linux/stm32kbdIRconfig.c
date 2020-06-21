@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32IRconfig: configure and monitor IRMP_STM32_KBD
 
-	Copyright (C) 2014-2018 Joerg Riechardt
+	Copyright (C) 2014-2020 Joerg Riechardt
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -23,13 +23,13 @@
 #include <fcntl.h>
 #include "usb_hid_keys.h"
 
-enum __attribute__ ((__packed__)) access {
+enum access {
 	ACC_GET,
 	ACC_SET,
 	ACC_RESET
 };
 
-enum __attribute__ ((__packed__)) command {
+enum command {
 	CMD_CAPS,
 	CMD_ALARM,
 	CMD_IRDATA,
@@ -41,10 +41,16 @@ enum __attribute__ ((__packed__)) command {
 	CMD_REPEAT
 };
 
-enum __attribute__ ((__packed__)) status {
+enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
+};
+
+enum report_id {
+	REPORT_ID_IR = 1,
+	REPORT_ID_CONFIG_IN = 2,
+	REPORT_ID_CONFIG_OUT = 3
 };
 
 static int stm32fd = -1;
@@ -62,28 +68,26 @@ static bool open_stm32(const char *devicename) {
 }
 
 static void read_stm32() {
-	int i;
 	int retVal;
 	retVal = read(stm32fd, inBuf, sizeof(inBuf));
 	if (retVal < 0) {
 		printf("read error\n");
 	} else {
 		printf("read %d bytes:\n\t", retVal);
-		for (i = 0; i < retVal; i++)
+		for (int i = 0; i < retVal; i++)
 			printf("%02hhx ", inBuf[i]);
 		puts("\n");
 	}
 } 
 
 static void write_stm32() {
-	int i;
 	int retVal;
 	retVal = write(stm32fd, outBuf, sizeof(outBuf));
 	if (retVal < 0) {
 		printf("write error\n");
 	} else {
 		printf("written %d bytes:\n\t", retVal);
-		for (i = 0; i < retVal; i++)
+		for (int i = 0; i < retVal; i++)
 			printf("%02hhx ", outBuf[i]);
 		puts("\n");
 	}
@@ -93,7 +97,7 @@ void write_and_check() {
 	write_stm32();
 	usleep(2000);
 	read_stm32();
-	while (inBuf[0] == 0x01)
+	while (inBuf[0] == REPORT_ID_IR)
 		read_stm32();
 	if (inBuf[1] == STAT_SUCCESS) {
 		puts("*****************************OK********************************\n");
@@ -109,11 +113,10 @@ int main(int argc, const char **argv) {
 	char c, d;
 	uint8_t n, k, l, idx;
 	int retValm, jump_to_firmware;
-	jump_to_firmware = 0;
 
 	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32");
 
-	outBuf[0] = 0x03; // Report ID Configuration, PC->STM32
+	outBuf[0] = REPORT_ID_CONFIG_OUT;
 	outBuf[1] = STAT_CMD;
 
 cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
@@ -248,6 +251,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			outBuf[idx++] = n;
 			break;
 		case 'c':
+			jump_to_firmware = 0;
 			outBuf[idx++] = CMD_CAPS;
 			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
 				outBuf[idx] = l;
@@ -264,7 +268,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
 						for (k = 4; k < 17; k++) {
-							if (!inBuf[k]) {
+							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								jump_to_firmware = 1;
 								goto again;
@@ -274,7 +278,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					} else { // queries for firmware
 						printf("firmware: ");
 						for (k = 4; k < 17; k++) {
-							if (!inBuf[k]) {
+							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								goto out;
 							}
@@ -290,7 +294,8 @@ again:			;
 			goto get;
 		}
 		write_and_check();
-out:		break;
+out:
+		break;
 
 	case 'r':
 reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\n");
@@ -357,9 +362,13 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		outBuf[idx++] = ACC_SET;
 		outBuf[idx++] = CMD_REBOOT;
 		write_and_check();
-		usleep(2500000);
 		close(stm32fd);
-		open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32");
+		usleep(1900000);
+		for(l=0;l<6;l++) {
+			if(open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32") == true)
+				break;
+			usleep(100000);
+		}
 		break;
 
 	case 'm':
@@ -388,7 +397,7 @@ monit:	while(true) {
 			printf("\n\n");
 		}
 	}
-	
+
 exit:	if (stm32fd >= 0) close(stm32fd);
 	return 0;
 }

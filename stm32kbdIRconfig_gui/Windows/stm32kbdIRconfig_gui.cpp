@@ -170,6 +170,7 @@ private:
 	FXString protocols;
 	FXString firmware;
 	FXString firmware1;
+	FXString uC;
 	FXColor storedShadowColor;
 	FXColor storedBaseColor;
 	FXColor storedBackColor;
@@ -189,7 +190,7 @@ private:
 protected:
 	MainWindow() {};
 public:
-	MainWindow(FXApp *a);
+	MainWindow(FXApp *app);
 	~MainWindow();
 	virtual void create();
 	
@@ -216,7 +217,6 @@ public:
 	long onRkey(FXObject *sender, FXSelector sel, void *ptr);
 	long onRrepeat(FXObject *sender, FXSelector sel, void *ptr);
 	long onRalarm(FXObject *sender, FXSelector sel, void *ptr);
-	long onReadIR(FXObject *sender, FXSelector sel, void *ptr);
 	long onUpgrade(FXObject *sender, FXSelector sel, void *ptr);
 	long onPrint(FXObject *sender, FXSelector sel, void *ptr);
 	long onClear(FXObject *sender, FXSelector sel, void *ptr);
@@ -622,7 +622,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	s += protocols;
 	connected_label3->setText(s);
 	for(int i = 0; i < wakeupslots; i++) {
-		FXString s;
 		s = (i < wakeupslots-1) ? "wakeup" : "reboot";
 #if (FOX_MINOR >= 7)
 		FXString t;
@@ -672,7 +671,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	//list wakeups and alarm
 	FXString u;
 	for(int i = 0; i < wakeupslots; i++) {
-		FXString s;
 		FXString t;
 #if (FOX_MINOR >= 7)
 		t.fromInt(i,10);
@@ -719,6 +717,11 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	t.format("%d", alarm % 60);
 	s += t;
 	s += " seconds\n";
+	if(uC != "STM32"){
+		s += "WARNING: This device's microcontroller is a ";
+		s += uC;
+		s += ", NOT a STM32!\n";
+	}
 	onClear(NULL, 0, NULL);
 	output_text->setText("");
 	input_text->appendText(u);
@@ -915,84 +918,6 @@ MainWindow::Read()
 		s += "\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
-	}
-
-	return 1;
-}
-
-long
-MainWindow::onReadIR(FXObject *sender, FXSelector sel, void *ptr)
-{
-	int read;
-	read = Read();
-	if(read == -1)
-		return -1;
-	else if (read == 0)
-		return 0;
-
-	FXString s;
-	FXString t;
-
-	if (buf[0] == REPORT_ID_IR) {
-		// Repeat Counter
-			if (!buf[6]) {
-				RepeatCounter = 0;
-			} else {
-				RepeatCounter++;
-			}
-			FXString u;
-			u.format("RepeatCounter: %d \n", RepeatCounter);
-			input_text->appendText(u);
-			input_text->setBottomLine(INT_MAX);
-			g_main_window->repaint();
-
-		// show received IR
-		s = "";
-		t.format("%02hhx", buf[1]);
-		s += t;
-		protocol_text->setText(s);
-		
-		s = ""; t = "";
-		t.format("%02hhx", buf[3]);
-		s += t; t = "";
-		t.format("%02hhx", buf[2]);
-		s += t;
-		address_text->setText(s);
-
-		s = ""; t = "";
-		t.format("%02hhx", buf[5]);
-		s += t; t = "";
-		t.format("%02hhx", buf[4]);
-		s += t;
-		command_text->setText(s);
-
-		s = ""; t = "";
-		t.format("%02hhx", buf[6]);
-		s += t;
-		flag_text->setText(s);
-
-		//translate by map and show
-		int k = 0;
-		t = protocol_text->getText();
-		t += address_text->getText();
-		t += command_text->getText();
-		t += "00";
-		s = "translated:";
-		map_text21->killHighlight();
-		for(int i = 0; i < active_lines; i++) {
-			if(map[i*2] == t) {
-				s += " ";
-				s += map[i*2+1];
-				key_text->setText(map[i*2+1]);
-				k++;
-				map_text21->setHighlight(mapbeg[i], mapbeg[i+1] - mapbeg[i] - 1);
-			}
-		}
-		if(k > 1)
-			s += ", WARNING: multiple entries!";
-		s += "\n";
-		input_text->appendText(s);
-		input_text->setBottomLine(INT_MAX);		
 	}
 
 	return 1;
@@ -1475,8 +1400,10 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	int jump_to_firmware;
+	int jump_to_firmware, romtable;
 	jump_to_firmware = 0;
+	romtable = 0;
+	uC = "";
 	for(int i = 0; i < 20; i++) { // for safety stop after 20 loops
 		s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
 #if (FOX_MINOR >= 7)
@@ -1518,19 +1445,25 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 				for (int k = 4; k < 17; k++) {
 					if (!buf[k]) { // NULL termination
 						s += "\n";
-						//s.substitute("_"," ");
 						input_text->appendText(s);
 						input_text->setBottomLine(INT_MAX);
 						return 1;
 					}
-					t.format("%c", buf[k]);
-					firmware += t;  // TODO line break ?
-					s += t;
+					if (buf[k] == 42) { // * separator
+						romtable = 1;
+						firmware += "   uC: ";
+						s += "*";
+					} else {
+						t.format("%c", buf[k]);
+						firmware += t;
+						if(romtable)
+							uC += t;
+						s += t;
+					}
 				}
 			}
 		}
 		s += "\n";
-		//s.substitute("_"," ");
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 again:	;
@@ -1825,7 +1758,7 @@ MainWindow::onOpen(FXObject *sender, FXSelector sel, void *ptr)
 	const FXchar patterns[]="All Files (*)\nmap Files (*.map)";
 	long loaded = 0;
 	FXint size = 0;
-	FXint n = 0;
+	FXint n;
 	FXFileDialog open(this,"Open a map file");
 	open.setPatternList(patterns);
 	open.setCurrentPattern(1);
@@ -2255,7 +2188,7 @@ MainWindow::onApply(FXObject *sender, FXSelector sel, void *ptr){
 	const char *delim = " \t\r\n"; // Space, Tab, CR and LF
 	FXString data = map_text21->getText();
 	const FXchar *d = data.text();
-	size_t i = 0;
+	size_t k = 0;
 	size_t sz = strlen(d);
 	char *str = (char*) malloc(sz+1);
 	strcpy(str, d);
@@ -2263,14 +2196,14 @@ MainWindow::onApply(FXObject *sender, FXSelector sel, void *ptr){
 	memset(mapbeg, 0, sizeof(mapbeg));
 	int count = 0;
 	while (token) {
-		map[i++] = token;
-		count += map[i-1].length() + 1;
-		if(!(i%2))
-			mapbeg[(i+1)/2] = count;
+		map[k++] = token;
+		count += map[k-1].length() + 1;
+		if(!(k%2))
+			mapbeg[(k+1)/2] = count;
 		token = strtok(NULL, delim);
 	}
 	free(str);
-	active_lines = i / 2;
+	active_lines = k / 2;
 
 	FXString u;
 	FXString v;

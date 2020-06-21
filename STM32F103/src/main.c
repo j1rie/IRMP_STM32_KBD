@@ -19,6 +19,7 @@
 #ifdef DEBUG
 #include <stdio.h>
 #endif
+#include "romtable.h"
 
 #define BYTES_PER_QUERY	(HID_IN_BUFFER_SIZE - 4)
 /* after plugging in, it takes some time, until SOF's are being sent to the device */
@@ -48,7 +49,7 @@ enum status {
 	STAT_FAILURE
 };
 
-const char firmware[] = FW_STR;
+char firmware[sizeof(FW_STR) + sizeof(rt)];
 
 const char supported_protocols[] = {
 #if IRMP_SUPPORT_SIRCS_PROTOCOL==1
@@ -726,6 +727,10 @@ int main(void)
 	FLASH_Unlock();
 	EE_Init();
 	irmp_set_callback_ptr (led_callback);
+	parse_romtable();
+	memcpy(&firmware, FW_STR, sizeof(FW_STR));
+	firmware[sizeof(FW_STR) - 1] = 42; // * separator
+	memcpy(&firmware[sizeof(FW_STR)], &rt, sizeof(rt));
 
 	while (1) {
 		if (!AlarmValue && !host_running())

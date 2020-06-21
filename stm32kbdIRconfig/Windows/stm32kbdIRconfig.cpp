@@ -83,7 +83,7 @@ static void read_stm32() {
 	} else {
 		printf("read %d bytes:\n\t", retVal);
 		for (int i = 0; i < retVal; i++)
-			printf("%02hx ", inBuf[i]);
+			printf("%02x ", (unsigned int)inBuf[i]);
 		puts("\n");
 	}
 } 
@@ -96,7 +96,7 @@ static void write_stm32() {
 	} else {
 		printf("written %d bytes:\n\t", retVal);
 		for (int i = 0; i < retVal; i++)
-			printf("%02hx ", outBuf[i]);
+			printf("%02x ", (unsigned int)outBuf[i]);
 		puts("\n");
 	}
 }
@@ -109,7 +109,7 @@ void write_and_check() {
 	usleep(2000);
 	#endif
 	read_stm32();
-	while (inBuf[0] == 0x01)
+	while (inBuf[0] == REPORT_ID_IR)
 		read_stm32();
 	if (inBuf[1] == STAT_SUCCESS) {
 		puts("*****************************OK********************************\n");
@@ -126,7 +126,6 @@ int main(int argc, char* argv[])
 	uint8_t k, l, idx;
 	unsigned int n;
 	int jump_to_firmware;
-	jump_to_firmware = 0;
 
 #ifdef WIN32
 	UNREFERENCED_PARAMETER(argc);
@@ -138,7 +137,7 @@ int main(int argc, char* argv[])
 
 	open_stm32();
 
-	outBuf[0] = 0x03; // Report ID Configuration, PC->STM32
+	outBuf[0] = REPORT_ID_CONFIG_OUT;
 	outBuf[1] = STAT_CMD;
 
 cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nexit (x)\n");
@@ -206,7 +205,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
 			printf("enter value (dec)\n");
-			scanf("%u", &kk);
+			scanf("%hu", &kk);
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check();
@@ -273,6 +272,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			outBuf[idx++] = n;
 			break;
 		case 'c':
+			jump_to_firmware = 0;
 			outBuf[idx++] = CMD_CAPS;
 			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
 				outBuf[idx] = l;
@@ -293,7 +293,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
 						for (k = 4; k < 17; k++) {
-							if (!inBuf[k]) {
+							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								jump_to_firmware = 1;
 								goto again;
@@ -303,7 +303,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					} else { // queries for firmware
 						printf("firmware: ");
 						for (k = 4; k < 17; k++) {
-							if (!inBuf[k]) {
+							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								goto out;
 							}
@@ -319,7 +319,8 @@ again:			;
 			goto get;
 		}
 		write_and_check();
-out:		break;
+out:
+		break;
 
 	case 'r':
 reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\n");
@@ -386,13 +387,21 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		outBuf[idx++] = ACC_SET;
 		outBuf[idx++] = CMD_REBOOT;
 		write_and_check();
-		#ifdef WIN32
-		Sleep(2500);
-		#else
-		usleep(2500000);
-		#endif
 		hid_close(handle);
-		open_stm32();
+		#ifdef WIN32
+		Sleep(1900);
+		#else
+		usleep(1900000);
+		#endif
+		for(l=0;l<6;l++) {
+			if(open_stm32() == true)
+				break;
+			#ifdef WIN32
+			Sleep(100);
+			#else
+			usleep(100000);
+			#endif
+		}
 		break;
 
 	case 'x':
