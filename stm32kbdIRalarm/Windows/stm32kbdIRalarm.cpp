@@ -28,8 +28,6 @@
 
 enum __attribute__ ((__packed__)) access {
 	ACC_GET,
-
-
 	ACC_SET,
 	ACC_RESET
 };
