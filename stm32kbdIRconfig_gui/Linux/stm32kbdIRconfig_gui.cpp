@@ -984,7 +984,7 @@ MainWindow::Write_and_Check()
 		return -1;
 	}
 
-	while ((buf[0] == REPORT_ID_IR || read == 0) && count < 5000) { // 5000ms needed in case of "set by remote"
+	while ((buf[0] == REPORT_ID_IR || read == 0) && count < 5000) { // 5000ms needed in case of "set by remote", Read() is nonblocking
 		read = Read();
 		if(read == -1) {
 			s += "W&C loop Read(): -1\n";
