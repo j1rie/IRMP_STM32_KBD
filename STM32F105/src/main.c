@@ -21,13 +21,13 @@
 /* after plugging in, it takes some time, until SOF's are being sent to the device */
 #define SOF_TIMEOUT 500
 
-enum __attribute__ ((__packed__)) access {
+enum access {
 	ACC_GET,
 	ACC_SET,
 	ACC_RESET
 };
 
-enum __attribute__ ((__packed__)) command {
+enum command {
 	CMD_CAPS,
 	CMD_ALARM,
 	CMD_IRDATA,
@@ -39,7 +39,7 @@ enum __attribute__ ((__packed__)) command {
 	CMD_REPEAT
 };
 
-enum __attribute__ ((__packed__)) status {
+enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
@@ -423,7 +423,7 @@ int8_t get_handler(uint8_t *buf)
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 3;
 	uint16_t idx;
-	switch ((enum command) buf[2]) {
+	switch (buf[2]) {
 	case CMD_CAPS:
 		/* in first query we give information about slots and depth */
 		if (!buf[3]) {
@@ -483,7 +483,7 @@ int8_t set_handler(uint8_t *buf)
 	int8_t ret = 3;
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
-	switch ((enum command) buf[2]) {
+	switch (buf[2]) {
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[3], sizeof(AlarmValue));
 		break;
@@ -537,7 +537,7 @@ int8_t reset_handler(uint8_t *buf)
 	int8_t ret = 3;
 	uint16_t idx;
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	switch ((enum command) buf[2]) {
+	switch (buf[2]) {
 	case CMD_ALARM:
 		AlarmValue = 0xFFFFFFFF;
 		break;
@@ -672,7 +672,7 @@ int main(void)
 		if (!AlarmValue && !host_running())
 			Wakeup();
 
-		if (send_ir_on_delay > 0 && last_magic_sent != send_ir_on_delay) {
+		if (send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}
@@ -680,7 +680,7 @@ int main(void)
 		/* test if USB is connected to PC and configuration command is received */
 		if (USB_HID_GetStatus() == USB_HID_CONNECTED && USB_HID_ReceiveData(buf) == RX_READY && buf[0] == STAT_CMD) {
 
-			switch ((enum access) buf[1]) {
+			switch (buf[1]) {
 			case ACC_GET:
 				ret = get_handler(buf);
 				break;
