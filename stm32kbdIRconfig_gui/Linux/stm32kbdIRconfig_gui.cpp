@@ -797,8 +797,13 @@ MainWindow::onRescan(FXObject *sender, FXSelector sel, void *ptr)
 	devices = hid_enumerate(0x1209, 0x4445);
 	cur_dev = devices;	
 	while (cur_dev) {
-		// only hidraw, not keyboard
+#ifdef _WIN32
+		// select the hidraw device, not the keyboard device on Windows
 		if(cur_dev->usage == 0x01) {
+#else
+		// on Linux there's only the hidraw device anyway and getting correct usage would need a patch
+		if(1) {
+#endif
 			// Add it to the List Box.
 			FXString s;
 			s.format("%04hx:%04hx -", cur_dev->vendor_id, cur_dev->product_id);
