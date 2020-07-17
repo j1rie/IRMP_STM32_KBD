@@ -22,9 +22,9 @@ INCLUDES += -Isemihosting -Istdio
 endif
 DEFINES = -D$(PLATFORM) -DSTM32F30X -DUSE_STDPERIPH_DRIVER -DSOF_CALLBACK
 
-OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
+OBJS = cmsis_boot/startup/startup_stm32f30x.o cmsis_boot/system_stm32f30x.o\
+       src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
        irmp/irmp.o\
-       cmsis_boot/startup/startup_stm32f30x.o cmsis_boot/system_stm32f30x.o\
        stm_lib/src/stm32f30x_misc.o stm_lib/src/stm32f30x_exti.o\
        stm_lib/src/stm32f30x_flash.o stm_lib/src/stm32f30x_gpio.o\
        stm_lib/src/stm32f30x_pwr.o stm_lib/src/stm32f30x_rcc.o\
@@ -50,7 +50,7 @@ DATE := $(shell date +"%F_%H-%M")
 TARGET := $(DATE)_$(TARGET)
 
 IRMP_VERSION := $(shell grep -e "Version IRMP" irmp/README.txt | awk '{print $$3}')
-DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version: $(IRMP_VERSION)\""
+DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version: $(IRMP_VERSION)*STM32\""
 
 ifdef Bootloader
 DEFINES += -DBootloader
