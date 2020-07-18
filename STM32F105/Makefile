@@ -14,16 +14,15 @@ OBJCP = $(CROSS_COMPILE)objcopy
 
 ARCH = -mcpu=cortex-m3 -mthumb
 COMMON = -g -Os -flto
-
 INCLUDES = -Icmsis -Icmsis_boot -Istm_lib/inc -Iusb_hid/inc -Iirmp -Isrc
 ifdef DEBUG
 INCLUDES += -Isemihosting -Istdio
 endif
 DEFINES = -D$(PLATFORM) -DSTM32F10X_CL -DUSE_STDPERIPH_DRIVER
 
-OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
+OBJS = cmsis_boot/startup/startup_stm32f10x_cl.o cmsis_boot/system_stm32f10x.o\
+       src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
        irmp/irmp.o\
-       cmsis_boot/startup/startup_stm32f10x_cl.o cmsis_boot/system_stm32f10x.o\
        stm_lib/src/misc.o\
        stm_lib/src/stm32f10x_flash.o stm_lib/src/stm32f10x_gpio.o\
        stm_lib/src/stm32f10x_rcc.o\
@@ -33,7 +32,7 @@ OBJS = src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
        usb_hid/src/usb_dcd_int.o usb_hid/src/usbd_core.o\
        usb_hid/src/usbd_desc.o\
        usb_hid/src/usbd_hid_core.o usb_hid/src/usbd_ioreq.o\
-       usb_hid/src/usbd_req.o usb_hid/src/usbd_usr.o\
+       usb_hid/src/usbd_req.o usb_hid/src/usbd_usr.o
 ifdef DEBUG
 OBJS += semihosting/semihosting.o semihosting/sh_cmd.o  stdio/printf.o
 endif
@@ -44,11 +43,11 @@ DATE := $(shell date +"%F_%H-%M")
 TARGET := $(DATE)_$(TARGET)
 
 IRMP_VERSION := $(shell grep -e "Version IRMP" irmp/README.txt | awk '{print $$3}')
-DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version: $(IRMP_VERSION)\""
+DEFINES += -DFW_STR="\"$(TARGET)   IRMP-Version: $(IRMP_VERSION)*STM32\""
 
 ifdef Bootloader
 DEFINES += -DBootloader
-TARGET := $(TARGET)_BL
+TARGET := $(TARGET)_BL5k
 LDFLAGS = -nostartfiles -Wl,-Map=$(TARGET).map,--gc-sections,--entry=main,-Tscripts/arm-gcc-link-bootloader.ld $(ARCH) $(COMMON)
 else
 LDFLAGS = -nostartfiles -Wl,-Map=$(TARGET).map,--gc-sections,--entry=main,-Tscripts/arm-gcc-link.ld $(ARCH) $(COMMON)

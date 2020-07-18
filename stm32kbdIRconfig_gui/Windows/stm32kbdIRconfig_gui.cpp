@@ -1746,7 +1746,8 @@ MainWindow::onPrint(FXObject *sender, FXSelector sel, void *ptr)
 				device_list->deselectItem(0);
 				device_list->selectItem(cur_item);
 				onConnect(NULL, 0, NULL);
-			}
+			} else
+				input_text->setText("");
 			FXString u = printcollect;
 			input_text->appendText(u);
 			input_text->setBottomLine(INT_MAX);
