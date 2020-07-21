@@ -1725,13 +1725,13 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPrint(FXObject *sender, FXSelector sel, void *ptr)
 {
-		int count = 0;
 		FXint success = 1;
 		FXString t = print;
 		input_text->appendText(t);
 		input_text->setBottomLine(INT_MAX);
 		if(t == "=== Firmware Upgrade successful! ===\n"){
-			 do { // wait for device to reappear
+			int count = 0;
+			do { // wait for device to reappear
 				FXThread::sleep(100000000); // 100 ms
 				onRescan(NULL, 0, NULL);
 				count++;
