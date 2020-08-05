@@ -2,7 +2,7 @@ OUTPUT_FORMAT ("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
 /* Internal Memory Map*/
 MEMORY
 {
-	rom (rx)  : ORIGIN = 0x08003000, LENGTH = 0x0003C000 /* -bootloader -eeprom */
+	rom (rx)  : ORIGIN = 0x08003000, LENGTH = 0x0003B000 /* -bootloader -eeprom */
 	ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x0000A000
 }
 

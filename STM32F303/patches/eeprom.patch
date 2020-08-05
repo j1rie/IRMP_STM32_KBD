@@ -1,6 +1,6 @@
 diff -Nrup A/inc/eeprom.h B/inc/eeprom.h
 --- A/inc/eeprom.h	2009-08-04 16:25:00.000000000 +0200
-+++ B/inc/eeprom.h	2019-12-17 22:16:47.353397811 +0100
++++ B/inc/eeprom.h	2020-08-05 12:23:02.547929316 +0200
 @@ -24,7 +24,7 @@
  #define __EEPROM_H
  
@@ -21,8 +21,8 @@ diff -Nrup A/inc/eeprom.h B/inc/eeprom.h
  /* EEPROM start address in Flash */
 -#define EEPROM_START_ADDRESS    ((uint32_t)0x08010000) /* EEPROM emulation start address:
 -                                                  after 64KByte of used Flash memory */
-+#define EEPROM_START_ADDRESS    ((uint32_t)0x0803F000) /* F303CC has actually 256k = 0x40000 Flash */
-+                                                       /* 0x8040000 - 2 * 0x800 = 0x803F000 */
++#define EEPROM_START_ADDRESS    ((uint32_t)0x0803E000) /* F303CC has 256k = 0x40000 Flash */
++/* IRMP eeprom last two pages, KBD eeprom before IRMP eeprom, 0x8040000 - 4 * 0x800 = 0x803E000 */
  
  /* Pages 0 and 1 base and end addresses */
  #define PAGE0_BASE_ADDRESS      ((uint32_t)(EEPROM_START_ADDRESS + 0x000))
