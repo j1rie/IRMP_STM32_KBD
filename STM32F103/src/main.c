@@ -310,7 +310,7 @@ uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 {
 	uint8_t i, retVal = 0;
 	for(i=0; i<3; i++) {
-		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) {
+		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) { // TODO cache eeprom (or wait for STM to do so)
 			/* the variable was not found or no valid page was found */
 			*((uint16_t *) &buf[2*i]) = 0xFFFF;
 			retVal = 1;
