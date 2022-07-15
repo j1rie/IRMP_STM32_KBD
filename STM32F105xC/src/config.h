@@ -28,6 +28,8 @@
 //#define SimpleCircuit_F105
 
 /* C6 IRMP (irmpconfig.h), B10 Logging (irmp.c) */
+#define IR_IN_PORT	C
+#define IR_IN_PIN	6
 
 /* On this board activate for pull high the A{0,1,2} pins and for pull low the B{6,7,8} pins, BUT NEVER BOTH,
  * due to the level shifting complementary MOSFETs and the level shifting transistors in the A{0,1,2} paths.
