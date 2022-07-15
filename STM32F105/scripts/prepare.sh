@@ -7,7 +7,7 @@ cd ..
 mkdir -p ext_src
 [[ -e ./ext_src/prepared ]] && exit 0
 cd ./ext_src
-for i in en.stm32_f105-07_f2_f4_usb-host-device_lib stsw-stm32010; do
+for i in en.stm32_f105-07_f2_f4_usb-host-device_lib en.stsw-stm32010; do
 	if [[ ! -s $i.zip ]]; then
 		echo 'unfortunately you have to download these files from ST manually and put them into ext_src'
 		echo 'http://www.st.com/en/embedded-software/stsw-stm32046.html'
@@ -16,8 +16,8 @@ for i in en.stm32_f105-07_f2_f4_usb-host-device_lib stsw-stm32010; do
 		#wget "http://www.st.com/resource/en/firmware/$i.zip"
 	fi
 done
-if [[ ! -s irmp.tar.gz ]]; then
-	wget "http://www.mikrocontroller.net/svnbrowser/irmp/?view=tar" -O irmp.tar.gz
+if [[ ! -s IRMP-master.zip ]]; then
+	wget "https://github.com/j1rie/IRMP/archive/refs/heads/master.zip"  -O IRMP-master.zip
 fi
 
 # extract
@@ -42,9 +42,7 @@ unzip -j $ar1 \
        Libraries/CMSIS/Include/core_cm3.h \
        Libraries/CMSIS/Include/core_cmFunc.h \
        Libraries/CMSIS/Include/core_cmInstr.h \
-       Libraries/CMSIS/Include/cmsis_gcc.h \
-       Libraries/CMSIS/Include/cmsis_armcc.h \
-       Libraries/CMSIS/Include/cmsis_armcc_V6.h
+       Libraries/CMSIS/Include/cmsis_gcc.h
 cd ..
 mkdir -p stm_lib
 cd  stm_lib
@@ -107,7 +105,7 @@ unzip -j $ar2 \
       Project/USB_Device_Examples/HID/src/usbd_desc.c \
       Project/USB_Device_Examples/HID/src/usbd_usr.c
 
-ar='../../ext_src/stsw-stm32010.zip'
+ar='../../ext_src/en.stsw-stm32010.zip'
 ver='3.1.0'
 path="STM32F10x_AN2594_FW_V$ver"
 cd ../..
@@ -119,17 +117,22 @@ cd src
 unzip -j $ar $path/Project/EEPROM_Emulation/src/eeprom.c
 cd ../..
 
-ar='../ext_src/irmp.tar.gz'
-path="irmp"
+ar='../ext_src/IRMP-master.zip'
+path="IRMP-master"
 mkdir -p irmp
 cd irmp
-tar -xvf $ar --strip-components=1 \
+unzip -j $ar \
     $path/irmp.c \
     $path/irmp.h \
-    $path/irmpconfig.h \
+    $path/irmpconfig.h.max \
     $path/irmpprotocols.h \
     $path/irmpsystem.h \
+    $path/irsnd.c \
+    $path/irsnd.h \
+    $path/irsndconfig.h.max \
     $path/README.txt
+mv irmpconfig.h.max irmpconfig.h
+mv irsndconfig.h.max irsndconfig.h
 cd ..
 
 # patch

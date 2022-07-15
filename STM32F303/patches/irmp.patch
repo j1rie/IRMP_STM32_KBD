@@ -1,87 +1,12 @@
 diff -Nrup A/irmpconfig.h B/irmpconfig.h
---- A/irmpconfig.h	2018-09-10 14:26:02.000000000 +0200
-+++ B/irmpconfig.h	2019-12-14 17:28:45.158665099 +0100
-@@ -28,7 +28,7 @@
-  *---------------------------------------------------------------------------------------------------------------------------------------------------
-  */
- #ifndef F_INTERRUPTS
--#  define F_INTERRUPTS                          15000   // interrupts per second, min: 10000, max: 20000, typ: 15000
-+#  define F_INTERRUPTS                          20000   // interrupts per second, min: 10000, max: 20000, typ: 15000
- #endif
- 
- /*---------------------------------------------------------------------------------------------------------------------------------------------------
-@@ -54,17 +54,17 @@
- #define IRMP_SUPPORT_KASEIKYO_PROTOCOL          1       // Kaseikyo             >= 10000                 ~250 bytes
- 
- // more protocols, enable here!                 Enable  Remarks                 F_INTERRUPTS            Program Space
--#define IRMP_SUPPORT_JVC_PROTOCOL               0       // JVC                  >= 10000                 ~150 bytes
--#define IRMP_SUPPORT_NEC16_PROTOCOL             0       // NEC16                >= 10000                 ~100 bytes
--#define IRMP_SUPPORT_NEC42_PROTOCOL             0       // NEC42                >= 10000                 ~300 bytes
--#define IRMP_SUPPORT_MATSUSHITA_PROTOCOL        0       // Matsushita           >= 10000                  ~50 bytes
--#define IRMP_SUPPORT_DENON_PROTOCOL             0       // DENON, Sharp         >= 10000                 ~250 bytes
--#define IRMP_SUPPORT_RC5_PROTOCOL               0       // RC5                  >= 10000                 ~250 bytes
--#define IRMP_SUPPORT_RC6_PROTOCOL               0       // RC6 & RC6A           >= 10000                 ~250 bytes
--#define IRMP_SUPPORT_IR60_PROTOCOL              0       // IR60 (SDA2008)       >= 10000                 ~300 bytes
--#define IRMP_SUPPORT_GRUNDIG_PROTOCOL           0       // Grundig              >= 10000                 ~300 bytes
--#define IRMP_SUPPORT_SIEMENS_PROTOCOL           0       // Siemens Gigaset      >= 15000                 ~550 bytes
--#define IRMP_SUPPORT_NOKIA_PROTOCOL             0       // Nokia                >= 10000                 ~300 bytes
-+#define IRMP_SUPPORT_JVC_PROTOCOL               1       // JVC                  >= 10000                 ~150 bytes
-+#define IRMP_SUPPORT_NEC16_PROTOCOL             1       // NEC16                >= 10000                 ~100 bytes
-+#define IRMP_SUPPORT_NEC42_PROTOCOL             1       // NEC42                >= 10000                 ~300 bytes
-+#define IRMP_SUPPORT_MATSUSHITA_PROTOCOL        1       // Matsushita           >= 10000                  ~50 bytes
-+#define IRMP_SUPPORT_DENON_PROTOCOL             1       // DENON, Sharp         >= 10000                 ~250 bytes
-+#define IRMP_SUPPORT_RC5_PROTOCOL               1       // RC5                  >= 10000                 ~250 bytes
-+#define IRMP_SUPPORT_RC6_PROTOCOL               1       // RC6 & RC6A           >= 10000                 ~250 bytes
-+#define IRMP_SUPPORT_IR60_PROTOCOL              1       // IR60 (SDA2008)       >= 10000                 ~300 bytes
-+#define IRMP_SUPPORT_GRUNDIG_PROTOCOL           1       // Grundig              >= 10000                 ~300 bytes
-+#define IRMP_SUPPORT_SIEMENS_PROTOCOL           1       // Siemens Gigaset      >= 15000                 ~550 bytes
-+#define IRMP_SUPPORT_NOKIA_PROTOCOL             1       // Nokia                >= 10000                 ~300 bytes
- 
- // exotic protocols, enable here!               Enable  Remarks                 F_INTERRUPTS            Program Space
- #define IRMP_SUPPORT_BOSE_PROTOCOL              0       // BOSE                 >= 10000                 ~150 bytes
-@@ -100,7 +100,7 @@
- #define IRMP_SUPPORT_SAMSUNGAH_PROTOCOL         0       // SAMSUNG AH           >= 10000                 ~250 bytes
- #define IRMP_SUPPORT_IRMP16_PROTOCOL            0       // IRMP specific        >= 15000                 ~250 bytes
- #define IRMP_SUPPORT_GREE_PROTOCOL              0       // GREE CLIMATE         >= 10000                 ~250 bytes
--#define IRMP_SUPPORT_RCII_PROTOCOL              1       // RCII T+A             >= 15000                 ~250 bytes
-+#define IRMP_SUPPORT_RCII_PROTOCOL              0       // RCII T+A             >= 15000                 ~250 bytes
- 
- #define IRMP_SUPPORT_RADIO1_PROTOCOL            0       // RADIO, e.g. TEVION   >= 10000                 ~250 bytes (experimental)
- 
-@@ -134,9 +134,9 @@
-  * Change hardware pin here for ARM STM32
-  *---------------------------------------------------------------------------------------------------------------------------------------------------
-  */
--#elif defined (ARM_STM32)                                               // use C13 as IR input on STM32
--#  define IRMP_PORT_LETTER                      C
--#  define IRMP_BIT_NUMBER                       13
-+#elif defined (ARM_STM32)                                               // use defines from config.h as IR input on STM32
-+#  define IRMP_PORT_LETTER                      IR_IN_PORT
-+#  define IRMP_BIT_NUMBER                       IR_IN_PIN
- 
- /*---------------------------------------------------------------------------------------------------------------------------------------------------
-  * Hardware pin for ARM STM32 (HAL) - don't change here, define IRMP_RECEIVE_GPIO_Port & IRMP_RECEIVE_PIN in STM32Cube (Main.h)
-@@ -232,7 +232,7 @@
+--- A/irmpconfig.h	2022-01-22 17:30:00.000000000 +0100
++++ B/irmpconfig.h	2022-01-22 18:52:36.088007775 +0100
+@@ -277,7 +277,7 @@
   *---------------------------------------------------------------------------------------------------------------------------------------------------
   */
  #ifndef IRMP_USE_CALLBACK
--#  define IRMP_USE_CALLBACK                     0       // 1: use callbacks. 0: do not. default is 0
-+#  define IRMP_USE_CALLBACK                     1       // 1: use callbacks. 0: do not. default is 0
+-#  define IRMP_USE_CALLBACK                     0                       // 1: use callbacks. 0: do not. default is 0
++#  define IRMP_USE_CALLBACK                     1                       // 1: use callbacks. 0: do not. default is 0
  #endif
  
  /*---------------------------------------------------------------------------------------------------------------------------------------------------
-diff -Nrup A/irmpsystem.h B/irmpsystem.h
---- A/irmpsystem.h	2018-09-06 16:52:14.000000000 +0200
-+++ B/irmpsystem.h	2019-12-14 17:28:45.158665099 +0100
-@@ -37,6 +37,11 @@
- #  define ARM_STM32
- #  define ARM_STM32F10X
- #  define F_CPU (SysCtlClockGet())
-+#elif defined(STM32F30X)                                                            // ARM STM32
-+#  include <stm32f30x.h>
-+#  define ARM_STM32
-+#  define ARM_STM32F30X
-+#  define F_CPU (SysCtlClockGet())
- #elif defined(STM32F4XX)                                                            // ARM STM32
- #  include <stm32f4xx.h>
- #  define ARM_STM32

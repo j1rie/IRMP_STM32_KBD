@@ -7,7 +7,7 @@ cd ..
 mkdir -p ext_src
 [[ -e ./ext_src/prepared ]] && exit 0
 cd ./ext_src
-for i in stsw-stm32010 en.stsw-stm32121; do
+for i in en.stsw-stm32010 en.stsw-stm32121; do
 	if [[ ! -s $i.zip ]]; then
 		echo 'unfortunately you have to download these files from ST manually and put them into ext_src'
 		echo 'http://www.st.com/en/embedded-software/stsw-stm32121.html'
@@ -16,8 +16,8 @@ for i in stsw-stm32010 en.stsw-stm32121; do
 		#wget "http://www.st.com/st-web-ui/static/active/en/st_prod_software_internet/resource/technical/software/firmware/stsw-stm$i.zip"
 	fi
 done
-if [[ ! -s irmp.tar.gz ]]; then
-	wget "http://www.mikrocontroller.net/svnbrowser/irmp/?view=tar" -O irmp.tar.gz
+if [[ ! -s IRMP-master.zip ]]; then
+	wget "https://github.com/j1rie/IRMP/archive/refs/heads/master.zip"  -O IRMP-master.zip
 fi
 
 # extract
@@ -110,7 +110,7 @@ unzip -j $ar2 \
       $path/Libraries/STM32_USB-FS-Device_Driver/src/usb_regs.c \
       $path/Libraries/STM32_USB-FS-Device_Driver/src/usb_sil.c
 
-ar='../../ext_src/stsw-stm32010.zip'
+ar='../../ext_src/en.stsw-stm32010.zip'
 ver='3.1.0'
 path="STM32F10x_AN2594_FW_V$ver"
 cd ../..
@@ -122,17 +122,22 @@ cd src
 unzip -j $ar $path/Project/EEPROM_Emulation/src/eeprom.c
 cd ../..
 
-ar='../ext_src/irmp.tar.gz'
-path="irmp"
+ar='../ext_src/IRMP-master.zip'
+path="IRMP-master"
 mkdir -p irmp
 cd irmp
-tar -xvf $ar --strip-components=1 \
+unzip -j $ar \
     $path/irmp.c \
     $path/irmp.h \
-    $path/irmpconfig.h \
+    $path/irmpconfig.h.max \
     $path/irmpprotocols.h \
     $path/irmpsystem.h \
+    $path/irsnd.c \
+    $path/irsnd.h \
+    $path/irsndconfig.h.max \
     $path/README.txt
+mv irmpconfig.h.max irmpconfig.h
+mv irsndconfig.h.max irsndconfig.h
 cd ..
 
 # patch
