@@ -1,7 +1,7 @@
 /**********************************************************************************************************  
     stm32kbdIRalarm: set alarm to and get alarm from IRMP_STM32_KBD
 
-    Copyright (C) 2014-2018 Joerg Riechardt
+    Copyright (C) 2014-2022 Joerg Riechardt
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,13 +26,13 @@
 #define _GETOPT_API
 #define _CRT_SECURE_NO_WARNINGS
 
-enum __attribute__ ((__packed__)) access {
+enum access {
 	ACC_GET,
 	ACC_SET,
 	ACC_RESET
 };
 
-enum __attribute__ ((__packed__)) command {
+enum command {
 	CMD_CAPS,
 	CMD_ALARM,
 	CMD_IRDATA,
@@ -44,15 +44,15 @@ enum __attribute__ ((__packed__)) command {
 	CMD_REPEAT
 };
 
-enum __attribute__ ((__packed__)) status {
+enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
 };
 
 hid_device *handle;
-unsigned char inBuf[17];
-unsigned char outBuf[17];
+uint8_t inBuf[8];
+uint8_t outBuf[8];
 
 static bool open_stm32() {
 	// Open the device using the VID, PID.
@@ -130,7 +130,7 @@ int _tmain(int argc, TCHAR** argv) {
 	    setalarm = strtoul(svalue, NULL, 0);
 	    memcpy(&outBuf[4], &setalarm, sizeof(setalarm));
 	    write_stm32();
-	    Sleep(2);
+	    Sleep(3);
 	    read_stm32(); /* necessary to avoid, that echo is read by first alarm read */
 	    while (inBuf[0] == 0x01)
 		read_stm32();
@@ -141,7 +141,7 @@ int _tmain(int argc, TCHAR** argv) {
 	    outBuf[2] = ACC_GET;
 	    outBuf[3] = CMD_ALARM;
 	    write_stm32();
-	    Sleep(2);
+	    Sleep(3);
 	    read_stm32();
 	    while (inBuf[0] == 0x01)
 		read_stm32();

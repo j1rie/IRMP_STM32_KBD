@@ -20,7 +20,7 @@
 #include <stdio.h>
 #endif
 
-#define BYTES_PER_QUERY	(HID_IN_BUFFER_SIZE - 4)
+#define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
 /* after plugging in, it takes some time, until SOF's are being sent to the device */
 #define SOF_TIMEOUT 500
 
@@ -224,7 +224,6 @@ IRMP_RC6A28_PROTOCOL,
 0
 };
 
-__IO uint8_t PrevXferComplete = 1;
 uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int systicks = 0;
 volatile unsigned int sof_timeout = 0;
@@ -338,7 +337,7 @@ uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 {
 	uint8_t i, retVal = 0;
 	for(i=0; i<3; i++) {
-		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) {
+		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) { // TODO cache eeprom (or wait for STM to do so)
 			/* the variable was not found or no valid page was found */
 			*((uint16_t *) &buf[2*i]) = 0xFFFF;
 			retVal = 1;
@@ -519,13 +518,13 @@ int8_t get_handler(uint8_t *buf)
 			/* actually this is not true for the last transmission,
 			 * but it doesn't matter since it's NULL terminated
 			 */
-			ret = HID_IN_BUFFER_SIZE-1;
+			ret = HID_IN_REPORT_COUNT-1;
 			break;
 		}
 		if (idx >= sizeof(firmware) + (sizeof(supported_protocols) / BYTES_PER_QUERY + 1) * BYTES_PER_QUERY)
 			return -1;
 		strncpy((char *) &buf[3], &firmware[idx - (sizeof(supported_protocols) / BYTES_PER_QUERY + 1) * BYTES_PER_QUERY], BYTES_PER_QUERY);
-		ret = HID_IN_BUFFER_SIZE-1;
+		ret = HID_IN_REPORT_COUNT-1;
 		break;
 	case CMD_ALARM:
 		/* AlarmValue -> buf[3-6] */
@@ -757,7 +756,6 @@ void send_magic(void)
 
 int main(void)
 {
-	uint8_t buf[HID_OUT_BUFFER_SIZE-1];
 	uint8_t kbd_buf[3] = {0};
 	IRMP_DATA myIRData;
 	int8_t ret;
@@ -784,10 +782,11 @@ int main(void)
 			last_magic_sent = send_ir_on_delay;
 		}
 
-		/* test if USB is connected to PC, sendtransfer is complete and configuration command is received */
-		if (USB_HID_GetStatus() == CONFIGURED && PrevXferComplete && USB_HID_ReceiveData(buf) == RX_READY && buf[0] == STAT_CMD) {
+		/* wait for previous transfer to complete before sending again and test if configuration command is received */
+		if(PrevXferComplete && USB_HID_Data_Received && buf[0] == REPORT_ID_CONFIG_OUT && buf[1] == STAT_CMD) {
+			USB_HID_Data_Received = 0;
 
-			switch (buf[1]) {
+			switch (buf[2]) {
 			case ACC_GET:
 				ret = get_handler(buf);
 				break;
@@ -802,10 +801,10 @@ int main(void)
 			}
 
 			if (ret == -1) {
-				buf[0] = STAT_FAILURE;
-				ret = 3;
+				buf[1] = STAT_FAILURE;
+				ret = 4;
 			} else {
-				buf[0] = STAT_SUCCESS;
+				buf[1] = STAT_SUCCESS;
 			}
 
 			/* send configuration data */
@@ -815,44 +814,47 @@ int main(void)
 				reboot();
 		}
 
-		/* poll IR-data */
-		if (irmp_get_data(&myIRData)) {
-			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
-			if (!(myIRData.flags)) {
-				repeat_timer = 0;
-				last_sent = 0;
-				last_received = 0;
-				store_wakeup(&myIRData);
-				check_wakeups(&myIRData);
-				check_reboot(&myIRData);
-			} else {
-				last_received = repeat_timer;
-				if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
-					continue; // don't send key
+		/* wait for previous transfer to complete before sending again */
+		if (PrevXferComplete) {
+			/* poll IR-data */
+			if (irmp_get_data(&myIRData)) {
+				myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
+				if (!(myIRData.flags)) {
+					repeat_timer = 0;
+					last_sent = 0;
+					last_received = 0;
+					store_wakeup(&myIRData);
+					check_wakeups(&myIRData);
+					check_reboot(&myIRData);
 				} else {
-					last_sent = repeat_timer;
+					last_received = repeat_timer;
+					if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+						continue; // don't send key
+					} else {
+						last_sent = repeat_timer;
+					}
+				}
+
+				/* send key corresponding to IR-data */
+				num = get_num_of_irdata(&myIRData);
+				if(num != 0xFF) {
+					key = get_key(num);
+					if(key != 0xFFFF) {
+						kbd_buf[0] = key >> 8; // modifier
+						kbd_buf[2] = key & 0xFF; // key
+						USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+						release_needed = 1;
+					}
 				}
 			}
 
-			/* send key corresponding to IR-data */
-			num = get_num_of_irdata(&myIRData);
-			if(num != 0xFF) {
-				key = get_key(num);
-				if(key != 0xFFFF) {
-					kbd_buf[0] = key >> 8; // modifier
-					kbd_buf[2] = key & 0xFF; // key
-					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
-					release_needed = 1;
-				}
+			/* send release */
+			if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+				release_needed = 0;
+				kbd_buf[0] = 0;
+				kbd_buf[2] = 0;
+				USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 			}
-		}
-
-		/* send release */
-		if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
-			release_needed = 0;
-			kbd_buf[0] = 0;
-			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
 		}
 	}
 }

@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32IRconfig: configure and monitor IRMP_STM32_KBD
 
-	Copyright (C) 2014-2020 Joerg Riechardt
+	Copyright (C) 2014-2022 Joerg Riechardt
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -54,8 +54,9 @@ enum report_id {
 };
 
 static int stm32fd = -1;
-uint8_t inBuf[17];
-uint8_t outBuf[17];
+uint8_t inBuf[64];
+uint8_t outBuf[64];
+unsigned int in_size, out_size;
 
 static bool open_stm32(const char *devicename) {
 	stm32fd = open(devicename, O_RDWR );
@@ -67,38 +68,38 @@ static bool open_stm32(const char *devicename) {
 	return true;
 }
 
-static void read_stm32() {
+static void read_stm32(int in_size, int show_len) {
 	int retVal;
-	retVal = read(stm32fd, inBuf, sizeof(inBuf));
+	retVal = read(stm32fd, inBuf, in_size);
 	if (retVal < 0) {
 		printf("read error\n");
 	} else {
 		printf("read %d bytes:\n\t", retVal);
-		for (int i = 0; i < retVal; i++)
+		for (int i = 0; i < show_len; i++)
 			printf("%02hhx ", inBuf[i]);
 		puts("\n");
 	}
 } 
 
-static void write_stm32() {
+static void write_stm32(int out_size) {
 	int retVal;
-	retVal = write(stm32fd, outBuf, sizeof(outBuf));
+	retVal = write(stm32fd, outBuf, out_size);
 	if (retVal < 0) {
 		printf("write error\n");
 	} else {
 		printf("written %d bytes:\n\t", retVal);
-		for (int i = 0; i < retVal; i++)
+		for (int i = 0; i < out_size; i++)
 			printf("%02hhx ", outBuf[i]);
 		puts("\n");
 	}
 }
 
-void write_and_check() {
-	write_stm32();
-	usleep(2000);
-	read_stm32(); // blocking per default, waits until data arrive
+void write_and_check(int idx, int show_len) {
+	write_stm32(idx);
+	usleep(3000);
+	read_stm32(in_size, show_len); // blocking per default, waits until data arrive
 	while (inBuf[0] == REPORT_ID_IR)
-		read_stm32();
+		read_stm32(in_size, show_len);
 	if (inBuf[1] == STAT_SUCCESS) {
 		puts("*****************************OK********************************\n");
 	} else {
@@ -119,6 +120,22 @@ int main(int argc, const char **argv) {
 	outBuf[0] = REPORT_ID_CONFIG_OUT;
 	outBuf[1] = STAT_CMD;
 
+	outBuf[2] = ACC_GET;
+	outBuf[3] = CMD_CAPS;
+	outBuf[4] = 0;
+	write(stm32fd, outBuf, 5);
+	usleep(3000);
+	read(stm32fd, inBuf, 9);
+	while (inBuf[0] == 0x01)
+		retValm = read(stm32fd, inBuf, 9);
+	in_size = inBuf[7] ? inBuf[7] : 17;
+	out_size = inBuf[8] ? inBuf[8] : 17;
+	printf("hid in report count: %u\n", in_size);
+	printf("hid out report count: %u\n", out_size);
+	if(!inBuf[7] || !inBuf[8])
+		printf("old firmware!\n");
+	puts("");
+
 cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
@@ -127,7 +144,7 @@ cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eep
 	case 'p':
 prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		switch (d) {
@@ -144,7 +161,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			outBuf[idx++] = (i>>8) & 0xFF;
 			outBuf[idx++] = (i>>16) & 0xFF;
 			outBuf[idx++] = i & 0xFF;
-			write_and_check();
+			write_and_check(idx, 4);
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
@@ -159,7 +176,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			outBuf[idx++] = (i>>8) & 0xFF;
 			outBuf[idx++] = (i>>16) & 0xFF;
 			outBuf[idx++] = i & 0xFF;
-			write_and_check();
+			write_and_check(idx, 4);
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
@@ -176,7 +193,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			}
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
-			write_and_check();
+			write_and_check(idx, 4);
 			break;
 		case 'r':
 			printf("set repeat delay(0)\nset repeat period(1)\nset repeat timeout(2)\n");
@@ -187,7 +204,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			scanf("%" SCNu16 "", &kk);
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
-			write_and_check();
+			write_and_check(idx, 4);
 			break;
 		default:
 			goto prog;
@@ -197,7 +214,7 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 	case 'q':
 Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		switch (d) {
@@ -216,13 +233,13 @@ Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote contro
 		default:
 			goto Prog;
 		}
-		write_and_check();
+		write_and_check(idx, 4);
 		break;
 
 	case 'g':
 get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_GET;
 		switch (d) {
@@ -231,35 +248,39 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = n;
+			l = 10;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
 			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = n;
+			l = 10;
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
 			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
+			l = 6;
 			break;
 		case 'r':
 			printf("get repeat delay(0)\nget repeat period(1)\nget repeat timeout(2)\n");
 			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
+			l = 6;
 			break;
 		case 'c':
 			jump_to_firmware = 0;
 			outBuf[idx++] = CMD_CAPS;
 			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
 				outBuf[idx] = l;
-				write_stm32();
-				usleep(2000);
-				read_stm32();
+				write_stm32(idx+1);
+				usleep(3000);
+				read_stm32(in_size, l == 0 ? 7 : in_size);
 				while (inBuf[0] == 0x01)
-					read_stm32();
+					read_stm32(in_size, l == 0 ? 7 : in_size);
 				if (!l) { // first query for slots and depth
 					printf("number of keys: %u\n", inBuf[4]);
 					//printf("macro_depth: %u\n", inBuf[5]);
@@ -267,7 +288,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 				} else {
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
-						for (k = 4; k < 17; k++) {
+						for (k = 4; k < in_size; k++) {
 							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								jump_to_firmware = 1;
@@ -277,7 +298,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 						}
 					} else { // queries for firmware
 						printf("firmware: ");
-						for (k = 4; k < 17; k++) {
+						for (k = 4; k < in_size; k++) {
 							if (!inBuf[k]) { // NULL termination
 								printf("\n\n");
 								goto out;
@@ -293,14 +314,14 @@ again:			;
 		default:
 			goto get;
 		}
-		write_and_check();
+		write_and_check(idx, l);
 out:
 		break;
 
 	case 'r':
 reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_RESET;
 		switch (d) {
@@ -334,34 +355,34 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		default:
 			goto reset;
 		}
-		write_and_check();
+		write_and_check(idx, 4);
 		break;
 
 	case 's':
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		outBuf[idx++] = CMD_ALARM;
 		printf("enter alarm\n");
 		scanf("%" SCNx64 "", &i);
-		memcpy(&outBuf[idx++], &i, 4);
-		write_and_check();
+		memcpy(&outBuf[idx], &i, 4);
+		write_and_check(idx + 4, 4);
 		break;
 
 	case 'a':
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_GET;
 		outBuf[idx++] = CMD_ALARM;
-		write_and_check();
+		write_and_check(idx, 8);
 		break;
 
 	case 'b':
-		memset(&outBuf[2], 0, 15);
+		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		outBuf[idx++] = CMD_REBOOT;
-		write_and_check();
+		write_and_check(idx, 4);
 		close(stm32fd);
 		usleep(1900000);
 		for(l=0;l<6;l++) {
@@ -386,15 +407,14 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 	goto cont;
 
 monit:	while(true) {
-		retValm = read(stm32fd, inBuf, sizeof(inBuf));
+		retValm = read(stm32fd, inBuf, in_size);
 		if (retValm >= 0) {
 			printf("read %d bytes:\n\t", retValm);
-			for (l = 0; l < retValm; l++)
+			for (l = 0; l < 5; l++)
 				printf("%02hhx ", inBuf[l]);
 			printf("\n");
-			printf("converted to protocoladdresscommandflag:\n\t");
-			printf("%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", inBuf[1],inBuf[3],inBuf[2],inBuf[5],inBuf[4],inBuf[6]);
-			printf("\n\n");
+			printf("modifier|key: %02hhx%02hhx\n\n", inBuf[1],inBuf[3]);
+			printf("\n");
 		}
 	}
 

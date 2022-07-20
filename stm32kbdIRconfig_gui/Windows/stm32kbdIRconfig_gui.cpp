@@ -1,7 +1,7 @@
 /*
  *  GUI Config Tool for IRMP STM32 KBD devices
  *
- *  Copyright (C) 2015-2020 Joerg Riechardt
+ *  Copyright (C) 2015-2022 Joerg Riechardt
  *
  *  based on work by Alan Ott
  *  Copyright 2010  Alan Ott
@@ -164,9 +164,11 @@ private:
 	struct hid_device_info *devices;
 	hid_device *connected_device;
 	size_t getDataFromTextField(FXTextField *tf, char *buf, size_t len);
-	unsigned char buf[17];
+	uint8_t buf[64];
 	int wakeupslots;
 	int irdatanr;
+	int in_size;
+	int out_size;
 	FXString protocols;
 	FXString firmware;
 	FXString firmware1;
@@ -233,9 +235,9 @@ public:
 	long onReeprom(FXObject *sender, FXSelector sel, void *ptr);
 	uint8_t get_key_nr(FXString s);
 	FXString get_key_from_nr(uint8_t nr);
-	long Write();
-	long Read();
-	long Write_and_Check();
+	long Write(int out_len);
+	long Read(int in_len);
+	long Write_and_Check(int out_len, int in_len);
 	long saveFile(const FXString& file);
 	long saveLogFile(const FXString& file);
 	long onApply(FXObject *sender, FXSelector sel, void *ptr);
@@ -298,7 +300,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 275, 38, 880, 978)  // for 1280x1024
+	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 425, 39, 1050, 1030)  // for 1920x1080
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -544,6 +546,7 @@ MainWindow::MainWindow(FXApp *app)
 	firmware1 = "";
 	max = 0;
 	count = 0;
+	out_size = 64; // at first out_size is unknown, so use HID maximum
 }
 
 MainWindow::~MainWindow()
@@ -680,7 +683,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
 		s += t;
 		output_text->setText(s);
-		Write_and_Check();
+		Write_and_Check(5, 10);
 		s = (i < wakeupslots-1) ? "wakeup: " : "reboot: ";
 		t.format("%02hhx", buf[4]);
 		s += t;
@@ -701,7 +704,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	}
 	s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
 	output_text->setText(s);
-	Write_and_Check();
+	Write_and_Check(4, 8);
 	unsigned int alarm = *((uint32_t *)&buf[4]);
 	FXString t;	
 	s = "alarm: ";
@@ -837,7 +840,7 @@ MainWindow::onReboot(FXObject *sender, FXSelector sel, void *ptr)
 
 	FXint cur_item = device_list->getCurrentItem();
 	FXint num_devices_before_reboot = device_list->getNumItems();
-	Write_and_Check();
+	Write_and_Check(4, 4);
 	FXThread::sleep(1500000000); // 1,5 s
 	do { // wait for device to reappear
 		FXThread::sleep(100000000); // 100 ms
@@ -890,7 +893,7 @@ MainWindow::getDataFromTextField(FXTextField *tf, char *buf, size_t len)
 }
 
 long
-MainWindow::Read()
+MainWindow::Read(int in_len)
 {
 	memset(buf, 0, sizeof(buf));
 	FXString s;
@@ -902,7 +905,7 @@ MainWindow::Read()
 		return -1;
 	}
 
-	int res = hid_read(connected_device, buf, sizeof(buf));
+	int res = hid_read(connected_device, buf, in_len); // nonblocking
 	
 	if (res < 0) {
 		FXMessageBox::error(this, MBOX_OK, "Error Reading", "Could not read from device. Error reported was: %ls", hid_error(connected_device));
@@ -914,8 +917,8 @@ MainWindow::Read()
 		if (res == 0)
 			return 0;
 
-		s.format("Received %d bytes:\n", res);
-		for (int i = 0; i < res; i++) {
+		s.format("Received %d bytes:\n", in_len);
+		for (int i = 0; i < in_len; i++) {
 			FXString t;
 			t.format("%02hhx ", buf[i]);
 			s += t;
@@ -929,12 +932,14 @@ MainWindow::Read()
 }
 
 long
-MainWindow::Write()
+MainWindow::Write(int out_len)
 {
 	FXString s;
-	char bufw[17];
+	char bufw[out_size];
 	memset(bufw, 0, sizeof(bufw));
-	getDataFromTextField(output_text, bufw, sizeof(bufw));
+	FXint output_text_len = getDataFromTextField(output_text, bufw, sizeof(bufw));
+	if(out_len > output_text_len)
+		out_len = output_text_len;
 
 	if (!connected_device) {
 		FXMessageBox::error(this, MBOX_OK, "Device Error W", "Unable To Connect to Device");
@@ -944,7 +949,7 @@ MainWindow::Write()
 		return -1;
 	}
 
-	int res = hid_write(connected_device, (const unsigned char*)bufw, 17);
+	int res = hid_write(connected_device, (const unsigned char*)bufw, out_len);
 	if (res < 0) {
 		FXMessageBox::error(this, MBOX_OK, "Error Writing", "Could not write to device. Error reported was: %ls", hid_error(connected_device));
 		input_text->appendText("write error\n");
@@ -952,8 +957,8 @@ MainWindow::Write()
 		onRescan(NULL, 0, NULL);
 		return -1;
 	} else {
-		s.format("Sent %d bytes:\n", res);
-		for (int i = 0; i < res; i++) {
+		s.format("Sent %d bytes:\n", out_len);
+		for (int i = 0; i < out_len; i++) {
 			FXString t;
 			t.format("%02hhx ", static_cast<unsigned char>(bufw[i]));
 			s += t;
@@ -967,21 +972,21 @@ MainWindow::Write()
 }
 
 long
-MainWindow::Write_and_Check()
+MainWindow::Write_and_Check(int out_len, int in_len)
 {
 	FXString s;
 	int read, count = 0;
 	s = "";
-	if(Write() == -1) {
+	if(Write(in_len) == -1) {
 		s += "W&C Write(): -1\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 		return -1;
 	}
 
-	FXThread::sleep(2000000); // 2ms
+	FXThread::sleep(3000000); // 3ms
 
-	read = Read();
+	read = Read(in_len);
 	if(read  == -1) {
 		s += "W&C first Read(): -1\n";
 		input_text->appendText(s);
@@ -990,7 +995,7 @@ MainWindow::Write_and_Check()
 	}
 
 	while ((buf[0] == REPORT_ID_IR || read == 0) && count < 5000) { // 5000ms needed in case of "set by remote", Read() is nonblocking
-		read = Read();
+		read = Read(in_len);
 		if(read == -1) {
 			s += "W&C loop Read(): -1\n";
 			input_text->appendText(s);
@@ -1015,7 +1020,7 @@ MainWindow::Write_and_Check()
 long
 MainWindow::onSendOutputReport(FXObject *sender, FXSelector sel, void *ptr)
 {
-	Write_and_Check();
+	Write_and_Check(11, 10);
 
 	return 1;
 }
@@ -1062,7 +1067,7 @@ MainWindow::onPwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(11, 4);
 
 	return 1;
 }
@@ -1113,7 +1118,7 @@ MainWindow::onPirdata(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(11, 4);
 
 	onGirdata(NULL, 0, NULL);
 
@@ -1163,7 +1168,7 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(7, 4);
 
 	onGkey(NULL, 0, NULL);
 
@@ -1202,7 +1207,7 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(7, 4);
 
 	return 1;
 }
@@ -1224,7 +1229,7 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	return 1;
 }
@@ -1250,7 +1255,7 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	onGirdata(NULL, 0, NULL);
 
@@ -1283,7 +1288,7 @@ MainWindow::onGwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 10);
 
 	s = "";
 	t.format("%02hhx", buf[4]);
@@ -1326,7 +1331,7 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 10);
 	
 	s = "";
 	t.format("%02hhx", buf[4]);
@@ -1369,7 +1374,7 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 6);
 
 	modifier_text->setText(get_key_from_nr(buf[5]));
 	key_text->setText(get_key_from_nr(buf[4]));
@@ -1388,7 +1393,7 @@ MainWindow::onGrepeat(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 6);
 
 #if (FOX_MINOR >= 7)
 	t.fromInt(*((uint16_t*)&buf[4]),10);
@@ -1420,7 +1425,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 		s += " ";
 		output_text->setText(s);
 
-		Write_and_Check();
+		Write_and_Check(5, i == 0 ? 9 : in_size);
 
 		if (!i) { // first query for slots and depth
 			s.format("number of irdata: %u\n", buf[4]);
@@ -1430,10 +1435,18 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			wakeupslots = buf[6];
 			t.format("number of wakeups: %u", buf[6]);
 			s += t;
+			in_size = buf[7] ? buf[7] : 17;
+			t.format("hid in report count: %u\n", in_size);
+			s += t;
+			out_size = buf[8] ? buf[8] : 17;
+			t.format("hid out report count: %u\n", out_size);
+			s += t;
+			if(!buf[7] || ! buf[8])
+				s += "old firmware!\n";
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
 				s = "protocols: ";
-				for (int k = 4; k < 17; k++) {
+				for (int k = 4; k < in_size; k++) {
 					if (!buf[k]) { // NULL termination
 						s += "\n";
 						input_text->appendText(s);
@@ -1447,7 +1460,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 				}
 			} else { // queries for firmware
 				s = "firmware: ";
-				for (int k = 4; k < 17; k++) {
+				for (int k = 4; k < in_size; k++) {
 					if (!buf[k]) { // NULL termination
 						s += "\n";
 						input_text->appendText(s);
@@ -1483,7 +1496,7 @@ MainWindow::onAget(FXObject *sender, FXSelector sel, void *ptr)
 	s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(4, 8);
 
 	unsigned int alarm = *((uint32_t *)&buf[4]);
 
@@ -1558,7 +1571,7 @@ MainWindow::onAset(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(8, 4);
 
 	input_text->appendText(u);
 	input_text->setBottomLine(INT_MAX);
@@ -1576,7 +1589,7 @@ MainWindow::onRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	return 1;
 }
@@ -1595,7 +1608,7 @@ MainWindow::onRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	onGirdata(NULL, 0, NULL);
 
@@ -1631,7 +1644,7 @@ MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	onGkey(NULL, 0, NULL);
 
@@ -1663,7 +1676,7 @@ MainWindow::onRrepeat(FXObject *sender, FXSelector sel, void *ptr)
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	return 1;
 }
@@ -1675,7 +1688,7 @@ MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_ALARM);
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(4, 4);
 
 	return 1;
 }
@@ -1715,7 +1728,7 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 		s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
 		output_text->setText(s);
 		if(connected_device)
-			Write_and_Check();
+			Write_and_Check(4, 4);
 		onDisconnect(NULL, 0, NULL);
 	}
 
@@ -2116,7 +2129,7 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 		s += u;
 		output_text->setText(s);
 
-		Write_and_Check();
+		Write_and_Check(11, 4);
 	}
 
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
@@ -2146,7 +2159,7 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	s += " ";
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(7, 4);
 
 	//onGeeprom();
   }
@@ -2175,13 +2188,13 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	s += u;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_KEY);
 	s += u;
 	output_text->setText(s);
 
-	Write_and_Check();
+	Write_and_Check(5, 4);
 	}
 
 	onGeeprom(NULL, 0, NULL);
