@@ -26,10 +26,10 @@ void USB_HID_SendData(uint8_t Report_ID, uint8_t *ptr, uint8_t len)
 	PrevXferComplete = 0;
 	if (Report_ID == REPORT_ID_KBD)
 	{
-		/* Windows needs HID_IN_REPORT_COUNT, for linux SIZEOF_IR + 1 is sufficient */
+		/* Windows needs HID_IN_REPORT_COUNT, for linux len + 1 is sufficient */
 		uint8_t buf[HID_IN_REPORT_COUNT] = {0};
 		buf[0] = Report_ID;
-		memcpy(&buf[1], ptr, SIZEOF_IR);
+		memcpy(&buf[1], ptr, len);
 		USB_SIL_Write(EP1_IN, buf, HID_IN_REPORT_COUNT);
 
 	}

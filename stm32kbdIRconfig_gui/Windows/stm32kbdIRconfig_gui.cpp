@@ -91,7 +91,8 @@ enum command {
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
-	CMD_REPEAT
+	CMD_REPEAT,
+	CMD_EEPROM_RESET
 };
 
 enum status {
@@ -977,7 +978,7 @@ MainWindow::Write_and_Check(int out_len, int in_len)
 	FXString s;
 	int read, count = 0;
 	s = "";
-	if(Write(in_len) == -1) {
+	if(Write(out_len) == -1) {
 		s += "W&C Write(): -1\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
@@ -2173,6 +2174,14 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	}
 	if(FXMessageBox::question(this,MBOX_YES_NO,tr("reset eeprom"),tr("really reset eeprom?"))==MBOX_CLICKED_NO) return 1;
 
+	FXString s;
+	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_EEPROM_RESET);
+
+	output_text->setText(s);
+
+	Write_and_Check(4, 4);
+
+/*
 	for(int i = 0; i < irdatanr; i++) {
 	    FXString s;
 	    FXString u;
@@ -2196,6 +2205,7 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 	Write_and_Check(5, 4);
 	}
+*/
 
 	onGeeprom(NULL, 0, NULL);
 

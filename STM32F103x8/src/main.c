@@ -40,7 +40,8 @@ enum command {
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
-	CMD_REPEAT
+	CMD_REPEAT,
+	CMD_EEPROM_RESET
 };
 
 enum status {
@@ -644,6 +645,10 @@ int8_t reset_handler(uint8_t *buf)
 		if(!(get_repeat(buf[4]) == 0xFFFF))
 			ret = -1;
 		break;
+	case CMD_EEPROM_RESET:
+		if(EE_Format() != FLASH_COMPLETE)
+			ret = -1;
+		break;
 	default:
 		ret = -1;
 	}
@@ -749,7 +754,7 @@ void send_magic(void)
 
 int main(void)
 {
-	uint8_t kbd_buf[3] = {0};
+	uint8_t kbd_buf[3] = {0}; // USB HID keyboard report: {modifier, reserved (ignored), keypress #1, keypress #2 (unused)}
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;

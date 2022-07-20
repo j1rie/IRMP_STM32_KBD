@@ -38,7 +38,8 @@ enum command {
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
-	CMD_REPEAT
+	CMD_REPEAT,
+	CMD_EEPROM_RESET
 };
 
 enum status {
@@ -136,7 +137,7 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat and alarm (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
+cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
@@ -319,7 +320,7 @@ out:
 		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\n");
+reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
@@ -348,6 +349,9 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 			scanf("%" SCNx8 "", &n);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
+			break;
+		case 'e':
+			outBuf[idx++] = CMD_EEPROM_RESET;
 			break;
 		case 'a':
 			outBuf[idx++] = CMD_ALARM;
