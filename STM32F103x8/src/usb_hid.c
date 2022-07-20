@@ -24,7 +24,7 @@ void USB_HID_Init(void)
 void USB_HID_SendData(uint8_t Report_ID, uint8_t *ptr, uint8_t len)
 {
 	PrevXferComplete = 0;
-	if (Report_ID == REPORT_ID_IR)
+	if (Report_ID == REPORT_ID_KBD)
 	{
 		/* Windows needs HID_IN_REPORT_COUNT, for linux len + 1 is sufficient */
 		uint8_t buf[HID_IN_REPORT_COUNT] = {0};

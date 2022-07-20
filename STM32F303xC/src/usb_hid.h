@@ -22,7 +22,7 @@
 #define HID_IN_INTERVAL		1
 #define HID_OUT_INTERVAL	1
 
-#define REPORT_ID_IR		0x01
+#define REPORT_ID_KBD		0x01
 #define REPORT_ID_CONFIG_IN	0x02
 #define REPORT_ID_CONFIG_OUT	0x03
 

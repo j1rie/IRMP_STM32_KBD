@@ -101,7 +101,7 @@ enum status {
 };
 
 enum report_id {
-	REPORT_ID_IR = 1,
+	REPORT_ID_KBD = 1,
 	REPORT_ID_CONFIG_IN = 2,
 	REPORT_ID_CONFIG_OUT = 3
 };
@@ -994,7 +994,7 @@ MainWindow::Write_and_Check(int out_len, int in_len)
 		return -1;
 	}
 
-	while ((buf[0] == REPORT_ID_IR || read == 0) && count < 5000) { // 5000ms needed in case of "set by remote", Read() is nonblocking
+	while ((buf[0] == REPORT_ID_KBD || read == 0) && count < 5000) { // 5000ms needed in case of "set by remote", Read() is nonblocking
 		read = Read(in_len);
 		if(read == -1) {
 			s += "W&C loop Read(): -1\n";

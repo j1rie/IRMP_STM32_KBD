@@ -681,9 +681,9 @@ void send_magic(void)
 {
 	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
 	uint8_t release[3] = {0x00, 0x00, 0x00};
-	USB_HID_SendData(REPORT_ID_IR, magic, sizeof(magic));
+	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
 	delay_ms(get_repeat(2));
-	USB_HID_SendData(REPORT_ID_IR, release, sizeof(release));
+	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
 }
 
 int main(void)
@@ -772,7 +772,7 @@ int main(void)
 				if(key != 0xFFFF) {
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
-					USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
 				}
 			}
@@ -783,7 +783,7 @@ int main(void)
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_IR, kbd_buf, sizeof(kbd_buf));
+			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 		}
 	}
 }
