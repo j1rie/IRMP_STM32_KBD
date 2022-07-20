@@ -11,8 +11,10 @@
 #define __USB_HID_H
 
 #include "stm32f10x.h"
-#include "usb_lib.h"
-#include "usb_pwr.h"
+#include "usbd_hid_core.h"
+#include "usbd_usr.h"
+#include "usbd_desc.h"
+#include "usb_dcd_int.h"
 #include <string.h>
 
 #define HID_IN_REPORT_COUNT	64 /* STM32->PC */
@@ -26,6 +28,7 @@
 #define REPORT_ID_CONFIG_IN	0x02
 #define REPORT_ID_CONFIG_OUT	0x03
 
+extern USB_OTG_CORE_HANDLE USB_OTG_dev;
 extern uint8_t buf[BUFFER_SIZE];
 extern volatile uint8_t USB_HID_Data_Received;
 extern __IO uint8_t PrevXferComplete;
