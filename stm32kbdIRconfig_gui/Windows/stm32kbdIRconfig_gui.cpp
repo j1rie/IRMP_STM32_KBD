@@ -1198,14 +1198,13 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REPEAT);
 	u.format("%x ", rslistbox->getCurrentItem());
 #if (FOX_MINOR >= 7)
-	t.format("%x ", repeat_text->getText().toInt());
+	t.format("%x %x", repeat_text->getText().toInt() & 0xFF, (repeat_text->getText().toInt() >> 8) & 0xFF );
 #else
-	t.format("%x ", FXIntVal(repeat_text->getText(), 10));
+	t.format("%x %x", FXIntVal(repeat_text->getText(), 10) & 0xFF, (FXIntVal(repeat_text->getText(), 10) >> 8) & 0xFF);
 #endif
 	s += u;
 	s += " ";
 	s += t;
-	s += " ";
 	output_text->setText(s);
 
 	Write_and_Check(7, 4);
