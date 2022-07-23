@@ -1,6 +1,6 @@
 /*
- *  IR receiver, sender, USB wakeup, motherboard switch wakeup, wakeup timer,
- *  USB HID device, eeprom emulation
+ *  IR receiver, USB wakeup, motherboard switch wakeup, wakeup timer,
+ *  USB HID keyboard device, eeprom emulation
  *
  *  Copyright (C) 2014-2022 Joerg Riechardt
  *
@@ -16,12 +16,6 @@
 #include "eeprom.h"
 #include "st_link_leds.h"
 #include "config.h" /* CooCox workaround */
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-#ifdef TM1637
-#include "tm1637.h"
-#endif
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
 /* after plugging in, it takes some time, until SOF's are being sent to the device */
@@ -34,13 +28,16 @@ enum access {
 };
 
 enum command {
-	CMD_EMIT,
 	CMD_CAPS,
-	CMD_HID_TEST,
 	CMD_ALARM,
-	CMD_MACRO,
+	CMD_IRDATA,
+	CMD_KEY,
 	CMD_WAKE,
-	CMD_REBOOT
+	CMD_REBOOT,
+	CMD_IRDATA_REMOTE,
+	CMD_WAKE_REMOTE,
+	CMD_REPEAT,
+	CMD_EEPROM_RESET
 };
 
 enum status {
@@ -229,12 +226,11 @@ uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int systicks = 0;
 volatile unsigned int sof_timeout = 0;
 volatile unsigned int i = 0;
+volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile unsigned int send_ir_on_delay = 0;
-#ifdef TM1637
-volatile unsigned int dim_delay;
-#endif
+uint16_t repeat_default[3] = {250, 150, 15};
 
 void delay_ms(unsigned int msec)
 {
@@ -261,14 +257,8 @@ void LED_Switch_init(void)
 	/* start with wakeup and reset switch off */
 #ifdef SimpleCircuit
 	GPIO_WriteBit(WAKEUP_PORT, WAKEUP_PIN, Bit_SET);
-#ifdef RESET_PORT
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_SET);
-#endif
 #else
 	GPIO_WriteBit(WAKEUP_PORT, WAKEUP_PIN, Bit_RESET);
-#ifdef RESET_PORT
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_RESET);
-#endif
 #endif /* SimpleCircuit */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -278,10 +268,8 @@ void LED_Switch_init(void)
 	GPIO_InitStructure.GPIO_Pin = LED_PIN;
 	GPIO_Init(LED_PORT, &GPIO_InitStructure);
 #endif /* ST_Link */
-#ifdef EXTLED_PORT
 	GPIO_InitStructure.GPIO_Pin = EXTLED_PIN;
 	GPIO_Init(EXTLED_PORT, &GPIO_InitStructure);
-#endif
 	GPIO_InitStructure.GPIO_Pin = WAKEUP_PIN;
 #ifdef SimpleCircuit
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -290,14 +278,6 @@ void LED_Switch_init(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 #endif /* SimpleCircuit */
 	GPIO_Init(WAKEUP_PORT, &GPIO_InitStructure);
-#ifdef RESET_PORT
-	GPIO_InitStructure.GPIO_Pin = RESET_PIN;
-	GPIO_Init(RESET_PORT, &GPIO_InitStructure);
-#endif
-	GPIO_InitStructure.GPIO_Pin = WAKEUP_RESET_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-	GPIO_Init(WAKEUP_RESET_PORT, &GPIO_InitStructure);
 	/* start with LED off */
 #ifdef ST_Link
 	LED_deinit();
@@ -355,7 +335,7 @@ uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 {
 	uint8_t i, retVal = 0;
 	for(i=0; i<3; i++) {
-		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) {
+		if (EE_ReadVariable(virt_addr + i, (uint16_t *) &buf[2*i])) { // TODO cache eeprom (or wait for STM to do so)
 			/* the variable was not found or no valid page was found */
 			*((uint16_t *) &buf[2*i]) = 0xFFFF;
 			retVal = 1;
@@ -364,12 +344,66 @@ uint8_t eeprom_restore(uint8_t *buf, uint16_t virt_addr)
 	return retVal;
 }
 
+/* which address has the received ir-code in eeprom? */
+uint8_t get_num_of_irdata(IRMP_DATA *ir)
+{
+	uint8_t i;
+	uint16_t idx;
+	uint8_t buf[SIZEOF_IR];
+	for (i=0; i < NUM_KEYS; i++) {
+		idx = SIZEOF_IR/2 * i;
+		eeprom_restore(buf, idx);
+		/* don't compare flags */
+		if (!memcmp(buf, ir, sizeof(buf) - 1))
+			return i;
+	}
+	return 0xFF;
+}
+
+/* put key into eeprom at address num */
+void put_key(uint16_t key, uint8_t num)
+{
+	EE_WriteVariable(NUM_KEYS * SIZEOF_IR/2 + num, key);
+}
+
+/* get key at address num from eeprom */
+uint16_t get_key(uint8_t num)
+{
+	uint16_t key;
+	if (EE_ReadVariable(NUM_KEYS * SIZEOF_IR/2 + num, &key)) {
+		/* the variable was not found or no valid page was found */
+		key = 0xFFFF;
+	}
+	return key;
+}
+
+/* put repeat into eeprom at address num */
+void put_repeat(uint16_t repeat, uint8_t num)
+{
+	EE_WriteVariable(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, repeat);
+}
+
+/* get repeat at address num from eeprom */
+uint16_t get_repeat(uint8_t num)
+{
+	uint16_t repeat;
+	if (EE_ReadVariable(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, &repeat)) {
+		/* the variable was not found or no valid page was found */
+		repeat = repeat_default[num];
+	}
+	if (repeat == 0xFFFF) {
+		/* after reset */
+		repeat = repeat_default[num];
+	}
+	return repeat;
+}
+
 void store_wakeup(IRMP_DATA *ir)
 {
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS;
+	idx = NUM_KEYS * (SIZEOF_IR/2 + 1);
 	eeprom_restore(tmp, idx);
 	if (!memcmp(tmp, zeros, SIZEOF_IR)) {
 		/* store received wakeup IRData in first wakeup slot */
@@ -387,6 +421,7 @@ void Systick_Init(void)
 void SysTick_Handler(void)
 {
 	systicks++;
+	repeat_timer++;
 	if (sof_timeout != SOF_TIMEOUT)
 		sof_timeout++;
 	if (i == 999) {
@@ -394,12 +429,6 @@ void SysTick_Handler(void)
 			AlarmValue--;
 		if (send_ir_on_delay)
 			send_ir_on_delay--;
-#ifdef TM1637
-		if (dim_delay){
-			dim_delay--;
-			tm1637SetBrightness(dim_delay);
-		}
-#endif
 		i = 0;
 	} else {
 		i++;
@@ -433,55 +462,29 @@ void Wakeup(void)
 	send_ir_on_delay = 90;
 }
 
-void Reset(void)
+int8_t store_new_irdata(uint16_t num)
 {
-#ifdef RESET_PORT
-	/* motherboard reset switch: RESET_PIN short high (resp. low in case of SimpleCircuit) */
-#ifdef SimpleCircuit
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_RESET);
-#else
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_SET);
-#endif /* SimpleCircuit */
-	delay_ms(500);
-#ifdef SimpleCircuit
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_SET);
-#else
-	GPIO_WriteBit(RESET_PORT, RESET_PIN, Bit_RESET);
-#endif /* SimpleCircuit */
-	fast_toggle();
-#endif
-}
-
-void store_new_wakeup(void)
-{
-	int8_t loop;
-	uint16_t idx;
-	IRMP_DATA wakeup_IRData;
-	irmp_get_data(&wakeup_IRData); // flush input of irmp data
-	blink_LED();
+	int8_t loop, ret = 3;
+	IRMP_DATA new_IRData;
+	uint8_t tmp[SIZEOF_IR];
+	irmp_get_data(&new_IRData); // flush input of irmp data
+	//blink_LED();
 	/* 5 seconds to press button on remote */
 	for(loop=0; loop < 50; loop++) {
 		delay_ms(100);
-		if (irmp_get_data(&wakeup_IRData)) {
-			wakeup_IRData.flags = 0;
-			idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS;
-			/* store received wakeup IRData in first wakeup slot */
-			eeprom_store(idx, (uint8_t *) &wakeup_IRData);
-			blink_LED();
-			return;
+		if (irmp_get_data(&new_IRData)) {
+			new_IRData.flags = 0;
+			/* store received IRData at address num */
+			eeprom_store(num, (uint8_t *) &new_IRData);
+			/* validate stored value in eeprom */
+			eeprom_restore(tmp, num);
+			if (memcmp(&new_IRData, tmp, sizeof(tmp)))
+				ret = -1;
+			return ret;
 		}
 	}
-}
-
-void wakeup_reset(void)
-{
-/* avoid AFIO in order to avoid having to flash with reset! */
-#if !defined(StickLink) && !defined(GreenLink)
-	/* wakeup reset pin pulled low? */
-	if (!GPIO_ReadInputDataBit(WAKEUP_RESET_PORT, WAKEUP_RESET_PIN)) {
-		store_new_wakeup();
-	}
-#endif /* ST_Link */
+	ret = -1;
+	return ret;
 }
 
 int8_t get_handler(uint8_t *buf)
@@ -493,8 +496,8 @@ int8_t get_handler(uint8_t *buf)
 	case CMD_CAPS:
 		/* in first query we give information about slots and depth */
 		if (!buf[4]) {
-			buf[4] = MACRO_SLOTS;
-			buf[5] = MACRO_DEPTH;
+			buf[4] = NUM_KEYS;
+			buf[5] = 0; //unused TODO
 			buf[6] = WAKE_SLOTS;
 			buf[7] = HID_IN_REPORT_COUNT;
 			buf[8] = HID_OUT_REPORT_COUNT;
@@ -521,15 +524,23 @@ int8_t get_handler(uint8_t *buf)
 		memcpy(&buf[4], &AlarmValue, sizeof(AlarmValue));
 		ret += sizeof(AlarmValue);
 		break;
-	case CMD_MACRO:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * buf[4] + SIZEOF_IR/2 * buf[5];
+	case CMD_IRDATA:
+		idx = SIZEOF_IR/2 * buf[4];
 		eeprom_restore(&buf[4], idx);
 		ret += SIZEOF_IR;
 		break;
+	case CMD_KEY:
+		*((uint16_t*)&buf[4]) = get_key(buf[4]);
+		ret += 2;
+		break;
 	case CMD_WAKE:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
 		eeprom_restore(&buf[4], idx);
 		ret += SIZEOF_IR;
+		break;
+	case CMD_REPEAT:
+		*((uint16_t*)&buf[4]) = get_repeat(buf[4]);
+		ret += 2;
 		break;
 	default:
 		ret = -1;
@@ -544,23 +555,24 @@ int8_t set_handler(uint8_t *buf)
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	switch (buf[3]) {
-	case CMD_EMIT:
-		yellow_short_on();
-		irsnd_send_data((IRMP_DATA *) &buf[4], 1);
-		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
 		break;
-	case CMD_MACRO:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * buf[4] + SIZEOF_IR/2 * buf[5];
-		eeprom_store(idx, &buf[6]);
+	case CMD_IRDATA:
+		idx = SIZEOF_IR/2 * buf[4];
+		eeprom_store(idx, &buf[5]);
 		/* validate stored value in eeprom */
 		eeprom_restore(tmp, idx);
-		if (memcmp(&buf[6], tmp, sizeof(tmp)))
+		if (memcmp(&buf[5], tmp, sizeof(tmp)))
+			ret = -1;
+	case CMD_KEY:
+		put_key(*((uint16_t*)&buf[5]), buf[4]);
+		/* validate stored value in eeprom */
+		if(!(get_key(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;
 		break;
 	case CMD_WAKE:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
 		eeprom_store(idx, &buf[5]);
 		/* validate stored value in eeprom */
 		eeprom_restore(tmp, idx);
@@ -570,8 +582,19 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_REBOOT:
 		Reboot = 1;
 		break;
-	case CMD_HID_TEST:
-		ret = HID_IN_REPORT_COUNT;
+	case CMD_IRDATA_REMOTE:
+		idx = SIZEOF_IR/2 * buf[4];
+		ret = store_new_irdata(idx);
+		break;
+	case CMD_WAKE_REMOTE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		ret = store_new_irdata(idx);
+		break;
+	case CMD_REPEAT:
+		put_repeat(*((uint16_t*)&buf[5]), buf[4]);
+		/* validate stored value in eeprom */
+		if(!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
+			ret = -1;
 		break;
 	default:
 		ret = -1;
@@ -590,20 +613,35 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_ALARM:
 		AlarmValue = 0xFFFFFFFF;
 		break;
-	case CMD_MACRO:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * buf[4] + SIZEOF_IR/2 * buf[5];
+	case CMD_IRDATA:
+		idx = SIZEOF_IR/2 * buf[4];
+		eeprom_store(idx, zeros);
+		/* validate stored value in eeprom */
+		eeprom_restore(tmp, idx);
+		if (memcmp(zeros, tmp, sizeof(tmp)))
+			ret = -1;
+	case CMD_KEY:
+		put_key(0xFFFF, buf[4]);
+		/* validate stored value in eeprom */
+		if(!(get_key(buf[4]) == 0xFFFF))
+			ret = -1;
+		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
 		eeprom_store(idx, zeros);
 		/* validate stored value in eeprom */
 		eeprom_restore(tmp, idx);
 		if (memcmp(zeros, tmp, sizeof(tmp)))
 			ret = -1;
 		break;
-	case CMD_WAKE:
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * buf[4];
-		eeprom_store(idx, zeros);
+	case CMD_REPEAT:
+		put_repeat(0xFFFF, buf[4]);
 		/* validate stored value in eeprom */
-		eeprom_restore(tmp, idx);
-		if (memcmp(zeros, tmp, sizeof(tmp)))
+		if(!(get_repeat(buf[4]) == 0xFFFF))
+			ret = -1;
+		break;
+	case CMD_EEPROM_RESET:
+		if(EE_Format() != FLASH_COMPLETE)
 			ret = -1;
 		break;
 	default:
@@ -612,7 +650,7 @@ int8_t reset_handler(uint8_t *buf)
 	return ret;
 }
 
-/* is received ir-code in one of the lower wakeup-slots? wakeup if true */
+/* is received ir-code in one of the wakeup-slots except last one? wakeup if true */
 void check_wakeups(IRMP_DATA *ir)
 {
 	if(host_running())
@@ -620,34 +658,11 @@ void check_wakeups(IRMP_DATA *ir)
 	uint8_t i;
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
-	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	for (i=0; i < WAKE_SLOTS/2; i++) {
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * i;
+	for (i=0; i < WAKE_SLOTS - 1; i++) {
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + i * SIZEOF_IR/2;
 		if (!eeprom_restore(buf, idx)) {
-			/* first encounter of zero in check_wakeups() means end of check */
-			if (!memcmp(buf, &zeros, sizeof(zeros))) //
-				break;
 			if (!memcmp(buf, ir, sizeof(buf)))
 				Wakeup();
-		}
-	}
-}
-
-/* is received ir-code in one of the upper wakeup-slots except last one? reset if true */
-void check_resets(IRMP_DATA *ir)
-{
-	uint8_t i;
-	uint16_t idx;
-	uint8_t buf[SIZEOF_IR];
-	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	for (i=WAKE_SLOTS/2; i < WAKE_SLOTS - 1; i++) {
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * i;
-		if (!eeprom_restore(buf, idx)) {
-			/* first encounter of zero in check_resets() means end of check */
-			if (!memcmp(buf, &zeros, sizeof(zeros))) //
-				break;
-			if (!memcmp(buf, ir, sizeof(buf)))
-				Reset();
 		}
 	}
 }
@@ -664,52 +679,10 @@ void check_reboot(IRMP_DATA *ir)
 {
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
-	idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * MACRO_SLOTS + SIZEOF_IR/2 * (WAKE_SLOTS - 1);
+	idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + (WAKE_SLOTS - 1) * SIZEOF_IR/2;
 	if (!eeprom_restore(buf, idx)) {
 		if (!memcmp(buf, ir, sizeof(buf)))
 			reboot();
-	}
-}
-
-void transmit_macro(uint8_t macro)
-{
-	uint8_t i;
-	uint16_t idx;
-	uint8_t buf[SIZEOF_IR];
-	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	/* we start from 1, since we don't want to tx the trigger code of the macro*/
-	for (i=1; i < MACRO_DEPTH + 1; i++) {
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * macro + SIZEOF_IR/2 * i;
-		if (!eeprom_restore(buf, idx)) {
-			/* first encounter of zero in macro means end of macro */
-			if (!memcmp(buf, &zeros, sizeof(zeros)))
-				break;
-			/* if macros are sent already, while the trigger IR data are still repeated,
-			* the receiving device may crash
-			* Depending on the protocol we need a pause between the trigger and the transmission
-			* and between two transmissions. The highest known pause is 130 ms for Denon. */
-			yellow_short_on();
-			irsnd_send_data((IRMP_DATA *) buf, 1);
-		}
-	}
-}
-
-/* is received ir-code (trigger) in one of the macro-slots? transmit_macro if true */
-void check_macros(IRMP_DATA *ir)
-{
-	uint8_t i;
-	uint16_t idx;
-	uint8_t buf[SIZEOF_IR];
-	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	for (i=0; i < MACRO_SLOTS; i++) {
-		idx = (MACRO_DEPTH + 1) * SIZEOF_IR/2 * i;
-		if (!eeprom_restore(buf, idx)) {
-			/* first encounter of zero in check_macros() means end of check */
-			if (!memcmp(buf, &zeros, sizeof(zeros))) //
-				break;
-		    if (!memcmp(buf, ir, sizeof(buf)))
-			transmit_macro(i);
-		}
 	}
 }
 
@@ -772,15 +745,21 @@ void led_callback (uint_fast8_t on)
 
 void send_magic(void)
 {
-	uint8_t magic[SIZEOF_IR] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0x00};
-	USB_HID_SendData(REPORT_ID_IR, magic, SIZEOF_IR);
+	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
+	uint8_t release[3] = {0x00, 0x00, 0x00};
+	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
+	delay_ms(get_repeat(2));
+	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
 }
 
 int main(void)
 {
+	uint8_t kbd_buf[3] = {0}; // USB HID keyboard report: {modifier, reserved (ignored), keypress #1, keypress #2 (unused)}
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
+	uint16_t key, last_sent, last_received;
+	uint8_t num, release_needed;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -788,13 +767,9 @@ int main(void)
 	USB_HID_Init();
 	USB_DISC_release();
 	IRMP_Init();
-	irsnd_init();
 	FLASH_Unlock();
 	EE_Init();
 	irmp_set_callback_ptr (led_callback);
-#ifdef TM1637
-	tm1637Init();
-#endif
 
 	while (1) {
 		if (!AlarmValue && !host_running())
@@ -804,8 +779,6 @@ int main(void)
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}
-
-		wakeup_reset();
 
 		/* wait for previous transfer to complete before sending again and test if configuration command is received */
 		if(PrevXferComplete && USB_HID_Data_Received && buf[0] == REPORT_ID_CONFIG_OUT && buf[1] == STAT_CMD) {
@@ -845,20 +818,40 @@ int main(void)
 			if (irmp_get_data(&myIRData)) {
 				myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 				if (!(myIRData.flags)) {
+					repeat_timer = 0;
+					last_sent = 0;
+					last_received = 0;
 					store_wakeup(&myIRData);
-					check_macros(&myIRData);
 					check_wakeups(&myIRData);
-					check_resets(&myIRData);
 					check_reboot(&myIRData);
+				} else {
+					last_received = repeat_timer;
+					if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+						continue; // don't send key
+					} else {
+						last_sent = repeat_timer;
+					}
 				}
 
-				/* send IR-data */
-				USB_HID_SendData(REPORT_ID_IR, (uint8_t *) &myIRData, sizeof(myIRData));
+				/* send key corresponding to IR-data */
+				num = get_num_of_irdata(&myIRData);
+				if(num != 0xFF) {
+					key = get_key(num);
+					if(key != 0xFFFF) {
+						kbd_buf[0] = key >> 8; // modifier
+						kbd_buf[2] = key & 0xFF; // key
+						USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+						release_needed = 1;
+					}
+				}
+			}
 
-#ifdef TM1637
-				/* send IR-data to 4-digit-display */
-				tm1637DisplayHex(myIRData.command);
-#endif
+			/* send release */
+			if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+				release_needed = 0;
+				kbd_buf[0] = 0;
+				kbd_buf[2] = 0;
+				USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 			}
 		}
 	}
