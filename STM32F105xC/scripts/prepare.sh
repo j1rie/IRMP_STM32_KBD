@@ -127,9 +127,6 @@ unzip -j $ar \
     $path/irmpconfig.h.max \
     $path/irmpprotocols.h \
     $path/irmpsystem.h \
-    $path/irsnd.c \
-    $path/irsnd.h \
-    $path/irsndconfig.h.max \
     $path/README.txt
 mv irmpconfig.h.max irmpconfig.h
 mv irsndconfig.h.max irsndconfig.h

@@ -7,7 +7,7 @@
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
  *  (at your option) any later version.
- */diff -Nrup A/inc/usb_bsp.h B/inc/usb_bsp.h
+ */diff -Nrup A/inc/usb_bsp.h B/inc/usb_bsp.h
 --- A/inc/usb_bsp.h	2018-09-05 14:57:38.000000000 +0200
 +++ B/inc/usb_bsp.h	2022-07-20 17:25:30.597819789 +0200
 @@ -25,6 +25,7 @@
@@ -263,7 +263,7 @@ diff -Nrup A/src/usbd_desc.c B/src/usbd_desc.c
                     USBD_StrDesc, length);
 diff -Nrup A/src/usbd_hid_core.c B/src/usbd_hid_core.c
 --- A/src/usbd_hid_core.c	2018-09-05 14:58:08.000000000 +0200
-+++ B/src/usbd_hid_core.c	2022-07-20 17:33:52.364483888 +0200
++++ B/src/usbd_hid_core.c	2022-07-21 21:26:59.907529466 +0200
 @@ -44,6 +44,7 @@
  #include "usbd_hid_core.h"
  #include "usbd_desc.h"
@@ -369,20 +369,20 @@ diff -Nrup A/src/usbd_hid_core.c B/src/usbd_hid_core.c
 +  0x26, 0xff, 0x00,      /*     LOGICAL_MAXIMUM (255)      */
 +  0x75, 0x08,            /*     REPORT_SIZE (8)            */
 +
-+  /* STM32->PC, HID raw */
++  /* STM32->PC */
 +  0x85, REPORT_ID_CONFIG_IN, /* REPORT_ID                  */
 +  0x09, 0x03,            /*     USAGE (3)                  */
-+  0x95, HID_IN_REPORT_COUNT-1, /* REPORT_COUNT              */
++  0x95, HID_IN_REPORT_COUNT-1, /* REPORT_COUNT             */
 +  0x81, 0x02,            /*     INPUT (Data,Var,Abs,Vol)   */
 +
-+  /* PC->STM32, HID raw */
++  /* PC->STM32 */
 +  0x85, REPORT_ID_CONFIG_OUT, /* REPORT_ID                 */
 +  0x09, 0x04,            /*     USAGE (4)                  */
-+  0x95, HID_OUT_REPORT_COUNT-1, /* REPORT_COUNT             */
++  0x95, HID_OUT_REPORT_COUNT-1, /* REPORT_COUNT            */
 +  0x91, 0x02,            /*     OUTPUT (Data,Var,Abs,Vol)  */
 +  0xc0, 	         /*     END_COLLECTION	           */
 +
-+  /* PC->STM32, HID keyboard */
++  /* STM32->PC, HID Keyboard */
 +  0x05, 0x01,            /*  USAGE_PAGE (Generic Desktop)  */
 +  0x09, 0x06,            /*     USAGE (Keyboard)           */
 +  0xa1, 0x01,            /*     COLLECTION (Application)   */

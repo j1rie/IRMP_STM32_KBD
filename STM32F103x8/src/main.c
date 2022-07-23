@@ -596,7 +596,7 @@ int8_t set_handler(uint8_t *buf)
 		ret = store_new_irdata(idx);
 		break;
 	case CMD_REPEAT:
-		put_repeat(*((uint16_t*)&buf[4]), buf[4]);
+		put_repeat(*((uint16_t*)&buf[5]), buf[4]);
 		/* validate stored value in eeprom */
 		if(!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;

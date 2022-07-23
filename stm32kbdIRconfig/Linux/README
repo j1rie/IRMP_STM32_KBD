@@ -4,7 +4,7 @@ Usage:
 stm32kbdIRconfig [/dev/hidraw1]
 
 program and read the eeprom (wakeups, irdata, keys, repeat and capabilities)
-reset wakeups, irdata, keys, repeat and alarm
+reset wakeups, irdata, keys, repeat, alarm and eeprom
 set and get the alarm
 reboot the device
 monitor (read) IRMP_STM32_KBD, stop with ^C

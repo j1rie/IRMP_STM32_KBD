@@ -1,5 +1,5 @@
 /**********************************************************************************************************
-	stm32IRconfig: configure and monitor IRMP_STM32_KBD
+	stm32kbdIRconfig: configure and monitor IRMP_STM32_KBD
 
 	Copyright (C) 2014-2022 Joerg Riechardt
 

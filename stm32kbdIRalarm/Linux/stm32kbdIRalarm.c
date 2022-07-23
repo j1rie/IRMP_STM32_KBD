@@ -38,13 +38,20 @@ enum command {
 	CMD_REBOOT,
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
-	CMD_REPEAT
+	CMD_REPEAT,
+	CMD_EEPROM_RESET
 };
 
 enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
+};
+
+enum report_id {
+	REPORT_ID_KBD = 1,
+	REPORT_ID_CONFIG_IN = 2,
+	REPORT_ID_CONFIG_OUT = 3
 };
 
 static int stm32fd = -1;
@@ -139,7 +146,7 @@ int main(int argc, char *argv[]) {
 	    write_stm32();
 	    usleep(3000);
 	    read_stm32();
-	    while (inBuf[0] == 0x01)
+	    while (inBuf[0] == REPORT_ID_KBD)
 		read_stm32();
 	    alarm = *((uint32_t *)&inBuf[4]);
 	    printf("\tSTM32alarm: %" PRIu16 " days %d hours %d minutes %d seconds\n", alarm/60/60/24, (alarm/60/60) % 24, (alarm/60) % 60, alarm % 60);

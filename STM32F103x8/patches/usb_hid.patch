@@ -243,7 +243,7 @@ diff -Nrup A/src/stm32_it.c B/src/stm32_it.c
  * Function Name  : USB_FS_WKUP_IRQHandler
 diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 --- A/src/usb_desc.c	2017-06-16 10:14:00.000000000 +0200
-+++ B/src/usb_desc.c	2022-07-20 12:28:08.030812861 +0200
++++ B/src/usb_desc.c	2022-07-21 21:25:33.554476366 +0200
 @@ -59,10 +59,10 @@ const uint8_t CustomHID_DeviceDescriptor
      0x00,                       /*bDeviceSubClass*/
      0x00,                       /*bDeviceProtocol*/
@@ -340,13 +340,13 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 +    0x26, 0xff, 0x00,      /*     LOGICAL_MAXIMUM (255)      */
 +    0x75, 0x08,            /*     REPORT_SIZE (8)            */
 +
-+    /* STM32->PC, HID raw */
++    /* STM32->PC */
 +    0x85, REPORT_ID_CONFIG_IN, /* REPORT_ID                  */
 +    0x09, 0x03,            /*     USAGE (3)                  */
 +    0x95, HID_IN_REPORT_COUNT-1, /* REPORT_COUNT             */
 +    0x81, 0x82,            /*     INPUT (Data,Var,Abs,Vol)   */
 +
-+    /* PC->STM32, HID raw */
++    /* PC->STM32 */
 +    0x85, REPORT_ID_CONFIG_OUT, /* REPORT_ID                 */
 +    0x09, 0x04,            /*     USAGE (4)                  */
 +    0x95, HID_OUT_REPORT_COUNT-1, /* REPORT_COUNT            */
