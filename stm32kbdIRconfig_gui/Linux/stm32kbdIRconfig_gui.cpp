@@ -1081,9 +1081,9 @@ MainWindow::onPirdata(FXObject *sender, FXSelector sel, void *ptr)
 	const char *z = " ";
 	int len;
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA);
 	s += t;
@@ -1147,9 +1147,9 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t, u;
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
 	s += t;
@@ -1198,9 +1198,9 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REPEAT);
 	u.format("%x ", rslistbox->getCurrentItem());
 #if (FOX_MINOR >= 7)
-	t.format("%x %x", repeat_text->getText().toInt() & 0xFF, (repeat_text->getText().toInt() >> 8) & 0xFF );
+	t.format("%x %x", repeat_text->getText().toUInt() & 0xFF, (repeat_text->getText().toUInt() >> 8) & 0xFF );
 #else
-	t.format("%x %x", FXIntVal(repeat_text->getText(), 10) & 0xFF, (FXIntVal(repeat_text->getText(), 10) >> 8) & 0xFF);
+	t.format("%x %x", FXUIntVal(repeat_text->getText(), 10) & 0xFF, (FXUIntVal(repeat_text->getText(), 10) >> 8) & 0xFF);
 #endif
 	s += u;
 	s += " ";
@@ -1247,9 +1247,9 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA_REMOTE);
 	s += t;
@@ -1324,9 +1324,9 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_IRDATA);
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s += t;
 	output_text->setText(s);
@@ -1367,9 +1367,9 @@ MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 	FXString t;
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_KEY);
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s += t;
 	output_text->setText(s);
@@ -1530,10 +1530,10 @@ MainWindow::onAset(FXObject *sender, FXSelector sel, void *ptr)
 	unsigned int setalarm = 0;
 	FXString u = "";
 #if (FOX_MINOR >= 7)
-	setalarm += 60 * 60 * 24 * days_text->getText().toInt();
-	setalarm += 60 * 60 * hours_text->getText().toInt();
-	setalarm += 60 * minutes_text->getText().toInt();
-	setalarm += seconds_text->getText().toInt();
+	setalarm += 60 * 60 * 24 * days_text->getText().toUInt();
+	setalarm += 60 * 60 * hours_text->getText().toUInt();
+	setalarm += 60 * minutes_text->getText().toUInt();
+	setalarm += seconds_text->getText().toUInt();
 #else
 	setalarm += 60 * 60 * 24 * FXIntVal(days_text->getText(), 10);
 	setalarm += 60 * 60 * FXIntVal(hours_text->getText(), 10);
@@ -1600,9 +1600,9 @@ MainWindow::onRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_IRDATA);
 	s += t;
@@ -1636,9 +1636,9 @@ MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 #if (FOX_MINOR >= 7)
-	t.format("%x ", line_text->getText().toInt() - 1);
+	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
-	t.format("%x ", FXIntVal(line_text->getText(), 10) - 1);
+	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
 	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_KEY);
 	s += t;
