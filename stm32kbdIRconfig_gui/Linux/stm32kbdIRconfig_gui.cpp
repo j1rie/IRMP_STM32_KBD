@@ -374,7 +374,7 @@ MainWindow::MainWindow(FXApp *app)
 	//IR Group Box
 	FXSpring *s1311 = new FXSpring(hf131,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
 	FXGroupBox *gb1311 = new FXGroupBox(s1311, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X);
-	FXMatrix *m1311 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,0);
+	FXMatrix *m1311 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,4);
 	new FXLabel(m1311, "protocol");
 	new FXLabel(m1311, "address");
 	new FXLabel(m1311, "command");
@@ -410,7 +410,7 @@ MainWindow::MainWindow(FXApp *app)
 	rslistbox=new FXListBox(gb143,this,ID_RSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
 
 	// map group box
-	FXGroupBox *gb132 = new FXGroupBox(vf132, "eeprom map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+	FXGroupBox *gb132 = new FXGroupBox(vf132, "eeprom map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 4,4,0,10);
 	open_button = new FXButton(gb132, "open file", NULL, this, ID_OPEN, BUTTON_NORMAL|LAYOUT_FILL_X);
 	save_button = new FXButton(gb132, "save file", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
 	flash_button = new FXButton(gb132, "flash eeprom", NULL, this, ID_PEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
