@@ -686,17 +686,17 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		output_text->setText(s);
 		Write_and_Check(5, 10);
 		s = (i < wakeupslots-1) ? "wakeup: " : "reboot: ";
-		t.format("%02hhx", buf[4]);
+		t.format("%02x", (unsigned int)buf[4]);
 		s += t;
-		t.format("%02hhx", buf[6]);
+		t.format("%02x", (unsigned int)buf[6]);
 		s += t;
-		t.format("%02hhx", buf[5]);
+		t.format("%02x", (unsigned int)buf[5]);
 		s += t;
-		t.format("%02hhx", buf[8]);
+		t.format("%02x", (unsigned int)buf[8]);
 		s += t;
-		t.format("%02hhx", buf[7]);
+		t.format("%02x", (unsigned int)buf[7]);
 		s += t;
-		t.format("%02hhx", buf[9]);
+		t.format("%02x", (unsigned int)buf[9]);
 		s += t;
 		s += "\n";
 		if(!(s == "wakeup: ffffffffffff\n")) {
@@ -921,7 +921,7 @@ MainWindow::Read(int in_len)
 		s.format("Received %d bytes:\n", in_len);
 		for (int i = 0; i < in_len; i++) {
 			FXString t;
-			t.format("%02hhx ", buf[i]);
+			t.format("%02x ", (unsigned int)buf[i]);
 			s += t;
 		}
 		s += "\n";
@@ -961,7 +961,7 @@ MainWindow::Write(int out_len)
 		s.format("Sent %d bytes:\n", out_len);
 		for (int i = 0; i < out_len; i++) {
 			FXString t;
-			t.format("%02hhx ", static_cast<unsigned char>(bufw[i]));
+			t.format("%02x ", (unsigned int)(bufw[i]));
 			s += t;
 		}
 		s += "\n";
@@ -1291,26 +1291,26 @@ MainWindow::onGwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	Write_and_Check(5, 10);
 
 	s = "";
-	t.format("%02hhx", buf[4]);
+	t.format("%02x", (unsigned int)buf[4]);
 	s += t;
 	protocol_text->setText(s);
 		
 	s = "";
-	t.format("%02hhx", buf[6]);
+	t.format("%02x", (unsigned int)buf[6]);
 	s += t;
-	t.format("%02hhx", buf[5]);
+	t.format("%02x", (unsigned int)buf[5]);
 	s += t;
 	address_text->setText(s);
 
 	s = "";
-	t.format("%02hhx", buf[8]);
+	t.format("%02x", (unsigned int)buf[8]);
 	s += t;
-	t.format("%02hhx", buf[7]);
+	t.format("%02x", (unsigned int)buf[7]);
 	s += t;
 	command_text->setText(s);
 
 	s = "";
-	t.format("%02hhx", buf[9]);
+	t.format("%02x", (unsigned int)buf[9]);
 	s += t;
 	flag_text->setText(s);
 
@@ -1334,26 +1334,26 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 	Write_and_Check(5, 10);
 	
 	s = "";
-	t.format("%02hhx", buf[4]);
+	t.format("%02x", (unsigned int)buf[4]);
 	s += t;
 	protocol_text->setText(s);
 		
 	s = "";
-	t.format("%02hhx", buf[6]);
+	t.format("%02x", (unsigned int)buf[6]);
 	s += t;
-	t.format("%02hhx", buf[5]);
+	t.format("%02x", (unsigned int)buf[5]);
 	s += t;
 	address_text->setText(s);
 
 	s = "";
-	t.format("%02hhx", buf[8]);
+	t.format("%02x", (unsigned int)buf[8]);
 	s += t;
-	t.format("%02hhx", buf[7]);
+	t.format("%02x", (unsigned int)buf[7]);
 	s += t;
 	command_text->setText(s);
 
 	s = "";
-	t.format("%02hhx", buf[9]);
+	t.format("%02x", (unsigned int)buf[9]);
 	s += t;
 	flag_text->setText(s);
 
