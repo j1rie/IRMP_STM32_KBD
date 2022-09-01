@@ -464,7 +464,7 @@ void Wakeup(void)
 
 int8_t store_new_irdata(uint16_t num)
 {
-	int8_t loop, ret = 3;
+	int8_t loop, ret = 4;
 	IRMP_DATA new_IRData;
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
@@ -565,6 +565,7 @@ int8_t set_handler(uint8_t *buf)
 		eeprom_restore(tmp, idx);
 		if (memcmp(&buf[5], tmp, sizeof(tmp)))
 			ret = -1;
+		break;
 	case CMD_KEY:
 		put_key(*((uint16_t*)&buf[5]), buf[4]);
 		/* validate stored value in eeprom */
@@ -620,6 +621,7 @@ int8_t reset_handler(uint8_t *buf)
 		eeprom_restore(tmp, idx);
 		if (memcmp(zeros, tmp, sizeof(tmp)))
 			ret = -1;
+		break;
 	case CMD_KEY:
 		put_key(0xFFFF, buf[4]);
 		/* validate stored value in eeprom */
@@ -833,25 +835,30 @@ int main(void)
 					}
 				}
 
-				/* send key corresponding to IR-data */
+				/* send key corresponding to IR-data, but only if host is running, otherwise the transfer will not complete, and we are stuck */
 				num = get_num_of_irdata(&myIRData);
 				if(num != 0xFF) {
 					key = get_key(num);
 					if(key != 0xFFFF) {
 						kbd_buf[0] = key >> 8; // modifier
 						kbd_buf[2] = key & 0xFF; // key
-						USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+						if(host_running())
+							USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 						release_needed = 1;
 					}
 				}
 			}
+		}
 
-			/* send release */
+		/* wait for previous transfer to complete before sending again */
+		if (PrevXferComplete) {
+			/* send release, but only if host is running, otherwise the transfer will not complete, and we are stuck */
 			if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 				release_needed = 0;
 				kbd_buf[0] = 0;
 				kbd_buf[2] = 0;
-				USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+				if(host_running())
+					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 			}
 		}
 	}

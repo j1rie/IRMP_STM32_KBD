@@ -85,7 +85,7 @@ static void read_stm32(int in_size, int show_len) {
 	} else {
 		printf("read %d bytes:\n\t", retVal);
 		for (int i = 0; i < show_len; i++)
-			printf("%02x ", (unsigned int)inBuf[i]);
+			printf("%02x ", inBuf[i]);
 		puts("\n");
 	}
 } 
@@ -98,7 +98,7 @@ static void write_stm32(int out_size) {
 	} else {
 		printf("written %d bytes:\n\t", retVal);
 		for (int i = 0; i < out_size; i++)
-			printf("%02x ", (unsigned int)outBuf[i]);
+			printf("%02x ", outBuf[i]);
 		puts("\n");
 	}
 }
@@ -113,7 +113,7 @@ void write_and_check(int idx, int show_len) {
 	read_stm32(in_size, show_len); // blocking per default, waits until data arrive
 	while (inBuf[0] == REPORT_ID_KBD)
 		read_stm32(in_size, show_len);
-	if (inBuf[1] == STAT_SUCCESS) {
+	if((inBuf[0] == REPORT_ID_CONFIG_IN) && (inBuf[1] == STAT_SUCCESS) && (inBuf[2] == outBuf[2]) && (inBuf[3] == outBuf[3])) {
 		puts("*****************************OK********************************\n");
 	} else {
 		puts("***************************ERROR*******************************\n");
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
 	uint64_t i;
 	uint16_t kk = 0x0000;
 	char c, d;
-	uint8_t k, l, idx;
+	uint8_t k, l, idx, eeprom_lines;
 	unsigned int n;
 	int jump_to_firmware;
 
@@ -154,6 +154,7 @@ int main(int argc, char* argv[])
 	hid_read(handle, inBuf, 9);
 	while (inBuf[0] == 0x01)
 		hid_read(handle, inBuf, 9);
+	eeprom_lines = inBuf[4];
 	in_size = inBuf[7] ? inBuf[7] : 17;
 	out_size = inBuf[8] ? inBuf[8] : 17;
 	printf("hid in report count: %u\n", in_size);
@@ -162,13 +163,13 @@ int main(int argc, char* argv[])
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("program eeprom: wakeups, IR-data, keys and repeat (p)\nprogram eeprom: wakeups and IR-data with remote control (q)\nget eeprom: wakeups, IR-data, keys, repeat and capabilities (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nset alarm (s)\nget alarm (a)\nreboot (b)\nexit (x)\n");
+cont:	printf("set eeprom: wakeups, IR-data, keys, repeat and alarm (s)\nset eeprom by remote: wakeups and IR-data (q)\nget eeprom: wakeups, IR-data, keys, repeat, alarm, capabilities and eeprom (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
-	case 'p':
-prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
+	case 's':
+set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
@@ -217,8 +218,16 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 				break;
 			    }
 			}
-			outBuf[idx++] = kk & 0xFF;
-			outBuf[idx++] = (kk>>8) & 0xFF;
+			outBuf[idx++] = kk;
+			printf("enter modifier (KEY_xxx)\n");
+			scanf("%s", &c);
+			for(l=0; l < lines; l++) {
+			    if(!strcmp(mapusb[l].key, &c)) {
+				kk = mapusb[l].usb_hid_key;
+				break;
+			    }
+			}
+			outBuf[idx++] = kk;
 			write_and_check(idx, 4);
 			break;
 		case 'r':
@@ -232,13 +241,20 @@ prog:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\n");
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check(idx, 4);
 			break;
+		case 'a':
+			outBuf[idx++] = CMD_ALARM;
+			printf("enter alarm\n");
+			scanf("%I64x", &i);
+			memcpy(&outBuf[idx], &i, 4);
+			write_and_check(idx + 4, 4);
+			break;
 		default:
-			goto prog;
+			goto set;
 		}
 		break;
 
 	case 'q':
-Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
+Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
@@ -257,13 +273,13 @@ Prog:		printf("set wakeup with remote control(w)\nset IR-data with remote contro
 			outBuf[idx++] = n;
 			break;
 		default:
-			goto Prog;
+			goto Set;
 		}
 		write_and_check(idx, 4);
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\n");
+get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, out_size - 2);
 		idx = 2;
@@ -274,28 +290,81 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = n;
-			l = 10;
+			write_and_check(idx, 10);
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = n;
-			l = 10;
+			write_and_check(idx, 10);
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = n;
-			l = 6;
+			write_and_check(idx, 6);
 			break;
 		case 'r':
 			printf("get repeat delay(0)\nget repeat period(1)\nget repeat timeout(2)\n");
 			scanf("%u", &n);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
-			l = 6;
+			write_and_check(idx, 6);
+			break;
+		case 'a':
+			outBuf[idx++] = CMD_ALARM;
+			write_and_check(idx, 8);
+			break;
+		case 'e':
+			for (l = 0; l < eeprom_lines; l++) {
+				outBuf[idx++] = CMD_IRDATA;
+				outBuf[idx++] = l;
+				hid_write(handle, outBuf, idx);
+				#ifdef WIN32
+				Sleep(3);
+				#else
+				usleep(3000);
+				#endif
+				hid_read(handle, inBuf, 10);
+				for (int i = 4; i < 10; i++)
+					printf("%02x", inBuf[i]);
+				printf(" ");
+				idx = 3;
+				outBuf[idx++] = CMD_KEY;
+				outBuf[idx++] = l;
+				#ifdef WIN32
+				Sleep(3);
+				#else
+				usleep(3000);
+				#endif
+				hid_write(handle, outBuf, idx);
+				#ifdef WIN32
+				Sleep(3);
+				#else
+				usleep(3000);
+				#endif
+				hid_read(handle, inBuf, 6);
+				for(n=0; n < lines-1; n++) {
+					if(mapusb[n].usb_hid_key == inBuf[5]) {
+						printf("%s|", mapusb[n].key);
+					}
+				}
+				for(n=0; n < lines-1; n++) {
+					if(mapusb[n].usb_hid_key == inBuf[4]) {
+						printf("%s", mapusb[n].key);
+					}
+				}
+				printf("\n");
+				#ifdef WIN32
+				Sleep(3);
+				#else
+				usleep(3000);
+				#endif
+				idx = 3;
+			}
+			goto out;
 			break;
 		case 'c':
 			jump_to_firmware = 0;
@@ -344,7 +413,6 @@ again:			;
 		default:
 			goto get;
 		}
-		write_and_check(idx, l);
 out:
 		break;
 
@@ -379,35 +447,16 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = n;
 			break;
-		case 'a':
-			outBuf[idx++] = CMD_ALARM;
-			break;
 		case 'e':
 			outBuf[idx++] = CMD_EEPROM_RESET;
+			break;
+		case 'a':
+			outBuf[idx++] = CMD_ALARM;
 			break;
 		default:
 			goto reset;
 		}
 		write_and_check(idx, 4);
-		break;
-
-	case 's':
-		memset(&outBuf[2], 0, out_size - 2);
-		idx = 2;
-		outBuf[idx++] = ACC_SET;
-		outBuf[idx++] = CMD_ALARM;
-		printf("enter alarm\n");
-		scanf("%I64x", &i);
-		memcpy(&outBuf[idx], &i, 4);
-		write_and_check(idx + 4, 4);
-		break;
-
-	case 'a':
-		memset(&outBuf[2], 0, out_size - 2);
-		idx = 2;
-		outBuf[idx++] = ACC_GET;
-		outBuf[idx++] = CMD_ALARM;
-		write_and_check(idx, 8);
 		break;
 
 	case 'b':

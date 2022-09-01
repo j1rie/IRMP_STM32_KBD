@@ -37,7 +37,7 @@ void USB_HID_SendData(uint8_t Report_ID, uint8_t *ptr, uint8_t len)
 	{
 		/* Windows needs HID_IN_REPORT_COUNT, for linux len is sufficient */
 		ptr[0] = Report_ID;
-		memset(&ptr[len], 0, HID_IN_REPORT_COUNT - len);
+		//memset(&ptr[len], 0, HID_IN_REPORT_COUNT - len);
 		USB_SIL_Write(EP1_IN, ptr, HID_IN_REPORT_COUNT);
 	}
 	SetEPTxValid(ENDP1);

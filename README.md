@@ -46,6 +46,8 @@ Repeat this as often as needed.
 
 You can test the keymap immediately with evtest: After pressing the button on the remote, evtest should show the corresponding key.
 
+It is recommended to start with a fresh eeprom by pressing "eeprom map - reset eeprom".
+
 ## Learning wakeup
 If the wakeup is empty, the first received IR data will be stored into the wakeup.  
 Change wakeup with stm32kbdIRconfig_gui: press set by remote - wakeup, press button on remote control.  

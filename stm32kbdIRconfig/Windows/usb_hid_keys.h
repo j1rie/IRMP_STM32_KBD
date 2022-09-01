@@ -4,7 +4,7 @@ struct mapline {
     uint8_t usb_hid_key;
 };
 
-const uint8_t lines = 164;
+const uint8_t lines = 165;
 
 struct mapline mapusb[lines] =
 {
@@ -245,6 +245,6 @@ struct mapline mapusb[lines] =
 { "KEY_SCREENLOCK",	0xF9}, // KEY_COFFEE -> KEY_SCREENLOCK OK
 { "KEY_REFRESH",	0xFA}, // OK
 { "KEY_CALC",	0xFB},  // OK
-{ "ff",	0x00},  // for modifier, necessary for Windows
-{ "",	0x00},  // for modifier, necessary for Windows
+{ "ff",	0x00},  // ff stands for no key and that's what 0x00 does
+{ "ff",	0xFF},  // if eeprom is empty, we receive 0xFF, and that means no key
 };
