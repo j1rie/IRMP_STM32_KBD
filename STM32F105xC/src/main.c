@@ -717,12 +717,13 @@ int main(void)
 		if (!AlarmValue && !host_running())
 			Wakeup();
 
-		if (send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
+		/* always wait for previous transfer to complete before sending again, consider using a send buffer */
+		if (PrevXferComplete && host_running() && send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}
 
-		/* wait for previous transfer to complete before sending again and test if configuration command is received */
+		/* test if configuration command is received */
 		if(PrevXferComplete && USB_HID_Data_Received && buf[0] == REPORT_ID_CONFIG_OUT && buf[1] == STAT_CMD) {
 			USB_HID_Data_Received = 0;
 
@@ -754,43 +755,39 @@ int main(void)
 				reboot();
 		}
 
-		/* wait for previous transfer to complete before sending again */
-		if (PrevXferComplete) {
-			/* poll IR-data */
-			if (irmp_get_data(&myIRData)) {
-				myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
-				if (!(myIRData.flags)) {
-					repeat_timer = 0;
-					last_sent = 0;
-					last_received = 0;
-					store_wakeup(&myIRData);
-					check_wakeups(&myIRData);
-					check_reboot(&myIRData);
+		/* poll IR-data */
+		if (PrevXferComplete && irmp_get_data(&myIRData)) {
+			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
+			if (!(myIRData.flags)) {
+				repeat_timer = 0;
+				last_sent = 0;
+				last_received = 0;
+				store_wakeup(&myIRData);
+				check_wakeups(&myIRData);
+				check_reboot(&myIRData);
+			} else {
+				last_received = repeat_timer;
+				if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+					continue; // don't send key
 				} else {
-					last_received = repeat_timer;
-					if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
-						continue; // don't send key
-					} else {
-						last_sent = repeat_timer;
-					}
+					last_sent = repeat_timer;
 				}
+			}
 
-				/* send key corresponding to IR-data, but only if host is running, otherwise the transfer will not complete, and we are stuck */
-				num = get_num_of_irdata(&myIRData);
-				if(num != 0xFF) {
-					key = get_key(num);
-					if(key != 0xFFFF) {
-						kbd_buf[0] = key >> 8; // modifier
-						kbd_buf[2] = key & 0xFF; // key
-						if(host_running())
-							USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
-						release_needed = 1;
-					}
+			/* send key corresponding to IR-data, but only if host is running, otherwise the transfer will not complete, and we are stuck */
+			num = get_num_of_irdata(&myIRData);
+			if(num != 0xFF) {
+				key = get_key(num);
+				if(key != 0xFFFF) {
+					kbd_buf[0] = key >> 8; // modifier
+					kbd_buf[2] = key & 0xFF; // key
+					if(host_running())
+						USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+					release_needed = 1;
 				}
 			}
 		}
 
-		/* wait for previous transfer to complete before sending again */
 		if (PrevXferComplete) {
 			/* send release, but only if host is running, otherwise the transfer will not complete, and we are stuck */
 			if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {

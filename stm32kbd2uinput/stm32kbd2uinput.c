@@ -11,7 +11,7 @@ uint8_t debug = 0; // TODO make configuable
 uint8_t magic_key = 173; // TODO make configuable
 uint8_t only_once = 1;
 
-const char* kbd_device = "/dev/irmp_stm32_kbd"; // TODO make configuable
+const char* kbd_device = "/dev/irmp_stm32_kbd_event"; // TODO make configuable
 //const char* kbd_device = "/dev/input/event4"; // TODO make configuable
 
 int write_event(int fd, __u16 type, __u16 code, __s32 value)

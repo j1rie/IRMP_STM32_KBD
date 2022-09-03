@@ -1,7 +1,7 @@
 [Unit]
-Description="stm32kbd2uinput reads from irmp_stm32_kbd and writes key presses to uinput"
-Requisite=dev-irmp_stm32_kbd.device
-After=dev-irmp_stm32_kbd.device
+Description="stm32kbd2uinput reads from irmp_stm32_kbd_event and writes key presses to uinput"
+Requisite=dev-irmp_stm32_kbd_event.device
+After=dev-irmp_stm32_kbd_event.device
 
 [Service]
 Type=simple
@@ -12,4 +12,4 @@ KillMode=process
 TimeoutStopSec=1s
 
 [Install]
-WantedBy=dev-irmp_stm32_kbd.device
+WantedBy=dev-irmp_stm32_kbd_event.device
