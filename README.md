@@ -3,6 +3,7 @@
 A remote control receiver with many functions based on cheap hardware.
 
 ![Stick](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/Stick.jpg)
+  
 ![Stick am Board](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/Stick_am_Board.jpg)
  
 ## Introduction
@@ -31,16 +32,24 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 * stm32FWupgrade for firmware update on the command line
 
 ## Creating an eeprom map
-The stm32kbdIRconfig_gui can be used for building an eeprom map with the remote control.  
-There are two methods.  
-
+The stm32kbdIRconfig_gui can be used for building an eeprom map with the keyboard and the remote control.  
+There are three methods.  
+  
+(1)  
+![keyboard + irdata mode](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/keyboard+irdata_mode.jpg)  
+First method: Click a line, click "set by remote - keyboard + irdata", press the modifier or key on your keyboard, press the key if the first was a modifier, press the button on the remote.  
+The red text below the keyboard + irdata button guides you through the process.  
+Repeat this as often as needed.  
+  
+(2)  
 ![setting irdata into template map](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/setting_irdata_into_template_map.jpg)   
-First method: Open the template keymap. Remove lines with keys you don't need.  
+Second method: Open the template keymap. Remove lines with keys you don't need.  
 Click the line with the key's name, click "set by remote - irdata", press the button on the remote - repeat this for all buttons.  
 Click "flash eeprom".  
-
+  
+(3)  
 ![building eeprom map](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/building_eeprom_map.jpg)  
-Second method: Click a line, click "set by remote - irdata", press the button on the remote.  
+Third method: Click a line, click "set by remote - irdata", press the button on the remote.  
 Click a line, enter key (and modifier), click "set - key".  
 Repeat this as often as needed.  
 
