@@ -53,7 +53,9 @@ Third method: Click a line, click "set by remote - irdata", press the button on 
 Click a line, enter key (and modifier), click "set - key".  
 Repeat this as often as needed.  
 
-You can test the keymap immediately with evtest: After pressing the button on the remote, evtest should show the corresponding key.
+If you press the keyboard + irdata-button twice, you can test your keyboard keys as well as already configured buttons on the remote.  
+
+Also you can test the eeprom map with evtest: After pressing the button on the remote, evtest should show the corresponding key.
 
 It is recommended to start with a fresh eeprom by pressing "eeprom map - reset eeprom".
 
