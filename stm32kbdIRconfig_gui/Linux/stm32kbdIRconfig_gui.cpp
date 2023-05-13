@@ -583,8 +583,8 @@ MainWindow::MainWindow(FXApp *app)
 	firmware1 = "";
 	max = 0;
 	count = 0;
-	out_size = 64; // at first out_size is unknown, so use HID maximum
-	in_size = 64; // at first in_size is unknown, so use HID maximum
+	//out_size = 64; // at first out_size is unknown, so use HID maximum
+	//in_size = 64; // at first in_size is unknown, so use HID maximum
 	got_key = 0;
 	got_modifier = 0;
 	PR_kbd_irdata_Active = 0;
@@ -658,9 +658,49 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 
 	hid_set_nonblocking(connected_device, 1);
 
+	unsigned char descriptor[HID_API_MAX_REPORT_DESCRIPTOR_SIZE];
+	int res = 0;
+
+	res = hid_get_report_descriptor(connected_device, descriptor, sizeof(descriptor));
+	if (res < 0) {
+		FXMessageBox::error(this, MBOX_OK, "Report Descriptor Error", "Unable to get Report Descriptor");
+		return -1;
+	} else {
+		/*printf("Report Descriptor Size: %d\n", res);
+		printf("Report Descriptor:");
+		for (int i = 0; i < res; i++) {
+			printf(" %02x", descriptor[i]);
+		}
+		printf("\n");*/
+	}
+
+	/* Get Report count */
+	for(int n = 0; n < res; n++) {
+		if(descriptor[n] == 0x95 && descriptor[n+2] == 0x81){ // REPORT_COUNT, INPUT
+			in_size = descriptor[n+1] + 1;
+		}
+		if(descriptor[n] == 0x95 && descriptor[n+2] == 0x91){ // REPORT_COUNT, OUTPUT
+			out_size = descriptor[n+1] + 1;
+			break;
+		}
+	}
+
+	FXString s;
+	s.format("%d %d %d %d 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
+	output_text->setText(s);
+	Write_and_Check(5, 9);
+
+	FXString u, v, w, x;
+	if(in_size != (buf[7] ? buf[7] : 17))
+		u.format("warning: hid in report count mismatch: %u %u\n", in_size, buf[7] ? buf[7] : 17);
+	if(out_size != (buf[8] ? buf[8] : 17))
+		v.format("warning: hid out report count mismatch: %u %u\n", out_size,  buf[8] ? buf[8] : 17);
+	if(!buf[7] || !buf[8])
+		w.format("old firmware!\n");
+	x += u+v+w;
+
 	if(onGcaps(NULL, 0, NULL) == -1)
 		return -1;
-	FXString s;
 	s.format("Connected to: %04hx:%04hx -", device_info->vendor_id, device_info->product_id);
 	//s += FXString(" ") + device_info->manufacturer_string;
 	s += FXString(" ") + device_info->product_string;
@@ -720,7 +760,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	reset_button->enable();
 
 	//list wakeups and alarm and warn if no STM32
-	FXString u;
 	for(int i = 0; i < wakeupslots; i++) {
 		FXString t, v;
 #if (FOX_MINOR >= 7)
@@ -959,7 +998,7 @@ MainWindow::Read(int show_len)
 			return 0;
 
 		s.format("Received %d bytes:\n", res);
-		for (int i = 0; i < res/*show_len*/; i++) {
+		for (int i = 0; i < show_len; i++) {
 			FXString t;
 			t.format("%02x ", buf[i]);
 			s += t;
@@ -997,7 +1036,7 @@ MainWindow::Write(int out_len)
 		return -1;
 	}
 
-	int res = hid_write(connected_device, bufw, out_size/*len*/); // may write arbitrary length
+	int res = hid_write(connected_device, bufw, out_len); // may write arbitrary length
 	if (res < 0) {
 		FXMessageBox::error(this, MBOX_OK, "Error Writing", "Could not write to device. Error reported was: %ls", hid_error(connected_device));
 		input_text->appendText("write error\n");
@@ -1006,9 +1045,9 @@ MainWindow::Write(int out_len)
 		return -1;
 	} else {
 		s.format("Sent %d bytes:\n", res);
-		for (int i = 0; i < res/*out_len*/; i++) {
+		for (int i = 0; i < out_len; i++) {
 			FXString t;
-			t.format("%02x ", (bufw[i]));
+			t.format("%02x ", bufw[i]);
 			s += t;
 		}
 		s += "\n";
@@ -1588,14 +1627,14 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			wakeupslots = buf[6];
 			t.format("number of wakeups: %u", buf[6]);
 			s += t;
-			in_size = buf[7] ? buf[7] : 17;
-			t.format("hid in report count: %u\n", in_size);
-			s += t;
-			out_size = buf[8] ? buf[8] : 17;
-			t.format("hid out report count: %u\n", out_size);
-			s += t;
-			if(!buf[7] || ! buf[8])
-				s += "old firmware!\n";
+			//in_size = buf[7] ? buf[7] : 17;
+			//t.format("hid in report count: %u\n", in_size);
+			//s += t;
+			//out_size = buf[8] ? buf[8] : 17;
+			//t.format("hid out report count: %u\n", out_size);
+			//s += t;
+			//if(!buf[7] || ! buf[8])
+				//s += "old firmware!\n";
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
 				s = "protocols: ";

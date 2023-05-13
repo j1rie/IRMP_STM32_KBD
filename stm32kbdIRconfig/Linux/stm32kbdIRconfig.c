@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32kbdIRconfig: configure and monitor IRMP_STM32_KBD
 
-	Copyright (C) 2014-2022 Joerg Riechardt
+	Copyright (C) 2014-2023 Joerg Riechardt
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include <termios.h>
 #include <fcntl.h>
 #include "usb_hid_keys.h"
+#include <sys/ioctl.h>
+#include <linux/hidraw.h>
 
 enum access {
 	ACC_GET,
@@ -62,7 +64,7 @@ unsigned int in_size, out_size;
 static bool open_stm32(const char *devicename) {
 	stm32fd = open(devicename, O_RDWR );
 	if (stm32fd == -1) {
-		printf("error opening stm32 device: %s\n",strerror(errno));
+		printf("error opening stm32 device: %s\n", strerror(errno));
 		return false;
 	}
 	printf("opened stm32 device\n");
@@ -82,14 +84,14 @@ static void read_stm32(int in_size, int show_len) {
 	}
 } 
 
-static void write_stm32(int out_size) {
+static void write_stm32(int idx) {
 	int retVal;
-	retVal = write(stm32fd, outBuf, out_size);
+	retVal = write(stm32fd, outBuf, idx);
 	if (retVal < 0) {
 		printf("write error\n");
 	} else {
 		printf("written %d bytes:\n\t", retVal);
-		for (int i = 0; i < out_size; i++)
+		for (int i = 0; i < idx; i++)
 			printf("%02hhx ", outBuf[i]);
 		puts("\n");
 	}
@@ -113,27 +115,61 @@ int main(int argc, const char **argv) {
 	uint64_t i;
 	uint16_t kk = 0x0000;
 	char c, d;
-	uint8_t n, k, l, idx, eeprom_lines;
-	int retValm, jump_to_firmware;
-
+	uint8_t m, k, l, idx, eeprom_lines;
+	int retValm, jump_to_firmware, res, desc_size = 0;
+	unsigned int n;
 	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32_kbd");
+        struct hidraw_report_descriptor rpt_desc;
+
+        /* Get Report Descriptor Size */
+        res = ioctl(stm32fd, HIDIOCGRDESCSIZE, &desc_size);
+        if (res < 0)
+                perror("HIDIOCGRDESCSIZE");
+        else
+                printf("Report Descriptor Size: %d\n", desc_size);
+
+        /* Get Report Descriptor */
+        rpt_desc.size = desc_size;
+        res = ioctl(stm32fd, HIDIOCGRDESC, &rpt_desc);
+        if (res < 0) {
+                perror("HIDIOCGRDESC");
+        } else {
+                printf("Report Descriptor: ");
+                for(n = 0; n < rpt_desc.size; n++)
+                        printf("%02hhx ", rpt_desc.value[n]);
+                puts("");
+        }
+
+	/* Get Report count */
+	for(n = 0; n < rpt_desc.size - 2; n++) {
+		if(rpt_desc.value[n] == 0x95 && rpt_desc.value[n+2] == 0x81){ // REPORT_COUNT, INPUT
+			in_size = rpt_desc.value[n+1] + 1;
+		}
+		if(rpt_desc.value[n] == 0x95 && rpt_desc.value[n+2] == 0x91){ // REPORT_COUNT, OUTPUT
+			out_size = rpt_desc.value[n+1] + 1;
+			break;
+		}
+	}
 
 	outBuf[0] = REPORT_ID_CONFIG_OUT;
 	outBuf[1] = STAT_CMD;
-
 	outBuf[2] = ACC_GET;
 	outBuf[3] = CMD_CAPS;
 	outBuf[4] = 0;
 	write(stm32fd, outBuf, 5);
 	usleep(3000);
-	read(stm32fd, inBuf, 9);
+	read(stm32fd, inBuf, in_size);
 	while (inBuf[0] == 0x01)
-		retValm = read(stm32fd, inBuf, 9);
+		read(stm32fd, inBuf, in_size);
 	eeprom_lines = inBuf[4];
-	in_size = inBuf[7] ? inBuf[7] : 17;
-	out_size = inBuf[8] ? inBuf[8] : 17;
+	if(in_size != (inBuf[7] ? inBuf[7] : 17))
+		printf("warning: hid in report count mismatch: %u %u\n", in_size, inBuf[7] ? inBuf[7] : 17);
+	else
 	printf("hid in report count: %u\n", in_size);
-	printf("hid out report count: %u\n", out_size);
+	if(out_size != (inBuf[8] ? inBuf[8] : 17))
+		printf("warning: hid out report count mismatch: %u %u\n", out_size,  inBuf[8] ? inBuf[8] : 17);
+	else
+		printf("hid out report count: %u\n", out_size);
 	if(!inBuf[7] || !inBuf[8])
 		printf("old firmware!\n");
 	puts("");
@@ -152,9 +188,9 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			printf("enter IRData (protocoladdresscommandflag)\n");
 			scanf("%" SCNx64 "", &i);
 			outBuf[idx++] = (i>>40) & 0xFF;
@@ -167,9 +203,9 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			printf("enter IRData (protocoladdresscommandflag)\n");
 			scanf("%" SCNx64 "", &i);
 			outBuf[idx++] = (i>>40) & 0xFF;
@@ -182,9 +218,9 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_KEY;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			printf("enter key (KEY_xxx)\n");
 			scanf("%s", &c);
 			for(l=0; l < lines; l++) {
@@ -207,9 +243,9 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'r':
 			printf("set repeat delay(0)\nset repeat period(1)\nset repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			printf("enter value (dec)\n");
 			scanf("%" SCNu16 "", &kk);
 			outBuf[idx++] = kk & 0xFF;
@@ -237,15 +273,15 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_IRDATA_REMOTE;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		default:
 			goto Set;
@@ -262,30 +298,30 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			write_and_check(idx, 10);
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			write_and_check(idx, 10);
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_KEY;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			write_and_check(idx, 6);
 			break;
 		case 'r':
 			printf("get repeat delay(0)\nget repeat period(1)\nget repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			write_and_check(idx, 6);
 			break;
 		case 'a':
@@ -380,27 +416,27 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		switch (d) {
 		case 'w':
 			printf("enter slot number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_KEY;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		case 'r':
 			printf("reset repeat delay(0)\nreset repeat period(1)\nreset repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &n);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
-			outBuf[idx++] = n;
+			outBuf[idx++] = m;
 			break;
 		case 'e':
 			outBuf[idx++] = CMD_EEPROM_RESET;
