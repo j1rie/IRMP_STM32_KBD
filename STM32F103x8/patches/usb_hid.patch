@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014-2022 Joerg Riechardt
+ *  Copyright (C) 2014-2023 Joerg Riechardt
  *
  *  inspired by work from Andrew Kambaroff - http://sysmagazine.com/posts/208026
  *
@@ -22,7 +22,7 @@ diff -Nrup A/inc/platform_config.h B/inc/platform_config.h
  #endif
 diff -Nrup A/inc/usb_conf.h B/inc/usb_conf.h
 --- A/inc/usb_conf.h	2017-06-16 10:14:00.000000000 +0200
-+++ B/inc/usb_conf.h	2022-07-15 17:55:09.719728146 +0200
++++ B/inc/usb_conf.h	2023-05-13 15:34:48.807014231 +0200
 @@ -67,7 +67,7 @@
  /* EP1  */
  /* tx buffer base address */
@@ -32,15 +32,6 @@ diff -Nrup A/inc/usb_conf.h B/inc/usb_conf.h
  
  /*-------------------------------------------------------------*/
  /* -------------------   ISTR events  -------------------------*/
-@@ -76,7 +76,7 @@
- /* mask defining which events has to be handled */
- /* by the device application software */
- 
--#define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_SUSPM | CNTR_ERRM  | CNTR_SOFM \
-+#define IMR_MSK (CNTR_CTRM  | CNTR_WKUPM | CNTR_ERRM  | CNTR_SOFM \
-                  | CNTR_ESOFM | CNTR_RESETM )
- 
- /* CTR service routines */
 diff -Nrup A/inc/usb_desc.h B/inc/usb_desc.h
 --- A/inc/usb_desc.h	2017-06-16 10:14:00.000000000 +0200
 +++ B/inc/usb_desc.h	2020-07-04 23:30:15.000000000 +0200

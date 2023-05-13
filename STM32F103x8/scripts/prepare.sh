@@ -134,7 +134,6 @@ unzip -j $ar \
     $path/irmpsystem.h \
     $path/README.txt
 mv irmpconfig.h.max irmpconfig.h
-mv irsndconfig.h.max irsndconfig.h
 cd ..
 
 # patch

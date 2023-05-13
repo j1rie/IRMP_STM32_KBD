@@ -2,7 +2,7 @@
  *  IR receiver, USB wakeup, motherboard switch wakeup, wakeup timer,
  *  USB HID keyboard device, eeprom emulation
  *
- *  Copyright (C) 2014-2022 Joerg Riechardt
+ *  Copyright (C) 2014-2023 Joerg Riechardt
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
 #include "config.h" /* CooCox workaround */
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
-/* after plugging in, it takes some time, until SOF's are being sent to the device */
-#define SOF_TIMEOUT 500
 
 enum access {
 	ACC_GET,
@@ -224,7 +222,6 @@ IRMP_RC6A28_PROTOCOL,
 
 uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int systicks = 0;
-volatile unsigned int sof_timeout = 0;
 volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
@@ -422,8 +419,6 @@ void SysTick_Handler(void)
 {
 	systicks++;
 	repeat_timer++;
-	if (sof_timeout != SOF_TIMEOUT)
-		sof_timeout++;
 	if (i == 999) {
 		if (AlarmValue)
 			AlarmValue--;
@@ -433,11 +428,6 @@ void SysTick_Handler(void)
 	} else {
 		i++;
 	}
-}
-
-uint8_t host_running(void)
-{
-	return (sof_timeout != SOF_TIMEOUT);
 }
 
 void Wakeup(void)
@@ -569,7 +559,7 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_KEY:
 		put_key(*((uint16_t*)&buf[5]), buf[4]);
 		/* validate stored value in eeprom */
-		if(!(get_key(buf[4]) == *((uint16_t*)&buf[5])))
+		if (!(get_key(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;
 		break;
 	case CMD_WAKE:
@@ -594,7 +584,7 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_REPEAT:
 		put_repeat(*((uint16_t*)&buf[5]), buf[4]);
 		/* validate stored value in eeprom */
-		if(!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
+		if (!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;
 		break;
 	default:
@@ -625,7 +615,7 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_KEY:
 		put_key(0xFFFF, buf[4]);
 		/* validate stored value in eeprom */
-		if(!(get_key(buf[4]) == 0xFFFF))
+		if (!(get_key(buf[4]) == 0xFFFF))
 			ret = -1;
 		break;
 	case CMD_WAKE:
@@ -639,11 +629,11 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_REPEAT:
 		put_repeat(0xFFFF, buf[4]);
 		/* validate stored value in eeprom */
-		if(!(get_repeat(buf[4]) == 0xFFFF))
+		if (!(get_repeat(buf[4]) == 0xFFFF))
 			ret = -1;
 		break;
 	case CMD_EEPROM_RESET:
-		if(EE_Format() != FLASH_COMPLETE)
+		if (EE_Format() != FLASH_COMPLETE)
 			ret = -1;
 		break;
 	default:
@@ -655,7 +645,7 @@ int8_t reset_handler(uint8_t *buf)
 /* is received ir-code in one of the wakeup-slots except last one? wakeup if true */
 void check_wakeups(IRMP_DATA *ir)
 {
-	if(host_running())
+	if (!suspended)
 		return;
 	uint8_t i;
 	uint16_t idx;
@@ -774,17 +764,17 @@ int main(void)
 	irmp_set_callback_ptr (led_callback);
 
 	while (1) {
-		if (!AlarmValue && !host_running())
+		if (!AlarmValue && suspended)
 			Wakeup();
 
 		/* always wait for previous transfer to complete before sending again, consider using a send buffer */
-		if (PrevXferComplete && host_running() && send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
+		if (PrevXferComplete && send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}
 
 		/* test if configuration command is received */
-		if(PrevXferComplete && USB_HID_Data_Received && buf[0] == REPORT_ID_CONFIG_OUT && buf[1] == STAT_CMD) {
+		if (PrevXferComplete && USB_HID_Data_Received && buf[0] == REPORT_ID_CONFIG_OUT && buf[1] == STAT_CMD) {
 			USB_HID_Data_Received = 0;
 
 			switch (buf[2]) {
@@ -811,7 +801,7 @@ int main(void)
 			/* send configuration data */
 			USB_HID_SendData(REPORT_ID_CONFIG_IN, buf, ret);
 			blink_LED();
-			if(Reboot)
+			if (Reboot)
 				reboot();
 		}
 
@@ -827,7 +817,7 @@ int main(void)
 				check_reboot(&myIRData);
 			} else {
 				last_received = repeat_timer;
-				if((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+				if ((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
 					continue; // don't send key
 				} else {
 					last_sent = repeat_timer;
@@ -836,13 +826,12 @@ int main(void)
 
 			/* send key corresponding to IR-data, but only if host is running, otherwise the transfer will not complete, and we are stuck */
 			num = get_num_of_irdata(&myIRData);
-			if(num != 0xFF) {
+			if (num != 0xFF) {
 				key = get_key(num);
-				if(key != 0xFFFF) {
+				if (key != 0xFFFF) {
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
-					if(host_running())
-						USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
 				}
 			}
@@ -850,12 +839,11 @@ int main(void)
 
 		if (PrevXferComplete) {
 			/* send release, but only if host is running, otherwise the transfer will not complete, and we are stuck */
-			if((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+			if ((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 				release_needed = 0;
 				kbd_buf[0] = 0;
 				kbd_buf[2] = 0;
-				if(host_running())
-					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+				USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 			}
 		}
 	}
