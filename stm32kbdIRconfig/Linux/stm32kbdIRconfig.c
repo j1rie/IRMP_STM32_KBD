@@ -165,7 +165,7 @@ int main(int argc, const char **argv) {
 	if(in_size != (inBuf[7] ? inBuf[7] : 17))
 		printf("warning: hid in report count mismatch: %u %u\n", in_size, inBuf[7] ? inBuf[7] : 17);
 	else
-	printf("hid in report count: %u\n", in_size);
+		printf("hid in report count: %u\n", in_size);
 	if(out_size != (inBuf[8] ? inBuf[8] : 17))
 		printf("warning: hid out report count mismatch: %u %u\n", out_size,  inBuf[8] ? inBuf[8] : 17);
 	else

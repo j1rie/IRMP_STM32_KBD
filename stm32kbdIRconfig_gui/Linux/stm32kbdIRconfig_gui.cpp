@@ -583,8 +583,6 @@ MainWindow::MainWindow(FXApp *app)
 	firmware1 = "";
 	max = 0;
 	count = 0;
-	//out_size = 64; // at first out_size is unknown, so use HID maximum
-	//in_size = 64; // at first in_size is unknown, so use HID maximum
 	got_key = 0;
 	got_modifier = 0;
 	PR_kbd_irdata_Active = 0;
@@ -815,6 +813,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	}
 	input_text->setText("");
 	output_text->setText("");
+	input_text->appendText(x);
 	input_text->appendText(u);
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
@@ -1627,14 +1626,10 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			wakeupslots = buf[6];
 			t.format("number of wakeups: %u", buf[6]);
 			s += t;
-			//in_size = buf[7] ? buf[7] : 17;
-			//t.format("hid in report count: %u\n", in_size);
-			//s += t;
-			//out_size = buf[8] ? buf[8] : 17;
-			//t.format("hid out report count: %u\n", out_size);
-			//s += t;
-			//if(!buf[7] || ! buf[8])
-				//s += "old firmware!\n";
+			t.format("hid in report count: %u\n", in_size);
+			s += t;
+			t.format("hid out report count: %u\n", out_size);
+			s += t;
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
 				s = "protocols: ";
