@@ -656,7 +656,7 @@ int8_t reset_handler(uint8_t *buf)
 /* is received ir-code in one of the wakeup-slots except last one? wakeup if true */
 void check_wakeups(IRMP_DATA *ir)
 {
-	if (!suspended)
+	if (!suspended && (bDeviceSate == CONFIGURED))
 		return;
 	uint8_t i;
 	uint16_t idx;
@@ -834,7 +834,7 @@ int main(void)
 				}
 			}
 
-			/* send key corresponding to IR-data, but only if host is running, otherwise the transfer will not complete, and we are stuck */
+			/* send key corresponding to IR-data */
 			num = get_num_of_irdata(&myIRData);
 			if (num != 0xFF) {
 				key = get_key(num);
@@ -847,9 +847,8 @@ int main(void)
 			}
 		}
 
-		if (PrevXferComplete) {
-			/* send release, but only if host is running, otherwise the transfer will not complete, and we are stuck */
-			if ((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		/* send release */
+		if(PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 				release_needed = 0;
 				kbd_buf[0] = 0;
 				kbd_buf[2] = 0;
