@@ -454,7 +454,7 @@ static int parse_hid_vid_pid_from_uevent_path(const char *uevent_path, unsigned 
 	}
 
 	char buf[1024];
-	res = read(handle, buf, sizeof(buf));
+	res = read(handle, buf, sizeof(buf) - 1); /* -1 for '\0' at the end */
 	close(handle);
 
 	if (res < 0) {
@@ -512,6 +512,11 @@ static int parse_uevent_info(const char *uevent, unsigned *bus_type,
 	char **serial_number_utf8, char **product_name_utf8)
 {
 	char tmp[1024];
+
+	if (!uevent) {
+		return 0;
+	}
+
 	size_t uevent_len = strlen(uevent);
 	if (uevent_len > sizeof(tmp) - 1)
 		uevent_len = sizeof(tmp) - 1;
@@ -808,12 +813,12 @@ static struct hid_device_info * create_device_info_for_hid_device(hid_device *de
 	return root;
 }
 
-HID_API_EXPORT const struct hid_api_version* HID_API_CALL hid_version()
+HID_API_EXPORT const struct hid_api_version* HID_API_CALL hid_version(void)
 {
 	return &api_version;
 }
 
-HID_API_EXPORT const char* HID_API_CALL hid_version_str()
+HID_API_EXPORT const char* HID_API_CALL hid_version_str(void)
 {
 	return HID_API_VERSION_STR;
 }
@@ -1007,7 +1012,7 @@ hid_device * HID_API_EXPORT hid_open_path(const char *path)
 		res = ioctl(dev->device_handle, HIDIOCGRDESCSIZE, &desc_size);
 		if (res < 0) {
 			hid_close(dev);
-			register_device_error_format(dev, "ioctl(GRDESCSIZE) error for '%s', not a HIDRAW device?: %s", path, strerror(errno));
+			register_global_error_format("ioctl(GRDESCSIZE) error for '%s', not a HIDRAW device?: %s", path, strerror(errno));
 			return NULL;
 		}
 

@@ -837,14 +837,12 @@ int main(void)
 			}
 		}
 
-		if (PrevXferComplete) {
-			/* send release */
-			if ((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
-				release_needed = 0;
-				kbd_buf[0] = 0;
-				kbd_buf[2] = 0;
-				USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
-			}
+		/* send release */
+		if (PrevXferComplete &&  (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+			release_needed = 0;
+			kbd_buf[0] = 0;
+			kbd_buf[2] = 0;
+			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 		}
 	}
 }

@@ -76,7 +76,9 @@ public:
 		ID_SAVE,
 		ID_SAVE_LOG,
 		ID_DEVLIST,
-		ID_KBD_TIMER
+		ID_KBD_TIMER,
+		ID_CEEPROM,
+		ID_GREEPROM
 	};
 
 enum access {
@@ -95,7 +97,9 @@ enum command {
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
 	CMD_REPEAT,
-	CMD_EEPROM_RESET
+	CMD_EEPROM_RESET,
+	CMD_EEPROM_COMMIT,
+	CMD_EEPROM_GET_RAW
 };
 
 enum status {
@@ -145,6 +149,8 @@ private:
 	FXButton *flash_button;
 	FXButton *get_button;
 	FXButton *reset_button;
+	FXButton *commit_button;
+	FXButton *get_raw_button;
 	FXLabel *connected_label;
 	FXLabel *connected_label2;
 	FXLabel *connected_label3;
@@ -246,9 +252,11 @@ public:
 	long onOpen(FXObject *sender, FXSelector sel, void *ptr);
 	long onSave(FXObject *sender, FXSelector sel, void *ptr);
 	long onSaveLog(FXObject *sender, FXSelector sel, void *ptr);
-	long onGeeprom(FXObject *sender, FXSelector sel, void *ptr);
-	long onPeeprom(FXObject *sender, FXSelector sel, void *ptr);
 	long onReeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onCeeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onGeeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onGReeprom(FXObject *sender, FXSelector sel, void *ptr);
+	long onPeeprom(FXObject *sender, FXSelector sel, void *ptr);
 	uint8_t get_hex_from_key(FXString s);
 	FXString get_key_from_hex(uint8_t hex);
 	long Write(int out_len);
@@ -295,7 +303,9 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GKEY, MainWindow::onGkey ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GREPEAT, MainWindow::onGrepeat ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GCAP, MainWindow::onGcaps ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_CEEPROM, MainWindow::onCeeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GEEPROM, MainWindow::onGeeprom ),
+	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_GREEPROM, MainWindow::onGReeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_PEEPROM, MainWindow::onPeeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_REEPROM, MainWindow::onReeprom ),
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_AGET, MainWindow::onAget ),
@@ -324,7 +334,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
 
 MainWindow::MainWindow(FXApp *app)
-	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 425, 39, 1100, 1030)  // for 1920x1080
+	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 425, 39, 1200, 1030)  // for 1920x1080
 {
 	this->setIcon(new FXGIFIcon(app,Icon)); // for taskbar
 	this->setMiniIcon(new FXICOIcon(app,MiniIcon)); // for titlebar
@@ -390,20 +400,21 @@ MainWindow::MainWindow(FXApp *app)
 	rrepeat_button = new FXButton(gb124, "repeat", NULL, this, ID_RREPEAT, BUTTON_NORMAL|LAYOUT_FILL_X);
 	ralarm_button = new FXButton(gb124, "alarm", NULL, this, ID_RALARM, BUTTON_NORMAL|LAYOUT_FILL_X);
 
-	// horizontal frame for IR Group Box, repeat Group Box, alarm Group Box, select listboxes and map group box
+	// horizontal frame for IR Group Box, repeat Group Box, alarm Group Box, select listboxes, eeprom group box, firmware update group box and eeprom map group box
 	FXHorizontalFrame *hf13 = new FXHorizontalFrame(vf1, LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
-	// two vertical frames, left for map, right for everything else
-	FXSpring *s131 = new FXSpring(hf13, LAYOUT_FILL_X, 300, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	// 3 vertical frames
+	FXSpring *s131 = new FXSpring(hf13, LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
 	FXVerticalFrame *vf131 = new FXVerticalFrame(s131, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 0,0);
 	FXSpring *s132 = new FXSpring(hf13, LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXVerticalFrame *vf132 = new FXVerticalFrame(s132, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
+	FXVerticalFrame *vf132 = new FXVerticalFrame(s132, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0,0,4,0, 0,8);
+	FXSpring *s133 = new FXSpring(hf13, LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
+	FXVerticalFrame *vf133 = new FXVerticalFrame(s133, LAYOUT_FILL_Y|LAYOUT_FILL_X,0,0,0,0, 0/*,0,0,0*/);
 
 	// horizontal frame for IR Group Box and repeat Group Box
-	FXHorizontalFrame *hf131 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X);
+	FXHorizontalFrame *hf1311 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X|PACK_UNIFORM_WIDTH);
 	//IR Group Box
-	FXSpring *s1311 = new FXSpring(hf131,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb1311 = new FXGroupBox(s1311, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X);
-	FXMatrix *m1311 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,4);
+	FXGroupBox *gb1311 = new FXGroupBox(hf1311, "IR (hex)", FRAME_GROOVE|LAYOUT_FILL_X/*, 0,0,0,0, 4,4,4,4*/);
+	FXMatrix *m1311 = new FXMatrix(gb1311, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,0);
 	new FXLabel(m1311, "protocol");
 	new FXLabel(m1311, "address");
 	new FXLabel(m1311, "command");
@@ -414,16 +425,14 @@ MainWindow::MainWindow(FXApp *app)
 	flag_text = new FXTextField(m1311, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 
 	// repeat Group Box
-	FXSpring *s1312 = new FXSpring(hf131,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb1312 = new FXGroupBox(s1312, "repeat", FRAME_GROOVE|LAYOUT_FILL_X, 0,0,0,0, 0,0,0,32, 0,0);
+	FXGroupBox *gb1312 = new FXGroupBox(hf1311, "repeat", FRAME_GROOVE|LAYOUT_FILL_X/*, 0,0,0,0, 0,0,0,32, 0,0*/);
 	repeat_text = new FXTextField(gb1312, 10, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 
 	// horizontal frame for alarm Group Box and select listboxes
-	FXHorizontalFrame *hf132 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X);
+	FXHorizontalFrame *hf1312 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X|PACK_UNIFORM_WIDTH);
 	//alarm Group Box
-	FXSpring *s1321 = new FXSpring(hf132,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb14 = new FXGroupBox(s1321, "alarm (dec)", FRAME_GROOVE|LAYOUT_FILL_X);
-	FXMatrix *m14 = new FXMatrix(gb14, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X, 0,0,0,0, 2,2,2,4, 2,2);
+	FXGroupBox *gb14 = new FXGroupBox(hf1312, "alarm (dec)", FRAME_GROOVE|LAYOUT_FILL_X, 0,0,0,0, 4,4,4,12);
+	FXMatrix *m14 = new FXMatrix(gb14, 4, MATRIX_BY_COLUMNS|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN, 0,0,0,0, 0,0,0,0, 0,0);
 	new FXLabel(m14, "days");
 	new FXLabel(m14, "hours");
 	new FXLabel(m14, "minutes");
@@ -433,34 +442,35 @@ MainWindow::MainWindow(FXApp *app)
 	minutes_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	seconds_text = new FXTextField(m14, 5, NULL, 0, TEXTFIELD_NORMAL|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
 	// select listboxes
-	FXSpring *s1322 = new FXSpring(hf132,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb143 = new FXGroupBox(s1322, "select", FRAME_GROOVE|LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/);
+	FXGroupBox *gb143 = new FXGroupBox(hf1312, "select", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y);
 	wslistbox=new FXListBox(gb143,this,ID_WSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
 	rslistbox=new FXListBox(gb143,this,ID_RSLISTBOX,FRAME_SUNKEN|FRAME_THICK|LAYOUT_TOP);
 
-	// map group box
-	FXGroupBox *gb132 = new FXGroupBox(vf132, "eeprom map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 4,4,0,10);
-	open_button = new FXButton(gb132, "open file", NULL, this, ID_OPEN, BUTTON_NORMAL|LAYOUT_FILL_X);
-	save_button = new FXButton(gb132, "save file", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
-	flash_button = new FXButton(gb132, "flash eeprom", NULL, this, ID_PEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
-	get_button = new FXButton(gb132, "get eeprom", NULL, this, ID_GEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
-	reset_button = new FXButton(gb132, "reset eeprom", NULL, this, ID_REEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
-	new FXLabel(gb132, "modifier");
-	FXVerticalFrame *innerVF10 = new FXVerticalFrame(gb132, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
-	modifier_text = new FXTextField(new FXHorizontalFrame(innerVF10,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
-	new FXLabel(gb132, "key");
-	FXVerticalFrame *innerVF9 = new FXVerticalFrame(gb132, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
-	key_text = new FXTextField(new FXHorizontalFrame(innerVF9,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
-	new FXLabel(gb132, "line");
-	FXVerticalFrame *innerVF11 = new FXVerticalFrame(gb132, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
-	line_text = new FXTextField(new FXHorizontalFrame(innerVF11,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, map_text21, FXText::ID_CURSOR_ROW, LAYOUT_FILL_X);
+	// eeprom group box
+	FXGroupBox *gb132 = new FXGroupBox(vf132, "eeprom", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 4,4,0,6);
+	flash_button = new FXButton(gb132, "flash", NULL, this, ID_PEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	get_button = new FXButton(gb132, "get", NULL, this, ID_GEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	reset_button = new FXButton(gb132, "reset", NULL, this, ID_REEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	commit_button = new FXButton(gb132, "commit", NULL, this, ID_CEEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
+	get_raw_button = new FXButton(gb132, "get raw", NULL, this, ID_GREEPROM, BUTTON_NORMAL|LAYOUT_FILL_X);
 
-	// horizontal frame for firmware upgrade
-	FXHorizontalFrame *hf133 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X);
-	/*FXSpring *s1331 = */new FXSpring(hf133,LAYOUT_FILL_X, 200, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXSpring *s1332 = new FXSpring(hf133,LAYOUT_FILL_X, 100, 0, 0,0,0,0, 0,0,0,0, 0,0);
-	FXGroupBox *gb133 = new FXGroupBox(s1332, "firmware", FRAME_GROOVE|LAYOUT_FILL_X);
-	upgrade_button = new FXButton(gb133, "upgrade", NULL, this, ID_UPGRADE, BUTTON_NORMAL|LAYOUT_FILL_X);
+	// firmware upgrade group box
+	FXGroupBox *gb1321 = new FXGroupBox(vf132, "firmware", FRAME_GROOVE|LAYOUT_FILL_X, 0,0,0,0, 4,4,4,11);
+	upgrade_button = new FXButton(gb1321, "upgrade", NULL, this, ID_UPGRADE, BUTTON_NORMAL|LAYOUT_FILL_X);
+
+	// eeprom map group box
+	FXGroupBox *gb133 = new FXGroupBox(vf133, "eeprom map", FRAME_GROOVE|LAYOUT_FILL_X|LAYOUT_FILL_Y, 0,0,0,0, 4,4,0,4);
+	open_button = new FXButton(gb133, "open file", NULL, this, ID_OPEN, BUTTON_NORMAL|LAYOUT_FILL_X);
+	save_button = new FXButton(gb133, "save file", NULL, this, ID_SAVE, BUTTON_NORMAL|LAYOUT_FILL_X);
+	new FXLabel(gb133, "modifier");
+	FXVerticalFrame *innerVF10 = new FXVerticalFrame(gb133, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	modifier_text = new FXTextField(new FXHorizontalFrame(innerVF10,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
+	new FXLabel(gb133, "key");
+	FXVerticalFrame *innerVF9 = new FXVerticalFrame(gb133, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	key_text = new FXTextField(new FXHorizontalFrame(innerVF9,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
+	new FXLabel(gb133, "line");
+	FXVerticalFrame *innerVF11 = new FXVerticalFrame(gb133, LAYOUT_FILL_X/*|LAYOUT_FILL_Y*/, 0,0,0,0, 0,0,0,0);
+	line_text = new FXTextField(new FXHorizontalFrame(innerVF11,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, map_text21, FXText::ID_CURSOR_ROW, LAYOUT_FILL_X);
 
 	// horizontal frame for Output Group Box
 	FXHorizontalFrame *hf15 = new FXHorizontalFrame(vf131, LAYOUT_FILL_X);
@@ -517,6 +527,8 @@ MainWindow::MainWindow(FXApp *app)
 	minutes_text->setHelpText("minutes");
 	seconds_text->setHelpText("seconds");
 	upgrade_button->setHelpText("upgrade firmware");
+	commit_button->setHelpText("RP2040: commit eeprom");
+	get_raw_button->setHelpText("RP2040: get eeprom raw");
 	aset_button->setHelpText("set alarm");
 	aget_button->setHelpText("get alarm");
 	wslistbox->setHelpText("wakeup to be set");
@@ -567,6 +579,8 @@ MainWindow::MainWindow(FXApp *app)
 	flash_button->disable();
 	get_button->disable();
 	reset_button->disable();
+	commit_button->disable();
+	get_raw_button->disable();
 
 	// save Colors
         storedShadowColor = pr_keyboard_and_irdata_button->getShadowColor();
@@ -653,8 +667,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		FXMessageBox::error(this, MBOX_OK, "Device Error oC", "Unable To Connect to Device");
 		return -1;
 	}
-
-	hid_set_nonblocking(connected_device, 1);
 
 	unsigned char descriptor[HID_API_MAX_REPORT_DESCRIPTOR_SIZE];
 	int res = 0;
@@ -756,6 +768,12 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	flash_button->enable();
 	get_button->enable();
 	reset_button->enable();
+	if(uC == "RP2040"){
+		commit_button->enable();
+		get_raw_button->enable();
+	} else {
+		reboot_button->enable();
+	}
 
 	//list wakeups and alarm and warn if no STM32
 	for(int i = 0; i < wakeupslots; i++) {
@@ -806,10 +824,10 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	t.format("%d", alarm % 60);
 	s += t;
 	s += " seconds\n";
-	if(uC != "STM32"){
+	if(uC != "STM32" && uC != "RP2040"){
 		s += "WARNING: This device's microcontroller is a ";
 		s += uC;
-		s += ", NOT a STM32!\n";
+		s += ", NOT a STM32 or RP2040!\n";
 	}
 	input_text->setText("");
 	output_text->setText("");
@@ -817,6 +835,8 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	input_text->appendText(u);
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
+
+	hid_set_nonblocking(connected_device, 1);
 
 	return 1;
 }
@@ -864,6 +884,8 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 	flash_button->disable();
 	get_button->disable();
 	reset_button->disable();
+	commit_button->disable();
+	get_raw_button->disable();
 	getApp()->removeTimeout(this, ID_KBD_TIMER);
 
 	return 1;
@@ -984,7 +1006,7 @@ MainWindow::Read(int show_len)
 		return -1;
 	}
 
-	int res = hid_read(connected_device, buf, in_size); // nonblocking, must read full length (because of Windows, ÂµC sends full length)!
+	int res = hid_read(connected_device, buf, in_size); // nonblocking, must read full length (because of Windows, µC sends full length)!
 	
 	if (res < 0) {
 		FXMessageBox::error(this, MBOX_OK, "Error Reading", "Could not read from device. Error reported was: %ls", hid_error(connected_device));
@@ -1887,40 +1909,51 @@ MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 {
-	const FXchar patterns[]="All Files (*)\nFirmware Files (*.bin)";
-	FXString s, v, Filename, FilenameText;
-	FXFileDialog open(this,"Open a firmware file");
-	open.setPatternList(patterns);
-	open.setCurrentPattern(1);
-	if(open.execute()){
-		Filename = open.getFilename();
-		FXint pos = Filename.rfind(PATHSEP);
-		FXint endpos = Filename.length();
-		FXint suffix_length = open.getCurrentPattern() ? 4 : 0;
-		FXString Firmwarename = Filename.mid(pos + 1, endpos - pos - 1 - suffix_length);
-		if(MBOX_CLICKED_NO==FXMessageBox::question(this,MBOX_YES_NO,"Really upgrade?","Old Firmware: %s\nNew Firmware: %s", firmware1.text(),  Firmwarename.text())) return 1;
-		sprintf(printcollect, "%s", "");
+	if(uC != "RP2040"){
+		const FXchar patterns[]="All Files (*)\nFirmware Files (*.bin)";
+		FXString s, v, Filename, FilenameText;
+		FXFileDialog open(this,"Open a firmware file");
+		open.setPatternList(patterns);
+		open.setCurrentPattern(1);
+		if(open.execute()){
+			Filename = open.getFilename();
+			FXint pos = Filename.rfind(PATHSEP);
+			FXint endpos = Filename.length();
+			FXint suffix_length = open.getCurrentPattern() ? 4 : 0;
+			FXString Firmwarename = Filename.mid(pos + 1, endpos - pos - 1 - suffix_length);
+			if(MBOX_CLICKED_NO==FXMessageBox::question(this,MBOX_YES_NO,"Really upgrade?","Old Firmware: %s\nNew Firmware: %s", firmware1.text(),  Firmwarename.text())) return 1;
+			sprintf(printcollect, "%s", "");
 #ifndef WIN32
-		sprintf(firmwarefile, "%s", Filename.text());
+			sprintf(firmwarefile, "%s", Filename.text());
 #else
-		FXCP1252Codec codec;
-		FXString mbstring=codec.utf2mb(Filename); // on Windows file encoding is cp1252, needed for umlaut
-		sprintf(firmwarefile, "%s", mbstring.text());
+			FXCP1252Codec codec;
+			FXString mbstring=codec.utf2mb(Filename); // on Windows file encoding is cp1252, needed for umlaut
+			sprintf(firmwarefile, "%s", mbstring.text());
 #endif
 
-		doUpgrade.set_firmwarefile(firmwarefile);
-		doUpgrade.set_print(print);
-		doUpgrade.set_printcollect(printcollect);
-		doUpgrade.set_signal(guisignal);
-		doUpgrade.start();
+			doUpgrade.set_firmwarefile(firmwarefile);
+			doUpgrade.set_print(print);
+			doUpgrade.set_printcollect(printcollect);
+			doUpgrade.set_signal(guisignal);
+			doUpgrade.start();
 
-		cur_item = device_list->getCurrentItem();
-		num_devices_before_upgrade = device_list->getNumItems();
-		s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
-		output_text->setText(s);
-		if(connected_device)
+			cur_item = device_list->getCurrentItem();
+			num_devices_before_upgrade = device_list->getNumItems();
+			s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
+			output_text->setText(s);
+			if(connected_device)
+				Write_and_Check(4, 4);
+			onDisconnect(NULL, 0, NULL);
+		}
+	} else {
+		if(MBOX_CLICKED_OK==FXMessageBox::information(this, MBOX_OK_CANCEL, "Firmware upgrade", "Switch the Pico into mass storage device mode.\nIn your file manager than drag and drop the firmware file *.uf2 onto the newly appeared mass storage device.\nThan press buttons 'Re-Scan devices' and 'Connect'.")){
+			FXString s;
+			s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
+			output_text->setText(s);
 			Write_and_Check(4, 4);
-		onDisconnect(NULL, 0, NULL);
+			FXThread::sleep(1000000000); // 1 s
+			onRescan(NULL, 0, NULL);
+		}
 	}
 
 	return 1;
@@ -2373,6 +2406,55 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	Write_and_Check(4, 4);
 
 	onGeeprom(NULL, 0, NULL);
+
+	return 1;
+}
+
+long
+MainWindow::onCeeprom(FXObject *sender, FXSelector sel, void *ptr){
+	FXString s;
+	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_EEPROM_COMMIT);
+
+	output_text->setText(s);
+
+	Write_and_Check(4, 4);
+
+	return 1;
+}
+
+long
+MainWindow::onGReeprom(FXObject *sender, FXSelector sel, void *ptr){
+	FXString s, t, u;
+	for(int k = 15; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
+		for(int l = 0; l < 16; l++) { // size / 32
+			s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_GET_RAW);
+#if (FOX_MINOR >= 7)
+			t.fromInt(k,16);
+			s += t;
+#else
+			s += FXStringVal(k,16);
+#endif
+			s += " ";
+#if (FOX_MINOR >= 7)
+			t.fromInt(l,16);
+			s += t;
+#else
+			s += FXStringVal(l,16);
+#endif
+			s += " ";
+			output_text->setText(s);
+
+			Write_and_Check(6, in_size);
+
+			for (int i = 4; i < 36; i++) {
+				t.format("%02x", buf[i]);
+				u += t;
+			}
+		}
+		u += "\n";
+	}
+	input_text->appendText(u);
+	input_text->setBottomLine(INT_MAX);
 
 	return 1;
 }
