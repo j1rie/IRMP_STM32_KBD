@@ -43,7 +43,8 @@ enum command {
 	CMD_REPEAT,
 	CMD_EEPROM_RESET,
 	CMD_EEPROM_COMMIT,
-	CMD_EEPROM_GET_RAW
+	CMD_EEPROM_GET_RAW,
+	CMD_HID_TEST
 };
 
 enum status {
@@ -673,7 +674,7 @@ int main(void)
 	Systick_Init();
 	tusb_init();
 	IRMP_Init();
-	eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_PAGE_SIZE ); // 32 pages of 512 byte, put KBD eeprom below IRMP eeprom
+	eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 512 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
 	while (1)

@@ -41,7 +41,10 @@ enum command {
 	CMD_IRDATA_REMOTE,
 	CMD_WAKE_REMOTE,
 	CMD_REPEAT,
-	CMD_EEPROM_RESET
+	CMD_EEPROM_RESET,
+	CMD_EEPROM_COMMIT,
+	CMD_EEPROM_GET_RAW,
+	CMD_HID_TEST
 };
 
 enum status {
@@ -115,7 +118,8 @@ int main(int argc, const char **argv) {
 	uint64_t i;
 	uint16_t kk = 0x0000;
 	char c, d;
-	uint8_t m, k, l, idx, eeprom_lines;
+	uint8_t s, m, l, idx, eeprom_lines;
+	int8_t k;
 	int retValm, jump_to_firmware, res, desc_size = 0;
 	unsigned int n;
 	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32_kbd");
@@ -174,7 +178,7 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set eeprom: wakeups, IR-data, keys, repeat and alarm (s)\nset eeprom by remote: wakeups and IR-data (q)\nget eeprom: wakeups, IR-data, keys, repeat, alarm, capabilities and eeprom (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat and alarm (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities and raw eeprom from RP2040) (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
@@ -182,7 +186,7 @@ cont:	printf("set eeprom: wakeups, IR-data, keys, repeat and alarm (s)\nset eepr
 	case 's':
 set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, out_size - 2);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		switch (d) {
@@ -259,6 +263,10 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			memcpy(&outBuf[idx], &i, 4);
 			write_and_check(idx + 4, 4);
 			break;
+		case 'c':
+			outBuf[idx++] = CMD_EEPROM_COMMIT;
+			write_and_check(idx, 4);
+			break;
 		default:
 			goto set;
 		}
@@ -267,7 +275,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 	case 'q':
 Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, out_size - 2);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		switch (d) {
@@ -292,7 +300,7 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 	case 'g':
 get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, out_size - 2);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_GET;
 		switch (d) {
@@ -328,6 +336,48 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			outBuf[idx++] = CMD_ALARM;
 			write_and_check(idx, 8);
 			break;
+		case 'c':
+			jump_to_firmware = 0;
+			outBuf[idx++] = CMD_CAPS;
+			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
+				outBuf[idx] = l;
+				write_stm32(idx+1);
+				usleep(3000);
+				read_stm32(in_size, l == 0 ? 9 : in_size);
+				while (inBuf[0] == 0x01)
+					read_stm32(in_size, l == 0 ? 9 : in_size);
+				if (!l) { // first query for slots and depth
+					printf("number of keys: %u\n", inBuf[4]);
+					//printf("macro_depth: %u\n", inBuf[5]);
+					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
+					printf("hid in report count: %u\n", inBuf[7]);
+					printf("hid out report count: %u\n", inBuf[8]);
+				} else {
+					if(!jump_to_firmware) { // queries for supported_protocols
+						printf("protocols: ");
+						for (s = 4; s < in_size; s++) {
+							if (!inBuf[s]) { // NULL termination
+								printf("\n\n");
+								jump_to_firmware = 1;
+								goto again;
+							}
+							printf("%u ", inBuf[s]);
+						}
+					} else { // queries for firmware
+						printf("firmware: ");
+						for (s = 4; s < in_size; s++) {
+							if (!inBuf[s]) { // NULL termination
+								printf("\n\n");
+								goto out;
+							}
+							printf("%c", inBuf[s]);
+						}
+					}
+				}
+				printf("\n\n");
+again:			;
+			}
+			break;
 		case 'e':
 			for (l = 0; l < eeprom_lines; l++) {
 				outBuf[idx++] = CMD_IRDATA;
@@ -350,7 +400,7 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 						printf("%s|", mapusb[n].key);
 					}
 				}
-				for(n=0; n < lines-1; n++) {
+				for(int n=0; n < lines-1; n++) {
 					if(mapusb[n].usb_hid_key == inBuf[4]) {
 						printf("%s", mapusb[n].key);
 					}
@@ -361,44 +411,23 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			}
 			goto out;
 			break;
-		case 'c':
-			jump_to_firmware = 0;
-			outBuf[idx++] = CMD_CAPS;
-			for (l = 0; l < 20; l++) { // for safety stop after 20 loops
-				outBuf[idx] = l;
-				write_stm32(idx+1);
-				usleep(3000);
-				read_stm32(in_size, l == 0 ? 7 : in_size);
-				while (inBuf[0] == 0x01)
-					read_stm32(in_size, l == 0 ? 7 : in_size);
-				if (!l) { // first query for slots and depth
-					printf("number of keys: %u\n", inBuf[4]);
-					//printf("macro_depth: %u\n", inBuf[5]);
-					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
-				} else {
-					if(!jump_to_firmware) { // queries for supported_protocols
-						printf("protocols: ");
-						for (k = 4; k < in_size; k++) {
-							if (!inBuf[k]) { // NULL termination
-								printf("\n\n");
-								jump_to_firmware = 1;
-								goto again;
-							}
-							printf("%u ", inBuf[k]);
-						}
-					} else { // queries for firmware
-						printf("firmware: ");
-						for (k = 4; k < in_size; k++) {
-							if (!inBuf[k]) { // NULL termination
-								printf("\n\n");
-								goto out;
-							}
-							printf("%c", inBuf[k]);
-						}
+		case 'p':
+			outBuf[idx++] = CMD_EEPROM_GET_RAW;
+			for(k = 31; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
+				outBuf[idx] = k;
+				for(l = 0; l < 16; l++) { // size / 32
+					outBuf[idx+1] = l;
+					write(stm32fd, outBuf, idx+2);
+					usleep(3000);
+					retValm = read(stm32fd, inBuf, in_size);
+					if (retValm < 0) {
+						printf("read error\n");
+					} else {
+						for (int i = 4; i < 36; i++)
+							printf("%02hhx ", inBuf[i]);
 					}
 				}
-				printf("\n\n");
-again:			;
+				printf("\n");
 			}
 			break;
 		default:
@@ -410,7 +439,7 @@ out:
 	case 'r':
 reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
-		memset(&outBuf[2], 0, out_size - 2);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_RESET;
 		switch (d) {
@@ -451,7 +480,7 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		break;
 
 	case 'b':
-		memset(&outBuf[2], 0, out_size - 2);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
 		outBuf[idx++] = ACC_SET;
 		outBuf[idx++] = CMD_REBOOT;
@@ -471,6 +500,15 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 
 	case 'x':
 		goto exit;
+		break;
+
+	case 'h':
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
+		for(l = 2; l < out_size; l++){
+			outBuf[l] = l - 1; // ACC_SET ...
+		}
+		outBuf[3] = CMD_HID_TEST;
+		write_and_check(out_size, in_size);
 		break;
 
 	default:

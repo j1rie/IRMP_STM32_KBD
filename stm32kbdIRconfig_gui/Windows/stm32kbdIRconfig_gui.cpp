@@ -2425,7 +2425,7 @@ MainWindow::onCeeprom(FXObject *sender, FXSelector sel, void *ptr){
 long
 MainWindow::onGReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	FXString s, t, u;
-	for(int k = 15; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
+	for(int k = 31; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
 		for(int l = 0; l < 16; l++) { // size / 32
 			s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_GET_RAW);
 #if (FOX_MINOR >= 7)
