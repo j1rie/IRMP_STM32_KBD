@@ -554,9 +554,9 @@ int8_t set_handler(uint8_t *buf)
 		if (!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;
 		break;
-	//case CMD_HID_TEST:
-		//ret = HID_IN_REPORT_COUNT;
-		//break;
+	case CMD_HID_TEST:
+		ret = HID_IN_REPORT_COUNT;
+		break;
 	case CMD_EEPROM_COMMIT:
 		if(!eeprom_commit())
 			ret = -1;
