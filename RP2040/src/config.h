@@ -10,7 +10,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 <= 255
+/* NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 3 * 2 <= 511
  * Eeprom page size = (512 - 1) 8bit variables,
  * Eeprom partition 1: NUM_KEYS IRMP_DATA
  * Eeprom partition 2: NUM_KEYS keys
@@ -24,7 +24,7 @@
 
 /* TODO GPIO x Logging (irmp.c) */
 
-#define WAKEUP_GPIO		27 /* GPIO 2  (Pin 32)  */
+#define WAKEUP_GPIO		27 /* GPIO 27 (Pin 32) */
 #define RESET_GPIO		3  /* GPIO 3  (Pin 5)  */
 #define EXTLED_GPIO		4  /* GPIO 4  (Pin 6)  */
 #define IR_IN_GPIO		28 /* GPIO 28 (Pin 34) */

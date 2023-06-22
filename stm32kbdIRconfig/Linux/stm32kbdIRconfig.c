@@ -178,13 +178,13 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, IR-data, keys, repeat and alarm (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities and raw eeprom from RP2040) (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\n");
+set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -192,7 +192,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			printf("enter IRData (protocoladdresscommandflag)\n");
@@ -207,7 +207,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = m;
 			printf("enter IRData (protocoladdresscommandflag)\n");
@@ -222,7 +222,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = m;
 			printf("enter key (KEY_xxx)\n");
@@ -234,7 +234,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			    }
 			}
 			outBuf[idx++] = kk;
-			printf("enter modifier (KEY_xxx)\n");
+			printf("enter modifier (KEY_xxx or ff for none)\n");
 			scanf("%s", &c);
 			for(l=0; l < lines; l++) {
 			    if(!strcmp(mapusb[l].key, &c)) {
@@ -247,7 +247,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'r':
 			printf("set repeat delay(0)\nset repeat period(1)\nset repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = m;
 			printf("enter value (dec)\n");
@@ -281,13 +281,13 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
 			outBuf[idx++] = m;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_IRDATA_REMOTE;
 			outBuf[idx++] = m;
 			break;
@@ -298,7 +298,7 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\n");
+get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2040(p)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -306,28 +306,28 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			write_and_check(idx, 10);
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = m;
 			write_and_check(idx, 10);
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = m;
 			write_and_check(idx, 6);
 			break;
 		case 'r':
 			printf("get repeat delay(0)\nget repeat period(1)\nget repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = m;
 			write_and_check(idx, 6);
@@ -445,25 +445,25 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		switch (d) {
 		case 'w':
 			printf("enter slot number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_IRDATA;
 			outBuf[idx++] = m;
 			break;
 		case 'k':
 			printf("enter key number (starting with 0)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_KEY;
 			outBuf[idx++] = m;
 			break;
 		case 'r':
 			printf("reset repeat delay(0)\nreset repeat period(1)\nreset repeat timeout(2)\n");
-			scanf("%" SCNx8 "", &m);
+			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = m;
 			break;

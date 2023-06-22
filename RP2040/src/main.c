@@ -294,14 +294,11 @@ void eeprom_restore(uint8_t *buf, int addr)
 	}
 }
 
-void eeprom_store_var(int addr, uint16_t var)
+void eeprom_store_var(int addr, uint8_t *var)
 {
 	uint8_t i;
-	uint8_t *p8 = (uint8_t *)(&var);
 	for(i=0; i<2; i++) {
-		//eeprom_write(addr + i, (*(uint8_t*)(&var+i*8)));
-        	eeprom_write(addr + i, (p8[i]));
-        	//eeprom_write(addr + i, (((uint8_t*)(&var)[i]);
+		eeprom_write(addr + i, var[i]);
 	}
 }
 
@@ -310,9 +307,7 @@ void eeprom_restore_var(int addr, uint16_t *var)
 	uint8_t i;
 	uint8_t *p8 = (uint8_t *)var;
 	for(i=0; i<2; i++) {
-		//(*(uint8_t*)(var+i*8)) = eeprom_read(addr + i);
-        	p8[i] = eeprom_read(addr + i);
-        	//((uint8_t*)var)[i] = eeprom_read(addr + i);
+		p8[i] = eeprom_read(addr + i);
 	}
 }
 
@@ -323,7 +318,7 @@ uint8_t get_num_of_irdata(IRMP_DATA *ir)
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	for (i=0; i < NUM_KEYS; i++) {
-		idx = SIZEOF_IR/2 * i;
+		idx = SIZEOF_IR * i;
 		eeprom_restore(buf, idx);
 		/* don't compare flags */
 		if (!memcmp(buf, ir, sizeof(buf) - 1))
@@ -333,30 +328,30 @@ uint8_t get_num_of_irdata(IRMP_DATA *ir)
 }
 
 /* put key into eeprom at address num */
-void put_key(uint16_t key, uint8_t num)
+void put_key(uint8_t *key, uint8_t num)
 {
-	eeprom_store_var(NUM_KEYS * SIZEOF_IR/2 + num, key);
+	eeprom_store_var(NUM_KEYS * SIZEOF_IR + 2 * num, key);
 }
 
 /* get key at address num from eeprom */
 uint16_t get_key(uint8_t num)
 {
 	uint16_t key;
-	eeprom_restore_var(NUM_KEYS * SIZEOF_IR/2 + num, &key);
+	eeprom_restore_var(NUM_KEYS * SIZEOF_IR + 2 * num, &key);
 	return key;
 }
 
 /* put repeat into eeprom at address num */
-void put_repeat(uint16_t repeat, uint8_t num)
+void put_repeat(uint8_t *repeat, uint8_t num)
 {
-	eeprom_store_var(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, repeat);
+	eeprom_store_var(NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 2 * num, repeat);
 }
 
 /* get repeat at address num from eeprom */
 uint16_t get_repeat(uint8_t num)
 {
 	uint16_t repeat;
-	eeprom_restore_var(NUM_KEYS * (SIZEOF_IR/2 + 1) + WAKE_SLOTS * SIZEOF_IR/2 + num, &repeat);
+	eeprom_restore_var(NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 2 * num, &repeat);
 	if (repeat == 0xFFFF) {
 		/* after reset */
 		repeat = repeat_default[num];
@@ -369,7 +364,7 @@ void store_wakeup(IRMP_DATA *ir)
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	idx = NUM_KEYS * (SIZEOF_IR/2 + 1);
+	idx = NUM_KEYS * (SIZEOF_IR + 2);
 	eeprom_restore(tmp, idx);
 	if (!memcmp(tmp, zeros, SIZEOF_IR)) {
 		/* store received wakeup IRData in first wakeup slot */
@@ -423,7 +418,6 @@ int8_t store_new_irdata(uint16_t num)
 	int16_t loop;
 	int8_t ret = 4;
 	IRMP_DATA new_IRData;
-	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
 	//blink_LED();
 	/* 15 seconds to press button on remote */
@@ -478,7 +472,7 @@ int8_t get_handler(uint8_t *buf)
 		ret += sizeof(AlarmValue);
 		break;
 	case CMD_IRDATA:
-		idx = SIZEOF_IR/2 * buf[4];
+		idx = SIZEOF_IR * buf[4];
 		eeprom_restore(&buf[4], idx);
 		ret += SIZEOF_IR;
 		break;
@@ -487,7 +481,7 @@ int8_t get_handler(uint8_t *buf)
 		ret += 2;
 		break;
 	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		eeprom_restore(&buf[4], idx);
 		ret += SIZEOF_IR;
 		break;
@@ -516,21 +510,14 @@ int8_t set_handler(uint8_t *buf)
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
 		break;
 	case CMD_IRDATA:
-		idx = SIZEOF_IR/2 * buf[4];
+		idx = SIZEOF_IR * buf[4];
 		eeprom_store(idx, &buf[5]);
-		/* validate stored value in eeprom */
-		eeprom_restore(tmp, idx);
-		if (memcmp(&buf[5], tmp, sizeof(tmp)))
-			ret = -1;
 		break;
 	case CMD_KEY:
-		put_key(*((uint16_t*)&buf[5]), buf[4]);
-		/* validate stored value in eeprom */
-		if (!(get_key(buf[4]) == *((uint16_t*)&buf[5])))
-			ret = -1;
+		put_key(&buf[5], buf[4]);
 		break;
 	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		eeprom_store(idx, &buf[5]);
 		if (!buf[4]){
 			if(!eeprom_commit())
@@ -541,18 +528,15 @@ int8_t set_handler(uint8_t *buf)
 		Reboot = 1;
 		break;
 	case CMD_IRDATA_REMOTE:
-		idx = SIZEOF_IR/2 * buf[4];
+		idx = SIZEOF_IR * buf[4];
 		ret = store_new_irdata(idx);
 		break;
 	case CMD_WAKE_REMOTE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		ret = store_new_irdata(idx);
 		break;
 	case CMD_REPEAT:
-		put_repeat(*((uint16_t*)&buf[5]), buf[4]);
-		/* validate stored value in eeprom */
-		if (!(get_repeat(buf[4]) == *((uint16_t*)&buf[5])))
-			ret = -1;
+		put_repeat(&buf[5], buf[4]);
 		break;
 	case CMD_HID_TEST:
 		ret = HID_IN_REPORT_COUNT;
@@ -572,35 +556,24 @@ int8_t reset_handler(uint8_t *buf)
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 4;
 	uint16_t idx;
-	uint8_t tmp[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	switch (buf[3]) {
 	case CMD_ALARM:
 		AlarmValue = 0xFFFFFFFF;
 		break;
 	case CMD_IRDATA:
-		idx = SIZEOF_IR/2 * buf[4];
+		idx = SIZEOF_IR * buf[4];
 		eeprom_store(idx, zeros);
-		/* validate stored value in eeprom */
-		eeprom_restore(tmp, idx);
-		if (memcmp(zeros, tmp, sizeof(tmp)))
-			ret = -1;
 		break;
 	case CMD_KEY:
-		put_key(0xFFFF, buf[4]);
-		/* validate stored value in eeprom */
-		if (!(get_key(buf[4]) == 0xFFFF))
-			ret = -1;
+		put_key(zeros, buf[4]);
 		break;
 	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		eeprom_store(idx, zeros);
 		break;
 	case CMD_REPEAT:
-		put_repeat(0xFFFF, buf[4]);
-		/* validate stored value in eeprom */
-		if (!(get_repeat(buf[4]) == 0xFFFF))
-			ret = -1;
+		put_repeat(zeros, buf[4]);
 		break;
 	case CMD_EEPROM_RESET:
 		eeprom_reset();
@@ -621,7 +594,7 @@ void check_wakeups(IRMP_DATA *ir)
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	for (i=0; i < WAKE_SLOTS - 1; i++) {
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + i * SIZEOF_IR/2;
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + i * SIZEOF_IR;
 		eeprom_restore(buf, idx);
 		if (!memcmp(buf, ir, sizeof(buf)))
 			Wakeup();
@@ -640,7 +613,7 @@ void check_reboot(IRMP_DATA *ir)
 {
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
-	idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + (WAKE_SLOTS - 1) * SIZEOF_IR/2;
+	idx = NUM_KEYS * (SIZEOF_IR + 2) + (WAKE_SLOTS - 1) * SIZEOF_IR;
 	eeprom_restore(buf, idx);
 	if (!memcmp(buf, ir, sizeof(buf)))
 		reboot();
