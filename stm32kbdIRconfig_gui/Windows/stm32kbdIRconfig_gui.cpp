@@ -99,7 +99,8 @@ enum command {
 	CMD_REPEAT,
 	CMD_EEPROM_RESET,
 	CMD_EEPROM_COMMIT,
-	CMD_EEPROM_GET_RAW
+	CMD_EEPROM_GET_RAW,
+	CMD_HID_TEST
 };
 
 enum status {
@@ -668,6 +669,8 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		return -1;
 	}
 
+	hid_set_nonblocking(connected_device, 1);
+
 	unsigned char descriptor[HID_API_MAX_REPORT_DESCRIPTOR_SIZE];
 	int res = 0;
 
@@ -696,7 +699,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	}
 
 	FXString s;
-	s.format("%d %d %d %d 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
+	s.format("%x %x %x %x 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
 	output_text->setText(s);
 	Write_and_Check(5, 9);
 
@@ -783,7 +786,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 #else
 		t = FXStringVal(i,10);
 #endif
-		s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
+		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
 		s += t;
 		output_text->setText(s);
 		Write_and_Check(5, 10);
@@ -806,7 +809,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 			u += s;
 		}
 	}
-	s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
+	s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
 	output_text->setText(s);
 	Write_and_Check(4, 8);
 	unsigned int alarm = *((uint32_t *)&buf[4]);
@@ -835,8 +838,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	input_text->appendText(u);
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
-
-	hid_set_nonblocking(connected_device, 1);
 
 	return 1;
 }
@@ -936,7 +937,7 @@ MainWindow::onReboot(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXint success = 1;
-	s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
+	s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
 	output_text->setText(s);
 
 	FXint cur_item = device_list->getCurrentItem();
@@ -1044,10 +1045,10 @@ MainWindow::Write(int out_len)
 	FXlong time = FXThread::time() / 1000000; // ms
 	uint32_t timestamp = (uint32_t)(time - starttime);
 
-	bufw[13] = timestamp >> 24;
-	bufw[14] = (timestamp >> 16) & 0xFF;
-	bufw[15] = (timestamp >> 8) & 0xFF;
-	bufw[16] = timestamp & 0xFF;
+	bufw[43] = timestamp >> 24;
+	bufw[44] = (timestamp >> 16) & 0xFF;
+	bufw[45] = (timestamp >> 8) & 0xFF;
+	bufw[46] = timestamp & 0xFF;
 
 	if (!connected_device) {
 		FXMessageBox::error(this, MBOX_OK, "Device Error W", "Unable To Connect to Device");
@@ -1085,7 +1086,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 	FXString s;
 	int read, count = 0;
 	s = "";
-
+#if (0)
 	// before writing first empty buffers and read away old stuff
 	read = Read(show_len);
 	if(read  == -1) {
@@ -1109,7 +1110,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 		count++;
 		FXThread::sleep(3000000); // 3ms
 	}
-
+#endif
 	if(Write(out_len) == -1) {
 		s = "W&C Write(): -1\n";
 		input_text->appendText(s);
@@ -1140,8 +1141,8 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 		}
 		count++;
 	}
-
-	while(buf[3] != CMD_CAPS  && (buf[13] != bufw[13] || (buf[14] != bufw[14]) || (buf[15] != bufw[15]) || (buf[16] != bufw[16])) && count < 200) {
+#if (0)
+	while(buf[3] != CMD_CAPS  && (buf[43] != bufw[43] || (buf[44] != bufw[44]) || (buf[45] != bufw[45]) || (buf[46] != bufw[46])) && count < 200) {
 		s += "*****************WRONG TIMESTAMP*********************\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
@@ -1156,7 +1157,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 		}
 		count++;
 	}
-
+#endif
 	if((buf[0] == REPORT_ID_CONFIG_IN) && (buf[1] == STAT_SUCCESS) && (buf[2] == bufw[2]) && (buf[3] == bufw[3])) {
 		s += "************************OK***************************\n";	
 	} else {
@@ -1171,7 +1172,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 long
 MainWindow::onSendOutputReport(FXObject *sender, FXSelector sel, void *ptr)
 {
-	Write_and_Check(11, 10);
+	Write_and_Check(11, 10); // TODO: maximum outgoing protocol is ?, maximum incoming protocol is ?
 
 	return 1;
 }
@@ -1184,7 +1185,7 @@ MainWindow::onPwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	const char *z = " ";
 	int len;
 	t.format("%d ", wslistbox->getCurrentItem());
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_WAKE);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_WAKE);
 	s += t;
 	t = protocol_text->getText();
 	len = t.length(); // don't put this into the for loop!!!
@@ -1235,7 +1236,7 @@ MainWindow::onPirdata(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA);
 	s += t;
 	t = protocol_text->getText();
 	len = t.length(); // don't put this into the for loop!!!
@@ -1303,7 +1304,7 @@ MainWindow::onPkey(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
 	s += t;
 #if (FOX_MINOR >= 7)
 	t.fromUInt(get_hex_from_key((key_text->getText())),16);
@@ -1349,7 +1350,7 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t, u;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REPEAT);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REPEAT);
 	u.format("%x ", rslistbox->getCurrentItem());
 #if (FOX_MINOR >= 7)
 	t.format("%x %x", repeat_text->getText().toUInt() & 0xFF, (repeat_text->getText().toUInt() >> 8) & 0xFF );
@@ -1380,7 +1381,7 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 	t.format("%x ", wslistbox->getCurrentItem());
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_WAKE_REMOTE);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_WAKE_REMOTE);
 	s += t;
 	output_text->setText(s);
 
@@ -1411,7 +1412,7 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA_REMOTE);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA_REMOTE);
 	s += t;
 	output_text->setText(s);
 
@@ -1475,7 +1476,7 @@ MainWindow::onGwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	t.format("%x", wslistbox->getCurrentItem());
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
 	s += t;
 	output_text->setText(s);
 
@@ -1513,7 +1514,7 @@ MainWindow::onGirdata(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_IRDATA);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_IRDATA);
 #if (FOX_MINOR >= 7)
 	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
@@ -1555,7 +1556,7 @@ long
 MainWindow::onGkey(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s, t, v;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_KEY);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_KEY);
 #if (FOX_MINOR >= 7)
 	t.format("%x ", line_text->getText().toUInt() - 1);
 #else
@@ -1600,7 +1601,7 @@ MainWindow::onGrepeat(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t, u;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_REPEAT);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_REPEAT);
 	u.format("%x ", rslistbox->getCurrentItem());
 	s += u;
 	s += " ";
@@ -1628,7 +1629,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 	romtable = 0;
 	uC = "";
 	for(int i = 0; i < 20; i++) { // for safety stop after 20 loops
-		s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
+		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
 #if (FOX_MINOR >= 7)
 		t.fromUInt(i,16);
 		s += t;
@@ -1702,7 +1703,7 @@ long
 MainWindow::onAget(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
-	s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
+	s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
 	output_text->setText(s);
 
 	Write_and_Check(4, 8);
@@ -1757,7 +1758,7 @@ MainWindow::onAset(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	const char *z = " ";
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_ALARM);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_ALARM);
 #if (FOX_MINOR >= 7)
 	t.fromUInt(setalarm,16);
 #else
@@ -1794,7 +1795,7 @@ MainWindow::onRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	FXString s;
 	FXString t;
 	t.format("%d", wslistbox->getCurrentItem());
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_WAKE);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_WAKE);
 	s += t;
 	output_text->setText(s);
 
@@ -1813,7 +1814,7 @@ MainWindow::onRirdata(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_IRDATA);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_IRDATA);
 	s += t;
 	output_text->setText(s);
 
@@ -1851,7 +1852,7 @@ MainWindow::onRkey(FXObject *sender, FXSelector sel, void *ptr)
 #else
 	t.format("%x ", FXUIntVal(line_text->getText(), 10) - 1);
 #endif
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_KEY);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_KEY);
 	s += t;
 	output_text->setText(s);
 
@@ -1883,7 +1884,7 @@ MainWindow::onRrepeat(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
 	FXString t, u;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_REPEAT);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_REPEAT);
 	u.format("%x ", rslistbox->getCurrentItem());
 	s += u;
 	s += " ";
@@ -1898,7 +1899,7 @@ long
 MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 {
 	FXString s;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_ALARM);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_ALARM);
 	output_text->setText(s);
 
 	Write_and_Check(4, 4);
@@ -1939,7 +1940,7 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 
 			cur_item = device_list->getCurrentItem();
 			num_devices_before_upgrade = device_list->getNumItems();
-			s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
+			s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
 			output_text->setText(s);
 			if(connected_device)
 				Write_and_Check(4, 4);
@@ -1948,7 +1949,7 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 	} else {
 		if(MBOX_CLICKED_OK==FXMessageBox::information(this, MBOX_OK_CANCEL, "Firmware upgrade", "Switch the Pico into mass storage device mode.\nIn your file manager than drag and drop the firmware file *.uf2 onto the newly appeared mass storage device.\nThan press buttons 'Re-Scan devices' and 'Connect'.")){
 			FXString s;
-			s.format("%d %d %d %d", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
+			s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
 			output_text->setText(s);
 			Write_and_Check(4, 4);
 			FXThread::sleep(1000000000); // 1 s
@@ -2335,7 +2336,7 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 		FXString s, u, t, v;
 		map_text21->extractText(u, mapbeg[i], map[i*2].length());
 		//if(compare(u, "ffffffffffff")) { // flash only if not ffffffffffff
-			s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA);
+			s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_IRDATA);
 			s += nr;
 			s += " ";
 			map_text21->extractText(u, mapbeg[i], 2); // TODO check if number
@@ -2375,7 +2376,7 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 		v = FXStringVal(get_hex_from_key(u.section(y, 0, 1)),16);
 #endif
 		//if(compare(t, "0") || compare(v, "0") ) { // flash only if not ff|ff or empty
-			s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
+			s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_KEY);
 			s += nr;
 			s += " ";
 			s += t;
@@ -2399,7 +2400,7 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	if(FXMessageBox::question(this,MBOX_YES_NO,tr("reset eeprom"),tr("really reset eeprom?"))==MBOX_CLICKED_NO) return 1;
 
 	FXString s;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_EEPROM_RESET);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_EEPROM_RESET);
 
 	output_text->setText(s);
 
@@ -2413,7 +2414,7 @@ MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
 long
 MainWindow::onCeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	FXString s;
-	s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_EEPROM_COMMIT);
+	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_EEPROM_COMMIT);
 
 	output_text->setText(s);
 
@@ -2427,7 +2428,7 @@ MainWindow::onGReeprom(FXObject *sender, FXSelector sel, void *ptr){
 	FXString s, t, u;
 	for(int k = 31; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
 		for(int l = 0; l < 16; l++) { // size / 32
-			s.format("%d %d %d %d ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_GET_RAW);
+			s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_GET_RAW);
 #if (FOX_MINOR >= 7)
 			t.fromInt(k,16);
 			s += t;
@@ -2444,7 +2445,7 @@ MainWindow::onGReeprom(FXObject *sender, FXSelector sel, void *ptr){
 			s += " ";
 			output_text->setText(s);
 
-			Write_and_Check(6, in_size);
+			Write_and_Check(6, 36);
 
 			for (int i = 4; i < 36; i++) {
 				t.format("%02x", buf[i]);
