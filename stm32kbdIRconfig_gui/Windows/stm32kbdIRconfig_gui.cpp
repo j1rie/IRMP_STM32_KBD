@@ -245,7 +245,6 @@ public:
 	long onUpgrade(FXObject *sender, FXSelector sel, void *ptr);
 	long onPrint(FXObject *sender, FXSelector sel, void *ptr);
 	long onClear(FXObject *sender, FXSelector sel, void *ptr);
-	long onTimeout(FXObject *sender, FXSelector sel, void *ptr);
 	long onMacTimeout(FXObject *sender, FXSelector sel, void *ptr);
 	long onCmdwsListBox(FXObject*,FXSelector,void*);
 	long onCmdrsListBox(FXObject*,FXSelector,void*);
@@ -699,7 +698,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	}
 
 	FXString s;
-	s.format("%x %x %x %x 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
+	s.format("%x %x %x %x 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS); // hex!
 	output_text->setText(s);
 	Write_and_Check(5, 9);
 
@@ -1085,6 +1084,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 {
 	FXString s;
 	int read, count = 0;
+	long retVal = 1;
 	s = "";
 #if (0)
 	// before writing first empty buffers and read away old stuff
@@ -1159,14 +1159,16 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 	}
 #endif
 	if((buf[0] == REPORT_ID_CONFIG_IN) && (buf[1] == STAT_SUCCESS) && (buf[2] == bufw[2]) && (buf[3] == bufw[3])) {
-		s += "************************OK***************************\n";	
+		s += "************************OK***************************\n";
+		retVal = 1;
 	} else {
 		s += "**********************ERROR**************************\n";
+		retVal = -1;
 	}
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 
-	return 1;
+	return retVal;
 }
 
 long
@@ -1397,7 +1399,7 @@ long
 MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 {
 	long retVal = 1;
-	PR_irdata_Active = 1;
+	//PR_irdata_Active = 1;
 	FXString s, t, p, a, c;
 	protocol_text->setText("");
 	address_text->setText("");
@@ -1418,9 +1420,11 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 
 	getApp()->repaint();
 
-	Write_and_Check(5, 4);
+	if(Write_and_Check(5, 4) == -1)
+		return -1;
 
 	onGirdata(NULL, 0, NULL);
+
 	// is this already in eeprom map?
 	for( int i = 0; i < active_lines; i++) {
 		map_text21->extractText(p, mapbeg[i], 2);
@@ -1464,7 +1468,7 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(mapbeg[i]);
 	map_text21->setModified(1);
-	PR_irdata_Active = 0;
+	//PR_irdata_Active = 0;
 
 	return retVal;
 }
@@ -2664,7 +2668,7 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		FXString s;
 		s = "entered keyboard + irdata mode\n";
 		s += "press the button again in order to stop\n";
-		s += "while waiting for irdata you can't leave until irdata reception or timeout\n";
+		s += "while waiting for irdata you can't leave until irdata reception or timeout (firmware is waiting 15 sec for IR reception)\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 		pr_kbd_irdata_text->setText("press modifier or key on keyboard");

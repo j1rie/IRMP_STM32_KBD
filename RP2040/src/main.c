@@ -577,7 +577,7 @@ int8_t reset_handler(uint8_t *buf)
 		break;
 	case CMD_EEPROM_RESET:
 		eeprom_reset();
-		eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_PAGE_SIZE);
+		//eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_PAGE_SIZE);
 		break;
 	default:
 		ret = -1;
@@ -657,7 +657,7 @@ int main(void)
 		if (board_button_read() && tud_suspended())
 			Wakeup();
 
-		if (!AlarmValue && tud_suspended())
+		if (!AlarmValue && tud_ready())
 			Wakeup();
 
 		if (send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
