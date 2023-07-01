@@ -454,7 +454,8 @@ void Wakeup(void)
 
 int8_t store_new_irdata(uint16_t num)
 {
-	int8_t loop, ret = 4;
+	int16_t loop;
+	int8_t ret = 4;
 	IRMP_DATA new_IRData;
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data

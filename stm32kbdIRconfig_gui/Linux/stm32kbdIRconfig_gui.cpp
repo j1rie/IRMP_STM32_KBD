@@ -1129,9 +1129,9 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 	}
 
 	//TODO consider making Write_and_Check a background thread in order to stay responsive to user interactions, otherwise the user just has to wait during "set by remote"
-	while ((buf[0] == REPORT_ID_KBD || read == 0) && count < 5500 ) { // over 15 sec for "set by remote", Read() is nonblocking
+	while ((buf[0] == REPORT_ID_KBD || read == 0) && count < 5500 ) { // over 5 sec for "set by remote", Read() is nonblocking
 		//printf("buf[0] %d, read %d, loop %d\n", buf[0], read, count);
-		FXThread::sleep(3000000); // 3ms
+		FXThread::sleep(1000000); // 1ms
 		read = Read(show_len);
 		if(read == -1) {
 			s = "W&C loop Read(): -1\n";
@@ -1174,7 +1174,7 @@ MainWindow::Write_and_Check(int out_len, int show_len)
 long
 MainWindow::onSendOutputReport(FXObject *sender, FXSelector sel, void *ptr)
 {
-	Write_and_Check(11, 10); // TODO: maximum outgoing protocol is ?, maximum incoming protocol is ?
+	Write_and_Check(11, 36); // maximum outgoing protocol is 11, maximum incoming protocol is 36
 
 	return 1;
 }
@@ -1372,25 +1372,31 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
-	PR_wakeup_Active = 1;
+	//PR_wakeup_Active = 1;
 	FXString s;
 	FXString t;
 	protocol_text->setText("");
 	address_text->setText("");
 	command_text->setText("");
 	flag_text->setText("");
-	s = "enter IR data by pressing a button on the remote control within 15 sec\n";
+	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
+	getApp()->repaint();
 	t.format("%x ", wslistbox->getCurrentItem());
 	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_WAKE_REMOTE);
 	s += t;
 	output_text->setText(s);
 
-	Write_and_Check(5, 4);
+	if(Write_and_Check(5, 4) == -1){
+		s = "timeout\n";
+		input_text->appendText(s);
+		input_text->setBottomLine(INT_MAX);
+		return -1;
+	}
 
 	onGwakeup(NULL, 0, NULL);
-	PR_wakeup_Active = 0;
+	//PR_wakeup_Active = 0;
 
 	return 1;
 }
@@ -1405,7 +1411,7 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	address_text->setText("");
 	command_text->setText("");
 	flag_text->setText("");
-	s = "enter IR data by pressing a button on the remote control within 15 sec\n";
+	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 	getApp()->repaint();
@@ -1420,8 +1426,12 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 
 	getApp()->repaint();
 
-	if(Write_and_Check(5, 4) == -1)
+	if(Write_and_Check(5, 4) == -1){
+		s = "timeout\n";
+		input_text->appendText(s);
+		input_text->setBottomLine(INT_MAX);
 		return -1;
+	}
 
 	onGirdata(NULL, 0, NULL);
 
@@ -2668,7 +2678,7 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		FXString s;
 		s = "entered keyboard + irdata mode\n";
 		s += "press the button again in order to stop\n";
-		s += "while waiting for irdata you can't leave until irdata reception or timeout (firmware is waiting 15 sec for IR reception)\n";
+		s += "while waiting for irdata you can't leave until irdata reception or timeout (firmware is waiting 5 sec for IR reception)\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 		pr_kbd_irdata_text->setText("press modifier or key on keyboard");
@@ -2790,7 +2800,7 @@ MainWindow::onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr)
 		pr_kbd_irdata_text_2->setText("or wait until timeout");
 		getApp()->repaint();
 
-		/* exit, if multiple entries */
+		/* exit, if timeout or multiple entries */
 		if(onPRirdata(NULL, 0, NULL) == -1) {
 			onPR_kbd_irdata(NULL, 0, NULL);
 			return 1;

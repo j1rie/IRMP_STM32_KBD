@@ -420,8 +420,8 @@ int8_t store_new_irdata(uint16_t num)
 	IRMP_DATA new_IRData;
 	irmp_get_data(&new_IRData); // flush input of irmp data
 	//blink_LED();
-	/* 15 seconds to press button on remote */
-	for(loop=0; loop < 150; loop++) {
+	/* 5 seconds to press button on remote */
+	for(loop=0; loop < 50; loop++) {
 		sleep_ms(100);
 		if (irmp_get_data(&new_IRData)) {
 			new_IRData.flags = 0;
@@ -654,19 +654,20 @@ int main(void)
 	{
 		tud_task(); // tinyusb device task
 
-		if (board_button_read() && tud_suspended())
+		if (board_button_read() && !tud_ready())
 			Wakeup();
 
-		if (!AlarmValue && tud_ready())
+		if (!AlarmValue && !tud_ready())
 			Wakeup();
 
-		if (send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
+		/* always wait for previous transfer to complete before sending again, consider using a send buffer */
+		if (PrevXferComplete && send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
 			send_magic();
 			last_magic_sent = send_ir_on_delay;
 		}
 
 		/* test if configuration command is received */
-		if(USB_HID_Data_Received && *bufptr == REPORT_ID_CONFIG_OUT && *(bufptr+1) == STAT_CMD) {
+		if(PrevXferComplete && USB_HID_Data_Received && *bufptr == REPORT_ID_CONFIG_OUT && *(bufptr+1) == STAT_CMD) {
 			USB_HID_Data_Received = 0;
 
 			switch (*(bufptr+2)) {
@@ -698,7 +699,7 @@ int main(void)
 		}
 
 		/* poll IR-data */
-		if (irmp_get_data(&myIRData)) {
+		if (PrevXferComplete && irmp_get_data(&myIRData)) {
 			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 			if (!(myIRData.flags)) {
 				repeat_timer = 0;
@@ -730,7 +731,7 @@ int main(void)
 		}
 
 		/* send release */
-		if ((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;

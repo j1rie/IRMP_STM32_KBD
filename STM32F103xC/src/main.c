@@ -470,8 +470,8 @@ int8_t store_new_irdata(uint16_t num)
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
 	//blink_LED();
-	/* 15 seconds to press button on remote */
-	for(loop=0; loop < 150; loop++) {
+	/* 5 seconds to press button on remote */
+	for(loop=0; loop < 50; loop++) {
 		delay_ms(100);
 		if (irmp_get_data(&new_IRData)) {
 			new_IRData.flags = 0;
@@ -746,7 +746,7 @@ void send_magic(void)
 	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
 	uint8_t release[3] = {0x00, 0x00, 0x00};
 	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
-	delay_ms(repeat_default[2]);
+	delay_ms(get_repeat(2));
 	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
 }
 
@@ -848,7 +848,7 @@ int main(void)
 		}
 
 		/* send release */
-		if(PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;

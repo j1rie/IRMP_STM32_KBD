@@ -225,7 +225,6 @@ IRMP_RC6A28_PROTOCOL,
 
 uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int systicks = 0;
-volatile unsigned int sof_timeout = 0;
 volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
@@ -470,7 +469,8 @@ void Wakeup(void)
 
 int8_t store_new_irdata(uint16_t num)
 {
-	int8_t loop, ret = 4;
+	int16_t loop;
+	int8_t ret = 4;
 	IRMP_DATA new_IRData;
 	uint8_t tmp[SIZEOF_IR];
 	irmp_get_data(&new_IRData); // flush input of irmp data
@@ -755,7 +755,7 @@ void send_magic(void)
 	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
 	uint8_t release[3] = {0x00, 0x00, 0x00};
 	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
-	delay_ms(repeat_default[2]);
+	delay_ms(get_repeat(2));
 	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
 }
 
@@ -841,7 +841,7 @@ int main(void)
 
 			/* send key corresponding to IR-data */
 			num = get_num_of_irdata(&myIRData);
-			if(num != 0xFF) {
+			if (num != 0xFF) {
 				key = get_key(num);
 				if (key != 0xFFFF) {
 					kbd_buf[0] = key >> 8; // modifier
@@ -852,14 +852,12 @@ int main(void)
 			}
 		}
 
-		if (PrevXferComplete) {
-			/* send release */
-			if ((repeat_timer - last_received >= get_repeat(2)) && release_needed) {
-				release_needed = 0;
-				kbd_buf[0] = 0;
-				kbd_buf[2] = 0;
-				USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
-			}
+		/* send release */
+		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+			release_needed = 0;
+			kbd_buf[0] = 0;
+			kbd_buf[2] = 0;
+			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 		}
 	}
 }
