@@ -45,7 +45,7 @@ tusb_desc_device_t const desc_device =
     .bcdUSB             = 0x0200,
     .bDeviceClass       = 0x00,
     .bDeviceSubClass    = 0x00,
-    .bDeviceProtocol    = HID_ITF_PROTOCOL_KEYBOARD,
+    .bDeviceProtocol    = HID_ITF_PROTOCOL_NONE,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor           = 0x1209,

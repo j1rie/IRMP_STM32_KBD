@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {

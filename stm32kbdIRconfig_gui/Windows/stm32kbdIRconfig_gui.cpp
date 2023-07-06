@@ -327,7 +327,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SAVE_LOG, MainWindow::onSaveLog ),
 	FXMAPFUNC(SEL_CLOSE,   0, MainWindow::onCmdQuit ),
 	FXMAPFUNC(SEL_IO_READ, MainWindow::ID_PRINT, MainWindow::onPrint),
-	FXMAPFUNC(SEL_KEYPRESS, MainWindow::ID_PR_KBD_IRDATA, MainWindow::onKeyPress),
+	FXMAPFUNC(SEL_KEYPRESS, 0, MainWindow::onKeyPress),
 	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_KBD_TIMER, MainWindow::onKbdTimeout ),
 };
 
@@ -509,7 +509,7 @@ MainWindow::MainWindow(FXApp *app)
 	pkey_button->setHelpText("set key");
 	prwakeup_button->setHelpText("set wakeup by remote");
 	prmacro_button->setHelpText("set irdata by remote");
-	pr_keyboard_and_irdata_button->setHelpText("set key by keyboard and irdata by remote, press again in order to stop - press twice for testing keys");
+	pr_keyboard_and_irdata_button->setHelpText("set key by keyboard and irdata by remote, press again in order to stop");
 	gwakeup_button->setHelpText("get wakeup");
 	gmacro_button->setHelpText("get irdata");
 	gkey_button->setHelpText("get key");
@@ -1024,6 +1024,14 @@ MainWindow::Read(int show_len)
 			t.format("%02x ", buf[i]);
 			s += t;
 		}
+#ifndef _WIN32
+		if (buf[0] == REPORT_ID_KBD){
+			s += "from remote control, modifier: ";
+			s += get_key_from_hex(buf[1]);
+			s += ", key: ";
+			s += get_key_from_hex(buf[3]);
+		}
+#endif
 		s += "\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
@@ -1372,7 +1380,6 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
-	//PR_wakeup_Active = 1;
 	FXString s;
 	FXString t;
 	protocol_text->setText("");
@@ -1389,14 +1396,13 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 	output_text->setText(s);
 
 	if(Write_and_Check(5, 4) == -1){
-		s = "timeout\n";
+		s = "wakeup timeout\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 		return -1;
 	}
 
 	onGwakeup(NULL, 0, NULL);
-	//PR_wakeup_Active = 0;
 
 	return 1;
 }
@@ -1404,8 +1410,6 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 {
-	long retVal = 1;
-	//PR_irdata_Active = 1;
 	FXString s, t, p, a, c;
 	protocol_text->setText("");
 	address_text->setText("");
@@ -1427,7 +1431,7 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	getApp()->repaint();
 
 	if(Write_and_Check(5, 4) == -1){
-		s = "timeout\n";
+		s = "irdata timeout\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
 		return -1;
@@ -1448,17 +1452,22 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 		   (protocol_text->getText() == p) &&
 		   (address_text->getText() == a) &&
 		   (command_text->getText() == c)) {
-			s = "warning: irdata already in eeprom map line ";
+			s = "warning: irdata ";
+			s += p;
+			s += a;
+			s += c;
+			s += "00";
+			s += " already in eeprom map line ";
 #if (FOX_MINOR >= 7)
 			t.fromUInt(i + 1, 10);
 #else
 			t = FXStringVal(i + 1, 10);
 #endif
 			s += t;
-			s += ", please reset\n";
+			s += "\n";
 			input_text->appendText(s);
 			input_text->setBottomLine(INT_MAX);
-			retVal = -1;
+			return -1;
 		}
 	}
 
@@ -1478,9 +1487,8 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(mapbeg[i]);
 	map_text21->setModified(1);
-	//PR_irdata_Active = 0;
 
-	return retVal;
+	return 1;
 }
 
 
@@ -2775,7 +2783,7 @@ MainWindow::onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr)
 		** and under Windows our config app receives keys send by our device, so ignore those)
 		*/
 		if((modifier_text->getText() == last_modifier) && (key_text->getText() == last_key)){
-			input_text->appendText("same key\n");
+			input_text->appendText("same key, ignored\n");
 			input_text->setBottomLine(INT_MAX);
 			getApp()->repaint();
 			if(PR_kbd_irdata_Active)

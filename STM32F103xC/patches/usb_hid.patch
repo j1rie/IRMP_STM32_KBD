@@ -234,7 +234,7 @@ diff -Nrup A/src/stm32_it.c B/src/stm32_it.c
  * Function Name  : USB_FS_WKUP_IRQHandler
 diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
 --- A/src/usb_desc.c	2017-06-16 10:14:00.000000000 +0200
-+++ B/src/usb_desc.c	2022-07-21 21:25:33.554476366 +0200
++++ B/src/usb_desc.c	2023-07-06 21:49:05.170109923 +0200
 @@ -59,10 +59,10 @@ const uint8_t CustomHID_DeviceDescriptor
      0x00,                       /*bDeviceSubClass*/
      0x00,                       /*bDeviceProtocol*/
@@ -299,7 +299,7 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
      /* 34 */
      	
      0x07,	/* bLength: Endpoint Descriptor size */
-@@ -132,9 +132,9 @@ const uint8_t CustomHID_ConfigDescriptor
+@@ -132,19 +132,20 @@ const uint8_t CustomHID_ConfigDescriptor
      0x01,	/* bEndpointAddress: */
  			/*	Endpoint Address (OUT) */
      0x03,	/* bmAttributes: Interrupt endpoint */
@@ -311,7 +311,11 @@ diff -Nrup A/src/usb_desc.c B/src/usb_desc.c
      /* 41 */
    }
    ; /* CustomHID_ConfigDescriptor */
-@@ -145,6 +145,7 @@ const uint8_t CustomHID_ReportDescriptor
+ const uint8_t CustomHID_ReportDescriptor[CUSTOMHID_SIZ_REPORT_DESC] =
+   {                    
+-    0x06, 0xFF, 0x00,      /* USAGE_PAGE (Vendor Page: 0xFF00) */                       
++    0x06, 0x00, 0xFF,      /* USAGE_PAGE (Vendor Page: 0x00FF) */                       
+     0x09, 0x01,            /* USAGE (Demo Kit)               */    
      0xa1, 0x01,            /* COLLECTION (Application)       */            
      /* 6 */
      

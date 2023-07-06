@@ -69,7 +69,7 @@ void eeprom_begin(size_t size, uint8_t nr_sectors, size_t margin) {
     else if(first_empty_page == -1) // no empty page (full)
         memcpy(_data, _sector + _nr_sectors * FLASH_SECTOR_SIZE - _size, _size); // last page
     else // empty
-        memcpy(_data, _sector, _size);   // 1st page
+        memset(_data, 0xFF, _size);
 
     _dirty = false; //make sure dirty is cleared in case begin() is called 2nd+ time
 }
@@ -138,7 +138,7 @@ void eeprom_reset() {
     //rp2040.idleOtherCore();
     flash_range_erase((intptr_t)_sector - (intptr_t)XIP_BASE, _nr_sectors * FLASH_SECTOR_SIZE);
     first_empty_page = 0;
-    memcpy(_data, _sector, _size);
+    memset(_data, 0xFF, _size);
     //rp2040.resumeOtherCore();
     restore_interrupts(status);
 }
