@@ -6,10 +6,10 @@ namespace FX {
 
 struct fxkey_line{
 	char key[32];
-	uint16_t fx_key;
+	uint32_t fx_key;
 };
 
-uint16_t fxkey_lines = 112;
+uint16_t fxkey_lines = 124;
 
 struct fxkey_line fxkey_map[]
 {
@@ -229,6 +229,20 @@ struct fxkey_line fxkey_map[]
   {"KEY_RIGHTSHIFT"                    , 0xFFE2},
   {"KEY_RIGHTALT"                      , 0xFFEA},
   {"KEY_RIGHTMETA"                     , 0xFFE8},
+
+// workaround for linux
+  {"KEY_F13"                           , 0x1008FF81},
+  {"KEY_F14"                           , 0x1008FF45},
+  {"KEY_F15"                           , 0x1008FF46},
+  {"KEY_F16"                           , 0x1008FF47},
+  {"KEY_F17"                           , 0x1008FF48},
+  {"KEY_F18"                           , 0x1008FF49},
+  {"KEY_F19"                           , 0x00000000},
+  {"KEY_F20"                           , 0x1008FFB2},
+  {"KEY_F21"                           , 0x1008FFA9},
+  {"KEY_F22"                           , 0x1008FFB0},
+  {"KEY_F23"                           , 0x1008FFB1},
+  {"KEY_F24"                           , 0x00000000},
   };
 
 }

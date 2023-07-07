@@ -268,7 +268,7 @@ public:
 	long onDevDClicked(FXObject *sender, FXSelector sel, void *ptr);
 	long onCmdQuit(FXObject *sender, FXSelector sel, void *ptr);
 	long onKeyPress(FXObject *sender, FXSelector sel, void *ptr);
-	FXString get_key_from_event_code(uint16_t code);
+	FXString get_key_from_event_code(uint32_t code);
 	uint32_t timestamp;
 	long onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr);
 	long onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr);
@@ -327,7 +327,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_COMMAND, MainWindow::ID_SAVE_LOG, MainWindow::onSaveLog ),
 	FXMAPFUNC(SEL_CLOSE,   0, MainWindow::onCmdQuit ),
 	FXMAPFUNC(SEL_IO_READ, MainWindow::ID_PRINT, MainWindow::onPrint),
-	FXMAPFUNC(SEL_KEYPRESS, 0, MainWindow::onKeyPress),
+	FXMAPFUNC(SEL_KEYPRESS, MainWindow::ID_PR_KBD_IRDATA, MainWindow::onKeyPress),
 	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_KBD_TIMER, MainWindow::onKbdTimeout ),
 };
 
@@ -2585,7 +2585,7 @@ MainWindow::onMacTimeout(FXObject *sender, FXSelector sel, void *ptr)
 }
 
 FXString
-MainWindow::get_key_from_event_code(uint16_t code){
+MainWindow::get_key_from_event_code(uint32_t code){
 	for(int i=0; i < fxkey_lines; i++) {
 		if(code == fxkey_map[i].fx_key) {
 			return fxkey_map[i].key;
@@ -2604,9 +2604,17 @@ MainWindow::onKeyPress(FXObject *sender, FXSelector sel, void *ptr)
 	key_text->setText("KEY_");
 	modifier_text->setText("ff");
 
+#if (FOX_MINOR >= 7)
+		//s.fromUInt(event->code, 16);
+#else
+		//s = FXStringVal(event->code,16);
+#endif
+
 	if(0xFFE0 < event->code && event->code < 0xFFEF){
 		modifier_text->setText(get_key_from_event_code(event->code));
 		got_modifier = 1;
+		//input_text->appendText(s);
+		//input_text->appendText(" ");
 		input_text->appendText("got modifier ");
 		input_text->appendText(modifier_text->getText());
 		input_text->appendText("\n");
@@ -2615,6 +2623,8 @@ MainWindow::onKeyPress(FXObject *sender, FXSelector sel, void *ptr)
 	} else {
 		key_text->setText(get_key_from_event_code(event->code));
 		got_key = 1;
+		//input_text->appendText(s);
+		//input_text->appendText(" ");
 		input_text->appendText("got key ");
 		input_text->appendText(key_text->getText());
 		input_text->appendText("\n");
