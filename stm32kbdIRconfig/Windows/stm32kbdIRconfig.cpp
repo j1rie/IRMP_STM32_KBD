@@ -197,7 +197,11 @@ int main(int argc, char* argv[])
 		printf("old firmware!\n");
 	puts("");
 
+	#ifdef WIN32
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nhid test (h)\nexit (x)\n");
+	#else
 cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+	#endif
 	scanf("%s", &c);
 
 	switch (c) {
@@ -545,6 +549,9 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		}
 		break;
 
+	case 'm':
+		goto monit;
+
 	case 'x':
 		goto exit;
 		break;
@@ -563,6 +570,18 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 	}
 
 	goto cont;
+
+monit:	while(true) {
+		retValm = hid_read(handle, inBuf, in_size);
+		if (retValm >= 0) {
+			printf("read %d bytes:\n\t", retValm);
+			for (l = 0; l < 64; l++)
+				printf("%02x ", inBuf[l]);
+			printf("\n");
+			printf("modifier|key: %02hhx%02x\n\n", inBuf[1],inBuf[3]);
+			printf("\n");
+		}
+	}
 
 exit:	hid_close(handle);
 

@@ -2600,6 +2600,10 @@ MainWindow::onKeyPress(FXObject *sender, FXSelector sel, void *ptr)
 	FXEvent *event = (FXEvent*)ptr;
 	FXString s;
 
+	// first reset
+	key_text->setText("KEY_");
+	modifier_text->setText("ff");
+
 	if(0xFFE0 < event->code && event->code < 0xFFEF){
 		modifier_text->setText(get_key_from_event_code(event->code));
 		got_modifier = 1;
