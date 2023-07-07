@@ -509,7 +509,7 @@ MainWindow::MainWindow(FXApp *app)
 	pkey_button->setHelpText("set key");
 	prwakeup_button->setHelpText("set wakeup by remote");
 	prmacro_button->setHelpText("set irdata by remote");
-	pr_keyboard_and_irdata_button->setHelpText("set key by keyboard and irdata by remote, press again in order to stop");
+	pr_keyboard_and_irdata_button->setHelpText("set key by keyboard and irdata by remote, press again in order to stop - press twice for testing keys");
 	gwakeup_button->setHelpText("get wakeup");
 	gmacro_button->setHelpText("get irdata");
 	gkey_button->setHelpText("get key");
