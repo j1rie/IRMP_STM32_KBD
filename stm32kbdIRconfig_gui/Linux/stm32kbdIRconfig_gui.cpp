@@ -766,7 +766,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	rrepeat_button->enable();
 	connect_button->disable();
 	disconnect_button->enable();
-	reboot_button->enable();
 	flash_button->enable();
 	get_button->enable();
 	reset_button->enable();
@@ -2696,6 +2695,8 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		line_text->disable();
 		pr_kbd_irdata_text->disable();
 		pr_kbd_irdata_text_2->disable();
+		commit_button->disable();
+		get_raw_button->disable();
 
 		FXString s;
 		s = "entered keyboard + irdata mode\n";
@@ -2737,13 +2738,19 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		rrepeat_button->enable();
 		connect_button->disable();
 		disconnect_button->enable();
-		reboot_button->enable();
 		flash_button->enable();
 		get_button->enable();
 		reset_button->enable();
 		open_button->enable();
 		save_button->enable();
 		upgrade_button->enable();
+		if(uC == "RP2040"){
+			commit_button->enable();
+			get_raw_button->enable();
+		} else {
+			reboot_button->enable();
+		}
+
 		map_text21->enable();
 		key_text->setText("KEY_");
 		modifier_text->setText("ff");

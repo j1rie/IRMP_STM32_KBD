@@ -17,8 +17,8 @@ ffffffffffff ff|KEY_BACKSPACE#back
 ffffffffffff ff|KEY_M#menu
 ffffffffffff ff|KEY_HOME#top_of_menu
 ffffffffffff ff|KEY_F8#mute
-ffffffffffff ff|KEY_KPMINUS
-ffffffffffff ff|KEY_KPPLUS
+ffffffffffff ff|KEY_KPMINUS#volume_down
+ffffffffffff ff|KEY_KPPLUS#volume_up
 ffffffffffff ff|KEY_TAB#toggle_fullscreen_playback
 ffffffffffff ff|KEY_BACKSLASH#toggle_fullscreen_window_view
 ffffffffffff ff|KEY_D#move_item_down
