@@ -1,7 +1,7 @@
 ## IRMP on RP2040
 
+(*)
 <img src="https://www.vdr-portal.de/index.php?attachment/48154-20230825-130009-jpg" width="33%">
-Waveshare RP2040-One with TSOP by clausmuus@vdr-portal.de
 
 For boards with the RP2040, e.g. the Raspberry Pi Pico and many others.  
 This is additional information, basic information in https://github.com/j1rie/IRMP_STM32#readme.
@@ -30,3 +30,5 @@ See [Getting Started with the Raspberry Pi Pico](https://rptl.io/pico-get-starte
 -> Install the Toolchain  
 ->  Building "Blink"  
 ->  Load and run "Blink"  
+
+(*) Waveshare RP2040-One with TSOP by clausmuus@vdr-portal.de
