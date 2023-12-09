@@ -78,7 +78,8 @@ public:
 		ID_DEVLIST,
 		ID_KBD_TIMER,
 		ID_CEEPROM,
-		ID_GREEPROM
+		ID_GREEPROM,
+		ID_PRIRDATA_TIMER
 	};
 
 enum access {
@@ -211,6 +212,7 @@ private:
 	int PR_wakeup_Active;
 	FXString last_modifier;
 	FXString last_key;
+	int template_mode;
 
 protected:
 	MainWindow() {};
@@ -272,6 +274,7 @@ public:
 	uint32_t timestamp;
 	long onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr);
 	long onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr);
+	long onPRirdataTimeout(FXObject *sender, FXSelector sel, void *ptr);
 };
 
 // FOX 1.7 changes the timeouts to all be nanoseconds.
@@ -329,6 +332,7 @@ FXDEFMAP(MainWindow) MainWindowMap [] = {
 	FXMAPFUNC(SEL_IO_READ, MainWindow::ID_PRINT, MainWindow::onPrint),
 	FXMAPFUNC(SEL_KEYPRESS, MainWindow::ID_PR_KBD_IRDATA, MainWindow::onKeyPress),
 	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_KBD_TIMER, MainWindow::onKbdTimeout ),
+	FXMAPFUNC(SEL_TIMEOUT, MainWindow::ID_PRIRDATA_TIMER, MainWindow::onPRirdataTimeout ),
 };
 
 FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap));
@@ -606,6 +610,7 @@ MainWindow::MainWindow(FXApp *app)
 	pr_kbd_irdata_text_2->setTextColor(FXRGB(255,0,0));
 	last_modifier = "";
 	last_key = "";
+	template_mode = 0;
 }
 
 MainWindow::~MainWindow()
@@ -766,7 +771,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	rrepeat_button->enable();
 	connect_button->disable();
 	disconnect_button->enable();
-	reboot_button->enable();
 	flash_button->enable();
 	get_button->enable();
 	reset_button->enable();
@@ -1415,7 +1419,14 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	address_text->setText("");
 	command_text->setText("");
 	flag_text->setText("");
-	s = "enter IR data by pressing a button on the remote control within 5 sec\n";
+	if(template_mode){
+		s = "we are in loop mode, in order to exit wait for timeout or press same button again\n";
+		s += "enter IR data by pressing a button on the remote control within 5 sec\n";
+		pr_kbd_irdata_text->setText("press button on remote");
+		pr_kbd_irdata_text_2->setText("or wait until timeout");
+	} else {
+		s = "enter IR data by pressing a button on the remote control within 5 sec\n";
+	}
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 	getApp()->repaint();
@@ -1434,6 +1445,10 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 		s = "irdata timeout\n";
 		input_text->appendText(s);
 		input_text->setBottomLine(INT_MAX);
+		if(template_mode){
+			pr_kbd_irdata_text->setText("");
+			pr_kbd_irdata_text_2->setText("");
+		}
 		return -1;
 	}
 
@@ -1467,6 +1482,10 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 			s += "\n";
 			input_text->appendText(s);
 			input_text->setBottomLine(INT_MAX);
+			if(template_mode){
+				pr_kbd_irdata_text->setText("");
+				pr_kbd_irdata_text_2->setText("");
+			}
 			return -1;
 		}
 	}
@@ -1487,6 +1506,9 @@ MainWindow::onPRirdata(FXObject *sender, FXSelector sel, void *ptr)
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(mapbeg[i]);
 	map_text21->setModified(1);
+
+	if(template_mode)
+		getApp()->addTimeout(this, ID_PRIRDATA_TIMER, 300 * timeout_scalar /* 300 ms*/); // avoid bounces
 
 	return 1;
 }
@@ -2055,6 +2077,8 @@ MainWindow::onOpen(FXObject *sender, FXSelector sel, void *ptr)
 
 					// Success
 					loaded=1;
+
+					template_mode = 1;
 				}
 
 				// Kill wait cursor
@@ -2080,6 +2104,7 @@ MainWindow::onOpen(FXObject *sender, FXSelector sel, void *ptr)
 #endif
 		u += v;
 		u += "\n";
+		u += "entered loop mode for 'set by remote - irdata'\n";
 		input_text->appendText(u);
 		input_text->setBottomLine(INT_MAX);
 		onApply(NULL, 0, NULL);
@@ -2322,6 +2347,9 @@ MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	onApply(NULL, 0, NULL);
 	map_text21->setCursorPos(0);
 	map_text21->setModified(0);
+	template_mode = 0;
+	input_text->appendText("stopped loop mode for 'set by remote - irdata'\n");
+	input_text->setBottomLine(INT_MAX);
 
 	return 1;
 }
@@ -2696,6 +2724,8 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		line_text->disable();
 		pr_kbd_irdata_text->disable();
 		pr_kbd_irdata_text_2->disable();
+		commit_button->disable();
+		get_raw_button->disable();
 
 		FXString s;
 		s = "entered keyboard + irdata mode\n";
@@ -2737,13 +2767,19 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		rrepeat_button->enable();
 		connect_button->disable();
 		disconnect_button->enable();
-		reboot_button->enable();
 		flash_button->enable();
 		get_button->enable();
 		reset_button->enable();
 		open_button->enable();
 		save_button->enable();
 		upgrade_button->enable();
+		if(uC == "RP2040"){
+			commit_button->enable();
+			get_raw_button->enable();
+		} else {
+			reboot_button->enable();
+		}
+
 		map_text21->enable();
 		key_text->setText("KEY_");
 		modifier_text->setText("ff");
@@ -2838,6 +2874,14 @@ MainWindow::onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr)
 
 	if(PR_kbd_irdata_Active)
 		getApp()->addTimeout(this, ID_KBD_TIMER, 100 * timeout_scalar /* 100 ms*/);
+
+	return 1;
+}
+
+long
+MainWindow::onPRirdataTimeout(FXObject *sender, FXSelector sel, void *ptr)
+{
+	onPRirdata(NULL, 0, NULL);
 
 	return 1;
 }
