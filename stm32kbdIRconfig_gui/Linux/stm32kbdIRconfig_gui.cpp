@@ -774,11 +774,10 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	flash_button->enable();
 	get_button->enable();
 	reset_button->enable();
+	reboot_button->enable();
 	if(uC == "RP2040"){
 		commit_button->enable();
 		get_raw_button->enable();
-	} else {
-		reboot_button->enable();
 	}
 
 	//list wakeups and alarm and warn if no STM32
@@ -2773,11 +2772,10 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		open_button->enable();
 		save_button->enable();
 		upgrade_button->enable();
+		reboot_button->enable();
 		if(uC == "RP2040"){
 			commit_button->enable();
 			get_raw_button->enable();
-		} else {
-			reboot_button->enable();
 		}
 
 		map_text21->enable();
