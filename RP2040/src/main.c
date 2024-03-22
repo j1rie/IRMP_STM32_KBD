@@ -1,8 +1,8 @@
 /*
- *  IR receiver, USB wakeup, motherboard switch wakeup, wakeup timer,
+ *  IR receiver, sender, USB wakeup, motherboard switch wakeup, wakeup timer,
  *  USB HID keyboard device, eeprom emulation
  *
- *  Copyright (C) 2014-2023 Joerg Riechardt
+ *  Copyright (C) 2014-2024 Joerg Riechardt
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -44,7 +44,9 @@ enum command {
 	CMD_EEPROM_RESET,
 	CMD_EEPROM_COMMIT,
 	CMD_EEPROM_GET_RAW,
-	CMD_HID_TEST
+	CMD_HID_TEST,
+	CMD_STATUSLED,
+	CMD_EMIT
 };
 
 enum status {
@@ -242,10 +244,13 @@ void LED_Switch_init(void)
 	/* start with wakeup switch off */
 	gpio_init(WAKEUP_GPIO);
 	gpio_init(EXTLED_GPIO);
+	gpio_init(STATUSLED_GPIO);
 	gpio_set_drive_strength(EXTLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
+	gpio_set_drive_strength(STATUSLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2040
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
+	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
 }
 
 void toggle_led(void)
@@ -267,6 +272,7 @@ void fast_toggle(void)
 	int i;
 	for(i=0; i<10; i++) {
 		toggle_led();
+		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
 		sleep_ms(50); 
 	}
 }
@@ -276,6 +282,10 @@ void yellow_short_on(void)
 	toggle_led();
 	sleep_ms(130);
 	toggle_led();
+}
+
+void statusled_write(uint8_t led_state) {
+	gpio_put(STATUSLED_GPIO, led_state);
 }
 
 void eeprom_store(int addr, uint8_t *buf)
@@ -506,6 +516,10 @@ int8_t set_handler(uint8_t *buf)
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	switch (buf[3]) {
+	case CMD_EMIT:
+		yellow_short_on();
+		irsnd_send_data((IRMP_DATA *) &buf[4], 1);
+		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
 		break;
@@ -544,6 +558,9 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_EEPROM_COMMIT:
 		if(!eeprom_commit())
 			ret = -1;
+		break;
+	case CMD_STATUSLED:
+		statusled_write(buf[4]);
 		break;
 	default:
 		ret = -1;
@@ -647,6 +664,7 @@ int main(void)
 	Systick_Init();
 	tusb_init();
 	IRMP_Init();
+	irsnd_init();
 	eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 512 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 

@@ -26,7 +26,9 @@ void IRMP_Init(void)
 
 bool irmp_timer_callback(repeating_timer_t *rt)
 {
-	irmp_ISR();
+	if (! irsnd_ISR()) { /* call irsnd ISR */
+		irmp_ISR(); /* if not busy call irmp ISR */
+	}
 
 	return true;
 }

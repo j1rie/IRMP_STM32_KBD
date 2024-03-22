@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2018 Joerg Riechardt
+ * Copyright (C) 2014-2024 Joerg Riechardt
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@
 #define WAKEUP_PIN	GPIO_Pin_7 /* Yaw-middle */
 #define EXTLED_PORT	GPIOB
 #define EXTLED_PIN	GPIO_Pin_8 /* connect EXTLED to Yaw-left and 3,3V */
+#define STATUSLED_PORT	GPIOB
+#define STATUSLED_PIN	GPIO_Pin_11
 #else
 #define WAKEUP_PORT	GPIOA
 #define WAKEUP_PIN	GPIO_Pin_1 /* Yaw-middle */

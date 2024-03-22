@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32kbdIRconfig: configure and monitor IRMP_STM32_KBD
 
-	Copyright (C) 2014-2023 Joerg Riechardt
+	Copyright (C) 2014-2024 Joerg Riechardt
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -44,7 +44,8 @@ enum command {
 	CMD_EEPROM_RESET,
 	CMD_EEPROM_COMMIT,
 	CMD_EEPROM_GET_RAW,
-	CMD_HID_TEST
+	CMD_HID_TEST,
+	CMD_STATUSLED
 };
 
 enum status {
@@ -178,13 +179,13 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2040 (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2040 and statusled (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\n");
+set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\nstatusled(s)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -265,6 +266,13 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			break;
 		case 'c':
 			outBuf[idx++] = CMD_EEPROM_COMMIT;
+			write_and_check(idx, 4);
+			break;
+		case 's':
+			outBuf[idx++] = CMD_STATUSLED;
+			printf("enter 1 for on, 0 for off\n");
+			scanf("%" SCNx8 "", &s);
+			outBuf[idx++] = s;
 			write_and_check(idx, 4);
 			break;
 		default:

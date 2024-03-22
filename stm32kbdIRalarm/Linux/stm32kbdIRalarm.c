@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 	    }
 	}
 
-	open_stm32(dvalue != NULL ? dvalue : "/dev/irmp_stm32");
+	open_stm32(dvalue != NULL ? dvalue : "/dev/irmp_stm32_kbd");
         outBuf[0] = REPORT_ID_CONFIG_OUT;
 	outBuf[1] = STAT_CMD;
 

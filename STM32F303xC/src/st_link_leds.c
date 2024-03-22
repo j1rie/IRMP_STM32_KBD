@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Joerg Riechardt
+ * Copyright (C) 2014-2024 Joerg Riechardt
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,6 +100,9 @@ void fast_toggle(void)
 #ifdef EXTLED_PORT
 		EXTLED_PORT->ODR ^= EXTLED_PIN;
 #endif
+#ifdef STATUSLED_PORT
+		STATUSLED_PORT->ODR ^= STATUSLED_PIN;
+#endif
 		while (systicks <= 50 * (i+1));
 	}
 }
@@ -118,3 +121,10 @@ void yellow_short_on(void)
 #endif
 }
 #endif /* ST_Link */
+void statusled_write (uint8_t led_state) {
+#ifdef STATUSLED_PORT
+		GPIO_WriteBit(STATUSLED_PORT, STATUSLED_PIN, led_state? Bit_SET : Bit_RESET);
+#elif defined(EXTLED_PORT) && (defined(ST_Link) || defined(StickLink))
+		GPIO_WriteBit(EXTLED_PORT, EXTLED_PIN, led_state? Bit_SET : Bit_RESET);
+#endif
+}

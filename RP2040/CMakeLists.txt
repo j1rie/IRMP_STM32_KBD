@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
     src/main.c
     usb/usb_descriptors.c
     irmp/irmp.c
+    irmp/irsnd.c
     src/irmpmain.c
     eeprom/eeprom.c
     src/usb_hid.c
