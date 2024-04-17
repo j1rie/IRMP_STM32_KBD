@@ -48,6 +48,7 @@ enum command {
 	CMD_STATUSLED,
 	CMD_EMIT,
 	CMD_NEOPIXEL,
+	CMD_MACRO,
 };
 
 enum status {
@@ -130,7 +131,7 @@ int main(int argc, const char **argv) {
 
 	uint64_t i;
 	uint16_t kk = 0x0000;
-	char c, d;
+	char c, d, e;
 	uint8_t s, m, l, idx, eeprom_lines;
 	int8_t k;
 	int retValm, jump_to_firmware, res, desc_size = 0;
@@ -191,13 +192,13 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
+cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups,macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\nstatusled(s)\nneopixel(n)\n");
+set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\nstatusled(s)\nneopixel(n)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -356,7 +357,7 @@ color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)
 		break;
 
 	case 'q':
-Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
+Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -367,6 +368,15 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
 			outBuf[idx++] = m;
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%" SCNx8 "", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%" SCNx8 "", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
@@ -394,6 +404,15 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			outBuf[idx++] = m;
 			write_and_check(idx, 10);
 			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%" SCNx8 "", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%" SCNx8 "", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
+			write_and_check(idx, 10);
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
 			scanf("%" SCNu8 "", &m);
@@ -435,6 +454,8 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
 					printf("hid in report count: %u\n", inBuf[7]);
 					printf("hid out report count: %u\n", inBuf[8]);
+					printf("macro_slots: %u\n", inBuf[9]);
+					printf("macro_depth: %u\n", inBuf[10]);
 				} else {
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
@@ -520,7 +541,7 @@ out:
 		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
+reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -531,6 +552,15 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%" SCNx8 "", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%" SCNx8 "", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");

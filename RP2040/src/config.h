@@ -10,14 +10,17 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 3 * 2 <= 511
- * Eeprom page size = (512 - 1) 8bit variables,
+/* NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 3 * 2 + MACRO_SLOTS x (MACRO_DEPTH + 1) <= 1023
+ * Eeprom page size = (1024 - 1) 8bit variables,
  * Eeprom partition 1: NUM_KEYS IRMP_DATA
  * Eeprom partition 2: NUM_KEYS keys
  * Eeprom partition 3: WAKE_SLOTS IRMP_DATA
  * Eeprom partition 4: repeat_delay, repeat_period, repeat_timeout
+ * Eeprom partition 5: MACRO_SLOTS x (MACRO_DEPTH + 1) IRMP_DATA
  */
 #define NUM_KEYS   61
+#define MACRO_SLOTS	8
+#define MACRO_DEPTH	8
 #define WAKE_SLOTS	2 // at least 2: wakeup and reboot
 #define SIZEOF_IR	6
 

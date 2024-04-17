@@ -50,6 +50,7 @@ enum command {
 	CMD_STATUSLED,
 	CMD_EMIT,
 	CMD_NEOPIXEL,
+	CMD_MACRO,
 };
 
 enum status {
@@ -525,7 +526,9 @@ int8_t get_handler(uint8_t *buf)
 			buf[6] = WAKE_SLOTS;
 			buf[7] = HID_IN_REPORT_COUNT;
 			buf[8] = HID_OUT_REPORT_COUNT;
-			ret += 5;
+			buf[9] = MACRO_SLOTS;
+			buf[10] = MACRO_DEPTH;
+			ret += 7;
 			break;
 		}
 		/* in later queries we give information about supported protocols and firmware */
@@ -547,6 +550,11 @@ int8_t get_handler(uint8_t *buf)
 		/* AlarmValue -> buf[3-6] */
 		memcpy(&buf[4], &AlarmValue, sizeof(AlarmValue));
 		ret += sizeof(AlarmValue);
+		break;
+	case CMD_MACRO:
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
+		eeprom_restore(&buf[4], idx);
+		ret += SIZEOF_IR;
 		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR * buf[4];
@@ -589,6 +597,10 @@ int8_t set_handler(uint8_t *buf)
 		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
+		break;
+	case CMD_MACRO:
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
+		eeprom_store(idx, &buf[6]);
 		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR * buf[4];
@@ -671,6 +683,10 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_ALARM:
 		AlarmValue = 0xFFFFFFFF;
 		break;
+	case CMD_MACRO:
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
+		eeprom_store(idx, zeros);
+		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR * buf[4];
 		eeprom_store(idx, zeros);
@@ -733,6 +749,46 @@ void check_reboot(IRMP_DATA *ir)
 		reboot();
 }
 
+void transmit_macro(uint8_t macro)
+{
+	uint8_t i;
+	uint16_t idx;
+	uint8_t buf[SIZEOF_IR];
+	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	/* we start from 1, since we don't want to tx the trigger code of the macro*/
+	for (i=1; i < MACRO_DEPTH + 1; i++) {
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * macro + SIZEOF_IR * i;
+		eeprom_restore(buf, idx);
+		/* first encounter of zero in macro means end of macro */
+		if (!memcmp(buf, &zeros, sizeof(zeros)))
+			break;
+		/* if macros are sent already, while the trigger IR data are still repeated,
+		* the receiving device may crash
+		* Depending on the protocol we need a pause between the trigger and the transmission
+		* and between two transmissions. The highest known pause is 130 ms for Denon. */
+		yellow_short_on();
+		irsnd_send_data((IRMP_DATA *) buf, 1);
+	}
+}
+
+/* is received ir-code (trigger) in one of the macro-slots? transmit_macro if true */
+void check_macros(IRMP_DATA *ir)
+{
+	uint8_t i;
+	uint16_t idx;
+	uint8_t buf[SIZEOF_IR];
+	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	for (i=0; i < MACRO_SLOTS; i++) {
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * i;
+		eeprom_restore(buf, idx);
+		/* first encounter of zero in check_macros() means end of check */
+		if (!memcmp(buf, &zeros, sizeof(zeros)))
+			break;
+		if (!memcmp(buf, ir, sizeof(buf)))
+			transmit_macro(i);
+	}
+}
+
 void led_callback(uint_fast8_t on)
 {
 	toggle_led();
@@ -769,7 +825,7 @@ int main(void)
 	irsnd_init();
 	ws2812_init();
 	set_rgb_led(white, 0);
-	eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 512 byte, put KBD eeprom below IRMP eeprom
+	eeprom_begin(4*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 1024 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
 	while (1)
@@ -828,6 +884,7 @@ int main(void)
 				last_sent = 0;
 				last_received = 0;
 				store_wakeup(&myIRData);
+				check_macros(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
 			} else {
