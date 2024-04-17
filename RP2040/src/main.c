@@ -698,10 +698,6 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_KEY:
 		put_key(zeros, buf[4]);
 		break;
-	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
-		eeprom_store(idx, zeros);
-		break;
 	case CMD_REPEAT:
 		put_repeat(zeros, buf[4]);
 		break;

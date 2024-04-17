@@ -413,7 +413,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget macro slot(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2040(p)\n");
+get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2040(p)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
