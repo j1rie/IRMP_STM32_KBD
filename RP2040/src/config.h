@@ -10,7 +10,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-/* NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 3 * 2 + MACRO_SLOTS x (MACRO_DEPTH + 1) <= 1023
+/* NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 3 * 2 + MACRO_SLOTS x (MACRO_DEPTH + 1) * SIZEOF_IR <= 1023
  * Eeprom page size = (1024 - 1) 8bit variables,
  * Eeprom partition 1: NUM_KEYS IRMP_DATA
  * Eeprom partition 2: NUM_KEYS keys

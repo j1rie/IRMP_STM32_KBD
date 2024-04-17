@@ -825,7 +825,7 @@ int main(void)
 	irsnd_init();
 	ws2812_init();
 	set_rgb_led(white, 0);
-	eeprom_begin(4*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 1024 byte, put KBD eeprom below IRMP eeprom
+	eeprom_begin(4*FLASH_PAGE_SIZE, 8, 2*FLASH_SECTOR_SIZE ); // 32 pages of 1024 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
 	while (1)
