@@ -136,8 +136,12 @@ int main(int argc, const char **argv) {
 	int8_t k;
 	int retValm, jump_to_firmware, res, desc_size = 0;
 	unsigned int n;
-	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32_kbd");
+
         struct hidraw_report_descriptor rpt_desc;
+
+        memset(&rpt_desc, 0x0, sizeof(rpt_desc));
+
+	open_stm32(argc>1 ? argv[1] : "/dev/irmp_stm32_kbd");
 
         /* Get Report Descriptor Size */
         res = ioctl(stm32fd, HIDIOCGRDESCSIZE, &desc_size);
@@ -192,7 +196,7 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups,macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
+cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
@@ -209,6 +213,24 @@ set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repea
 			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
+			printf("enter IRData (protocoladdresscommandflag)\n");
+			scanf("%" SCNx64 "", &i);
+			outBuf[idx++] = (i>>40) & 0xFF;
+			outBuf[idx++] = (i>>24) & 0xFF;
+			outBuf[idx++] = (i>>32) & 0xFF;
+			outBuf[idx++] = (i>>8) & 0xFF;
+			outBuf[idx++] = (i>>16) & 0xFF;
+			outBuf[idx++] = i & 0xFF;
+			write_and_check(idx, 4);
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%" SCNx8 "", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%" SCNx8 "", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			printf("enter IRData (protocoladdresscommandflag)\n");
 			scanf("%" SCNx64 "", &i);
 			outBuf[idx++] = (i>>40) & 0xFF;
@@ -391,7 +413,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2040(p)\n");
+get:		printf("get wakeup(w)\nget macro slot(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2040(p)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -519,7 +541,7 @@ again:			;
 			outBuf[idx++] = CMD_EEPROM_GET_RAW;
 			for(k = 31; k >= 0; k--) { // FLASH_SECTOR_SIZE * nr_sectors / size
 				outBuf[idx] = k;
-				for(l = 0; l < 16; l++) { // size / 32
+				for(l = 0; l < 32; l++) { // size / 32
 					outBuf[idx+1] = l;
 					write(stm32fd, outBuf, idx+2);
 					usleep(3000);
@@ -527,7 +549,7 @@ again:			;
 					if (retValm < 0) {
 						printf("read error\n");
 					} else {
-						for (int i = 4; i < 36; i++)
+						for (int i = 4; i < 36; i++) // 32
 							printf("%02hhx ", inBuf[i]);
 					}
 				}

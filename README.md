@@ -16,12 +16,17 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 * IR receiver (ca. 40 protocols decoded in hardware) 
 * switch PC on via remote control from S3 (STR) and S4 (STD) via USB or from S3, S4 and S5 (SoftOff) via motherboard-switch (+5V needed, on USB or from PSU or motherboard) 
 * switch PC on via build in timer from S3 (STR) and S4 (STD) via USB or from S3, S4 and S5 (SoftOff) via motherboard-switch (+5V needed, on USB or from PSU or motherboard) 
+* IR sender (ca. 40 protocols) 
 * the configuration is stored in the emulated eeprom
 * bootloader for comfortable firmware update
+* support for macros 
+
+A macro makes it possible to send a sequence of IR commands via the send diode on reception of a trigger.
+ macroslot0 is the trigger, macroslot1 … macroslot7 are the commands to be sent.
 
 ## Software Linux
 * GUI config-tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.
-* interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control.
+* interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, macros, irdata, keys, alarm time, repeat and  send IR. It is possible to program wakeups, macros and irdata via remote control.
 * stm32kbdIRalarm for setting and reading alarm time via script
 * stm32FWupgrade for firmware update on the command line
 
@@ -81,8 +86,7 @@ Programmer SWDIO -> IO
 Programmer SWCLK -> CLK  
 Programmer GND -> G  
 Programmer 3V3 -> V3  
-File - Open File - boot.blackDev.bin (https://github.com/j1rie/STM32F103-bootloader/tree/master/binaries
-)  
+File - Open File - boot.blackDev.bin (https://github.com/j1rie/STM32F103-bootloader/tree/master/binaries)
 Target - Program & Verify (confirm a message about read out protection, if it appears)  
 https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze#bootloader-flashen  
 
@@ -127,4 +131,4 @@ https://www.mikrocontroller.net/articles/IRMP_auf_STM32_-_Bauanleitung
 
 Much fun with IRMP on STM32!
 
-Copyright (C) 2018-2022 Jörg Riechardt
+Copyright (C) 2018-2024 Jörg Riechardt

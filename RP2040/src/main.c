@@ -556,6 +556,11 @@ int8_t get_handler(uint8_t *buf)
 		eeprom_restore(&buf[4], idx);
 		ret += SIZEOF_IR;
 		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
+		eeprom_restore(&buf[4], idx);
+		ret += SIZEOF_IR;
+		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR * buf[4];
 		eeprom_restore(&buf[4], idx);
@@ -564,11 +569,6 @@ int8_t get_handler(uint8_t *buf)
 	case CMD_KEY:
 		*((uint16_t*)&buf[4]) = get_key(buf[4]);
 		ret += 2;
-		break;
-	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
-		eeprom_restore(&buf[4], idx);
-		ret += SIZEOF_IR;
 		break;
 	case CMD_REPEAT:
 		*((uint16_t*)&buf[4]) = get_repeat(buf[4]);
@@ -602,13 +602,6 @@ int8_t set_handler(uint8_t *buf)
 		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
 		eeprom_store(idx, &buf[6]);
 		break;
-	case CMD_IRDATA:
-		idx = SIZEOF_IR * buf[4];
-		eeprom_store(idx, &buf[5]);
-		break;
-	case CMD_KEY:
-		put_key(&buf[5], buf[4]);
-		break;
 	case CMD_WAKE:
 		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		eeprom_store(idx, &buf[5]);
@@ -616,6 +609,13 @@ int8_t set_handler(uint8_t *buf)
 			if(!eeprom_commit())
 				ret = -1;
 		}
+		break;
+	case CMD_IRDATA:
+		idx = SIZEOF_IR * buf[4];
+		eeprom_store(idx, &buf[5]);
+		break;
+	case CMD_KEY:
+		put_key(&buf[5], buf[4]);
 		break;
 	case CMD_REBOOT:
 		Reboot = 1;
@@ -687,6 +687,10 @@ int8_t reset_handler(uint8_t *buf)
 		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
 		eeprom_store(idx, zeros);
 		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
+		eeprom_store(idx, zeros);
+		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR * buf[4];
 		eeprom_store(idx, zeros);
@@ -703,7 +707,6 @@ int8_t reset_handler(uint8_t *buf)
 		break;
 	case CMD_EEPROM_RESET:
 		eeprom_reset();
-		//eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_PAGE_SIZE);
 		break;
 	default:
 		ret = -1;
