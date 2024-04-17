@@ -45,7 +45,9 @@ enum command {
 	CMD_EEPROM_COMMIT,
 	CMD_EEPROM_GET_RAW,
 	CMD_HID_TEST,
-	CMD_STATUSLED
+	CMD_STATUSLED,
+	CMD_EMIT,
+	CMD_NEOPIXEL,
 };
 
 enum status {
@@ -59,6 +61,16 @@ enum report_id {
 	REPORT_ID_CONFIG_IN = 2,
 	REPORT_ID_CONFIG_OUT = 3
 };
+
+enum color {
+	red,
+	green,
+	blue,
+	yellow,
+	white
+};
+
+#define NUM_PIXELS 64
 
 static int stm32fd = -1;
 uint8_t inBuf[64];
@@ -179,13 +191,13 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2040 and statusled (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\nstatusled(s)\n");
+set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2040(c)\nstatusled(s)\nneopixel(n)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -274,6 +286,69 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			scanf("%" SCNx8 "", &s);
 			outBuf[idx++] = s;
 			write_and_check(idx, 4);
+			break;
+		case 'n':
+			outBuf[idx++] = CMD_NEOPIXEL;
+			printf("enter led number (starting with 1)\n");
+			scanf("%" SCNu8 "", &s);
+			outBuf[idx++] = 3 * s;
+			outBuf[idx++] = (s - 1) / 19;
+			outBuf[idx++] = 3 * ((s - 1) % 19) + 1;
+			idx += 3 * ((s - 1) % 19);
+color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)\n");
+			scanf("%s", &e);
+			switch (e) {
+			case 'r':
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'g':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 4;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'b':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 12;
+				write_and_check(idx, 4);
+				break;
+			case 'y':
+				outBuf[idx++] = 4;
+				outBuf[idx++] = 2;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'w':
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 2;
+				write_and_check(idx, 4);
+				break;
+			case 'o':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'c':
+				printf("enter red in hex\n");
+				scanf("%" SCNx8 "", &s);
+				outBuf[idx++] = s;
+				printf("enter green in hex\n");
+				scanf("%" SCNx8 "", &s);
+				outBuf[idx++] = s;
+				printf("enter blue in hex\n");
+				scanf("%" SCNx8 "", &s);
+				outBuf[idx++] = s;
+				write_and_check(idx, 4);
+				break;
+			default:
+				goto color;
+			}
 			break;
 		default:
 			goto set;
@@ -487,6 +562,22 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		write_and_check(idx, 4);
 		break;
 
+	case 'i':
+		printf("enter IRData (protocoladdresscommandflag)\n");
+		scanf("%" SCNx64 "", &i);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
+		idx = 2;
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_EMIT;
+		outBuf[idx++] = (i>>40) & 0xFF;
+		outBuf[idx++] = (i>>24) & 0xFF;
+		outBuf[idx++] = (i>>32) & 0xFF;
+		outBuf[idx++] = (i>>8) & 0xFF;
+		outBuf[idx++] = (i>>16) & 0xFF;
+		outBuf[idx++] = i & 0xFF;
+		write_and_check(idx, 4);
+		break;
+
 	case 'b':
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -504,6 +595,57 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 
 	case 'm':
 		goto monit;
+		break;
+
+	case 'n':
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
+		idx = 2;
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_NEOPIXEL;
+		outBuf[idx++] = NUM_PIXELS * 3;
+		for (m = 0; m < 3; m++) {
+			for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+				idx = 5;
+				outBuf[idx++] = s; // chunk s
+				outBuf[idx++] = 0;
+				for (i = 0; i < 19; i++) {
+					if (s * 19 + i < NUM_PIXELS) {
+						outBuf[idx++] = s * 19 + i;
+						outBuf[idx++] = 64 - s * 19 - i;
+						outBuf[idx++] = 0;
+					}
+				}
+				write_and_check(idx, 4);
+			}
+			usleep(1000000);
+			for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+				idx = 5;
+				outBuf[idx++] = s; // chunk s
+				outBuf[idx++] = 0;
+				for (i = 0; i < 19; i++) {
+					if (s * 19 + i < NUM_PIXELS) {
+						outBuf[idx++] = 64 - s * 19 - i;
+						outBuf[idx++] = s * 19 + i;
+						outBuf[idx++] = 0;
+					}
+				}
+				write_and_check(idx, 4);
+			}
+			usleep(1000000);
+		}
+		for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+			idx = 5;
+			outBuf[idx++] = s; // chunk s
+			outBuf[idx++] = 0;
+			for (i = 0; i < 19; i++) {
+				if (s * 19 + i < NUM_PIXELS) {
+					outBuf[idx++] = 0;
+					outBuf[idx++] = 0;
+					outBuf[idx++] = 0;
+				}
+			}
+			write_and_check(idx, 4);
+		}
 		break;
 
 	case 'x':

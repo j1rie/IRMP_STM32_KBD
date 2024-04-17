@@ -22,6 +22,8 @@
 #include <hardware/structs/systick.h>
 #include "timestamp.h"
 #include "pico/bootrom.h"
+#include "ws2812.h"
+extern void put_pixel(uint8_t red, uint8_t green, uint8_t blue);
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
 
@@ -46,13 +48,25 @@ enum command {
 	CMD_EEPROM_GET_RAW,
 	CMD_HID_TEST,
 	CMD_STATUSLED,
-	CMD_EMIT
+	CMD_EMIT,
+	CMD_NEOPIXEL,
 };
 
 enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
+};
+
+enum color {
+	red,
+	green,
+	blue,
+	yellow,
+	white,
+	off,
+	custom,
+	strong_red
 };
 
 const char supported_protocols[] = {
@@ -238,6 +252,10 @@ uint8_t Reboot = 0;
 volatile unsigned int send_ir_on_delay = 0;
 uint16_t repeat_default[3] = {250, 150, 15};
 static bool led_state = false;
+static enum color statusled_state = custom; // custom or red
+static enum color statusled_color = custom; // restore after blue/led_callback
+uint8_t pixel[NUM_PIXELS * 3] = {0};
+uint8_t custom_pixel[3] = {3,3,2}; // default white
 
 void LED_Switch_init(void)
 {
@@ -260,11 +278,49 @@ void toggle_led(void)
 	gpio_put(EXTLED_GPIO, led_state);
 }
 
+/* this is called by led_callback(), which is called by irmp_ISR(),
+ * so it needs to be fast, we can't set many leds here!
+ * setting only one led may disturb next led unfortunately
+ */
+void set_rgb_led(enum color led_color, bool store)
+{
+	switch (led_color) {
+	case red:
+		put_pixel(3,0,0);
+		break;
+	case strong_red:
+		put_pixel(255,0,0);
+		break;
+	case green:
+		put_pixel(0,255,0);
+		break;
+	case blue:
+		put_pixel(0,0,255);
+		break;
+	case yellow:
+		put_pixel(40,20,0);
+		break;
+	case white:
+		put_pixel(3,3,2);
+		break;
+	case off:
+		put_pixel(0,0,0);
+		break;
+	case custom:
+		put_pixel(custom_pixel[0],custom_pixel[1],custom_pixel[2]);
+		break;
+	}
+	if (store)
+		statusled_color = led_color;
+}
+
 void blink_LED(void)
 {
 	toggle_led();
+	set_rgb_led(green, 1);
 	sleep_ms(25);
 	toggle_led();
+	set_rgb_led(statusled_state, 1);
 }
 
 void fast_toggle(void)
@@ -272,6 +328,10 @@ void fast_toggle(void)
 	int i;
 	for(i=0; i<10; i++) {
 		toggle_led();
+		if (statusled_state == custom)
+			set_rgb_led(i%2 ? custom : strong_red, 1);
+		else
+			set_rgb_led(i%2 ? strong_red : custom, 1);
 		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
 		sleep_ms(50); 
 	}
@@ -280,12 +340,19 @@ void fast_toggle(void)
 void yellow_short_on(void)
 {
 	toggle_led();
+	set_rgb_led(yellow, 1);
 	sleep_ms(130);
 	toggle_led();
+	set_rgb_led(statusled_state, 1);
 }
 
 void statusled_write(uint8_t led_state) {
 	gpio_put(STATUSLED_GPIO, led_state);
+	if (led_state)
+		statusled_state = red;
+	else
+		statusled_state = custom;
+	set_rgb_led(statusled_state, 1);
 }
 
 void eeprom_store(int addr, uint8_t *buf)
@@ -562,6 +629,32 @@ int8_t set_handler(uint8_t *buf)
 	case CMD_STATUSLED:
 		statusled_write(buf[4]);
 		break;
+	case CMD_NEOPIXEL:
+		/* buf[4] = total length
+		 * buf[5] = chunk number, a chunk is max 57 long
+		 * buf[6] = data start byte of single + 1
+		 * buf[7 ... 63] rgb data
+		 */
+		{
+			bool single = buf[6]; // set only one led?
+			int start = single * (buf[6] - 1); // 0 for whole chunk, 'start byte of single' if only one led
+			int end = (!single) * 57 + single * (buf[6] + 2); // 57 for whole chunk, 3 bytes for only one led
+			bool cpy_flag = !buf[5] && !start; // first led
+			for (int n=start; n<end; n++) {
+				idx = buf[5] * 57 + n;
+				if (idx < buf[4])
+					pixel[idx] = buf[7 + n];
+				else
+					break;
+			}
+			if (idx >= buf[4] - 1) { // reached last led
+				for (int n = 0; n < NUM_PIXELS * 3; n += 3)
+					put_pixel(pixel[n], pixel[n + 1], pixel[n + 2]);
+				if (cpy_flag)
+					memcpy(custom_pixel, pixel, 3); // save color and restore it after blink_LED(), etc
+			}
+		}
+		break;
 	default:
 		ret = -1;
 	}
@@ -622,7 +715,11 @@ void check_wakeups(IRMP_DATA *ir)
 void reboot(void)
 {
 	fast_toggle();
+#ifdef PICO_DEFAULT_LED_PIN
 	reset_usb_boot(PICO_DEFAULT_LED_PIN, 0);
+#else
+	reset_usb_boot(0, 0);
+#endif
 }
 
 /* is received ir-code in the last wakeup-slot? reboot µC if true */
@@ -639,6 +736,11 @@ void check_reboot(IRMP_DATA *ir)
 void led_callback(uint_fast8_t on)
 {
 	toggle_led();
+	if (led_state) {
+		set_rgb_led(blue, 0);
+	} else {
+		set_rgb_led(statusled_color, 0);
+	}
 }
 
 void send_magic(void)
@@ -665,6 +767,8 @@ int main(void)
 	tusb_init();
 	IRMP_Init();
 	irsnd_init();
+	ws2812_init();
+	set_rgb_led(white, 0);
 	eeprom_begin(2*FLASH_PAGE_SIZE, 4, 2*FLASH_SECTOR_SIZE ); // 32 pages of 512 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
