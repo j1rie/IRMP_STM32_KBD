@@ -25,7 +25,7 @@ DEFINES = -D$(PLATFORM) -DSTM32F401xx -DUSE_STDPERIPH_DRIVER
 
 OBJS = cmsis_boot/startup/startup_stm32f401xx.o cmsis_boot/system_stm32f4xx.o\
        src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
-       irmp/irmp.o\
+       irmp/irmp.o irmp/irsnd.o\
        stm_lib/src/misc.o\
        stm_lib/src/stm32f4xx_flash.o stm_lib/src/stm32f4xx_gpio.o\
        stm_lib/src/stm32f4xx_rcc.o\

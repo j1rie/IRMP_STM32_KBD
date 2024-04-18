@@ -36,7 +36,9 @@ enum command {
 	CMD_WAKE_REMOTE,
 	CMD_REPEAT,
 	CMD_EEPROM_RESET,
-	CMD_STATUSLED
+	CMD_STATUSLED,
+	CMD_EMIT,
+	CMD_HID_TEST,
 };
 
 enum status {
@@ -473,6 +475,11 @@ int8_t get_handler(uint8_t *buf)
 		memcpy(&buf[4], &AlarmValue, sizeof(AlarmValue));
 		ret += sizeof(AlarmValue);
 		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		eeprom_restore(&buf[4], idx);
+		ret += SIZEOF_IR;
+		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR/2 * buf[4];
 		eeprom_restore(&buf[4], idx);
@@ -481,11 +488,6 @@ int8_t get_handler(uint8_t *buf)
 	case CMD_KEY:
 		*((uint16_t*)&buf[4]) = get_key(buf[4]);
 		ret += 2;
-		break;
-	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
-		eeprom_restore(&buf[4], idx);
-		ret += SIZEOF_IR;
 		break;
 	case CMD_REPEAT:
 		*((uint16_t*)&buf[4]) = get_repeat(buf[4]);
@@ -504,8 +506,20 @@ int8_t set_handler(uint8_t *buf)
 	uint16_t idx;
 	uint8_t tmp[SIZEOF_IR];
 	switch (buf[3]) {
+	case CMD_EMIT:
+		yellow_short_on();
+		irsnd_send_data((IRMP_DATA *) &buf[4], 1);
+		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
+		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		eeprom_store(idx, &buf[5]);
+		/* validate stored value in eeprom */
+		eeprom_restore(tmp, idx);
+		if (memcmp(&buf[5], tmp, sizeof(tmp)))
+			ret = -1;
 		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR/2 * buf[4];
@@ -521,16 +535,11 @@ int8_t set_handler(uint8_t *buf)
 		if (!(get_key(buf[4]) == *((uint16_t*)&buf[5])))
 			ret = -1;
 		break;
-	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
-		eeprom_store(idx, &buf[5]);
-		/* validate stored value in eeprom */
-		eeprom_restore(tmp, idx);
-		if (memcmp(&buf[5], tmp, sizeof(tmp)))
-			ret = -1;
-		break;
 	case CMD_REBOOT:
 		Reboot = 1;
+		break;
+	case CMD_HID_TEST:
+		ret = HID_IN_REPORT_COUNT;
 		break;
 	case CMD_IRDATA_REMOTE:
 		idx = SIZEOF_IR/2 * buf[4];
@@ -566,6 +575,14 @@ int8_t reset_handler(uint8_t *buf)
 	case CMD_ALARM:
 		AlarmValue = 0xFFFFFFFF;
 		break;
+	case CMD_WAKE:
+		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
+		eeprom_store(idx, zeros);
+		/* validate stored value in eeprom */
+		eeprom_restore(tmp, idx);
+		if (memcmp(zeros, tmp, sizeof(tmp)))
+			ret = -1;
+		break;
 	case CMD_IRDATA:
 		idx = SIZEOF_IR/2 * buf[4];
 		eeprom_store(idx, zeros);
@@ -578,14 +595,6 @@ int8_t reset_handler(uint8_t *buf)
 		put_key(0xFFFF, buf[4]);
 		/* validate stored value in eeprom */
 		if (!(get_key(buf[4]) == 0xFFFF))
-			ret = -1;
-		break;
-	case CMD_WAKE:
-		idx = NUM_KEYS * (SIZEOF_IR/2 + 1) + SIZEOF_IR/2 * buf[4];
-		eeprom_store(idx, zeros);
-		/* validate stored value in eeprom */
-		eeprom_restore(tmp, idx);
-		if (memcmp(zeros, tmp, sizeof(tmp)))
 			ret = -1;
 		break;
 	case CMD_REPEAT:

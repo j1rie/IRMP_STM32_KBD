@@ -136,7 +136,9 @@ int main(int argc, const char **argv) {
 	int8_t k;
 	int retValm, jump_to_firmware, res, desc_size = 0;
 	unsigned int n;
-
+	FILE *fp;
+	char testfilename[10];
+	uint16_t j = 0;
         struct hidraw_report_descriptor rpt_desc;
 
         memset(&rpt_desc, 0x0, sizeof(rpt_desc));
@@ -196,7 +198,7 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
+cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2040, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2040 (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nrun test (t)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
@@ -472,12 +474,11 @@ get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repe
 					read_stm32(in_size, l == 0 ? 9 : in_size);
 				if (!l) { // first query for slots and depth
 					printf("number of keys: %u\n", inBuf[4]);
-					//printf("macro_depth: %u\n", inBuf[5]);
 					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
 					printf("hid in report count: %u\n", inBuf[7]);
 					printf("hid out report count: %u\n", inBuf[8]);
-					printf("macro_slots: %u\n", inBuf[9]);
-					printf("macro_depth: %u\n", inBuf[10]);
+					printf("number of macros: %u\n", inBuf[9]);
+					printf("macro depth: %u\n", inBuf[10]);
 				} else {
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
@@ -700,6 +701,10 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset ke
 		}
 		break;
 
+	case 't':
+		goto test;
+		break;
+
 	case 'x':
 		goto exit;
 		break;
@@ -728,6 +733,26 @@ monit:	while(true) {
 			printf("\n");
 			printf("modifier|key: %02hhx%02hhx\n\n", inBuf[1],inBuf[3]);
 			printf("\n");
+		}
+	}
+
+test:	sprintf(testfilename, "test%u", j); printf("write into %s\n", testfilename); // if directory, it needs to exist (or be created)!
+	fp = fopen(testfilename, "w");
+	while(true) {
+		retValm = read(stm32fd, inBuf, in_size);
+		if (retValm >= 0) {
+			printf("%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx\n", inBuf[1],inBuf[3],inBuf[2],inBuf[5],inBuf[4],inBuf[6]);
+			fprintf(fp, "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx\n", inBuf[1],inBuf[3],inBuf[2],inBuf[5],inBuf[4],inBuf[6]);
+			if (inBuf[1] == 0x3c && inBuf[3] == 0 && inBuf[2] == 0 && inBuf[5] == 0 && inBuf[4] == 0x3f && inBuf[6] == 1) { // 3c0000003f01, stopsequence TODO make configurable
+				printf("received stopsequence\n");
+				fclose(fp);
+				j++;
+				if (j >= 200) { // TODO make number of tests configurable
+					printf("exit\n");
+					goto exit;
+				}
+				goto test;
+			}
 		}
 	}
 

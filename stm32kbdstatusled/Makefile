@@ -5,9 +5,6 @@ CC              = g++
 
 CFLAGS          = -O -Wall
 
-TMPDIR = /tmp
-
-
 all: stm32kbdstatusled
 
 .c.o:
@@ -15,8 +12,6 @@ all: stm32kbdstatusled
 
 stm32kbdstatusled: stm32kbdstatusled.o
 	$(CC) -o stm32kbdstatusled stm32kbdstatusled.o
-
-#$(LIBS)
 
 clean:
 	rm -f stm32kbdstatusled.o

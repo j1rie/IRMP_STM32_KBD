@@ -22,7 +22,7 @@ DEFINES = -D$(PLATFORM) -DSTM32F10X_CL -DUSE_STDPERIPH_DRIVER
 
 OBJS = cmsis_boot/startup/startup_stm32f10x_cl.o cmsis_boot/system_stm32f10x.o\
        src/irmpmain.o src/st_link_leds.o src/usb_hid.o src/main.o\
-       irmp/irmp.o\
+       irmp/irmp.o irmp/irsnd.o\
        stm_lib/src/misc.o\
        stm_lib/src/stm32f10x_flash.o stm_lib/src/stm32f10x_gpio.o\
        stm_lib/src/stm32f10x_rcc.o\

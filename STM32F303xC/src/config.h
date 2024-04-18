@@ -81,7 +81,9 @@
 #endif
 
 
-/* B10 Logging (irmp.c) */
+/* B6 IRSND (irsndconfig.h) , B10 Logging (irmp.c) */
+#define IR_OUT_PORT B
+#define IR_OUT_PIN  6
 
 #if defined(BlueLink) /* blue ST-Link, IRSND = NRST */
 	#define WAKEUP_PORT		GPIOA
