@@ -754,12 +754,11 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		}
 	}
 
-	FXString s;
+	FXString s, t, u, v, w, x;
 	s.format("%x %x %x %x 0 ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS); // hex!
 	output_text->setText(s);
 	Write_and_Check(5, 9);
 
-	FXString u, v, w, x;
 	if(in_size != (buf[7] ? buf[7] : 17))
 		u.format("warning: hid in report count mismatch: %u %u\n", in_size, buf[7] ? buf[7] : 17);
 	if(out_size != (buf[8] ? buf[8] : 17))
@@ -787,7 +786,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	for(int i = 0; i < wakeupslots; i++) {
 		s = (i < wakeupslots-1) ? "wakeup" : "reboot";
 #if (FOX_MINOR >= 7)
-		FXString t;
 		t.fromUInt(i,10);
 		s += (i > 0 && i < wakeupslots-1) ? t : "";
 #else
@@ -799,7 +797,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	for(int i = 0; i < macrodepth; i++) {
 		s = "macro";
 #if (FOX_MINOR >= 7)
-		FXString t;
 		t.fromInt(i,10);
 		s += t;
 #else
@@ -811,7 +808,6 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	for(int i = 0; i < macroslots; i++) {
 		s = "macroslot";
 #if (FOX_MINOR >= 7)
-		FXString t;
 		t.fromInt(i,10);
 		s += t;
 #else
@@ -860,13 +856,12 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		get_raw_button->enable();
 	}
 
-	//list wakeups and alarm and warn if no STM32
+	//list wakeups, macros and alarm and warn if no STM32
 	for(int i = 0; i < wakeupslots; i++) {
-		FXString t, v;
 #if (FOX_MINOR >= 7)
-		t.fromUInt(i,10);
+		t.fromUInt(i,16);
 #else
-		t = FXStringVal(i,10);
+		t = FXStringVal(i,16);
 #endif
 		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_WAKE);
 		s += t;
@@ -891,11 +886,61 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 			u += s;
 		}
 	}
+int show_macro = 0;
+	for(int i = 0; i < macroslots; i++) {
+		for(int k = 0; k < macrodepth; k++) {
+#if (FOX_MINOR >= 7)
+			t.fromUInt(i,16);
+			v.fromUInt(k,16);
+#else
+			t = FXStringVal(i,16);
+			v = FXStringVal(k,16);
+#endif
+			s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_MACRO);
+			s += t;
+			s += " ";
+			s += v;
+			output_text->setText(s);
+			Write_and_Check(6, 10);
+			t.format("%02x", buf[4]);
+			v = t;
+			t.format("%02x", buf[6]);
+			v += t;
+			t.format("%02x", buf[5]);
+			v += t;
+			t.format("%02x", buf[8]);
+			v += t;
+			t.format("%02x", buf[7]);
+			v += t;
+			t.format("%02x", buf[9]);
+			v += t;
+			if(v != "ffffffffffff") {
+				if(!k) {
+					w += "macro: ";
+					w += v;
+					w += " ->";
+				} else {
+					w += " ";
+					w += v;
+					if(k == macrodepth - 1)
+						w += "\n";
+					show_macro = 1;
+				}
+			} else {
+				if(!k) {
+					i = macroslots; // exit both loops
+					break;
+				} else {
+					w += "\n";
+					break;
+				}
+			}
+		}
+	}
 	s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_ALARM);
 	output_text->setText(s);
 	Write_and_Check(4, 8);
 	unsigned int alarm = *((uint32_t *)&buf[4]);
-	FXString t;	
 	s = "alarm: ";
 	t.format("%u", alarm/60/60/24);
 	s += t;
@@ -918,6 +963,8 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	output_text->setText("");
 	input_text->appendText(x);
 	input_text->appendText(u);
+	if(show_macro)
+		input_text->appendText(w);
 	input_text->appendText(s);
 	input_text->setBottomLine(INT_MAX);
 
