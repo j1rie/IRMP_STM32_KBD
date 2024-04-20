@@ -51,6 +51,7 @@ enum command {
 	CMD_EMIT,
 	CMD_NEOPIXEL,
 	CMD_MACRO,
+	CMD_MACRO_REMOTE,
 };
 
 enum status {
@@ -626,6 +627,10 @@ int8_t set_handler(uint8_t *buf)
 		break;
 	case CMD_WAKE_REMOTE:
 		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
+		ret = store_new_irdata(idx);
+		break;
+		case CMD_MACRO_REMOTE:
+		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
 		ret = store_new_irdata(idx);
 		break;
 	case CMD_REPEAT:

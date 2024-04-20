@@ -48,9 +48,9 @@ execute_process (COMMAND bash -c "grep -e 'Version IRMP' ${CMAKE_CURRENT_SOURCE_
 
 string(STRIP ${IRMP_VERSION} IRMP_VERSION)
 
-target_compile_definitions(timestamp PRIVATE FW_STR="${BUILD_TIME}_${PICO_BOARD}_KBD   IRMP-Version: ${IRMP_VERSION}*RP2040")
+target_compile_definitions(timestamp PRIVATE FW_STR="${BUILD_TIME}_${PICO_BOARD}_kbd   IRMP-Version: ${IRMP_VERSION}*RP2040")
 
-set(FW_STR "${BUILD_TIME}_${PICO_BOARD}_KBD   IRMP-Version: ${IRMP_VERSION}*RP2040")
+set(FW_STR "${BUILD_TIME}_${PICO_BOARD}_kbd   IRMP-Version: ${IRMP_VERSION}*RP2040")
 
 target_include_directories(timestamp PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 

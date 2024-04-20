@@ -49,6 +49,7 @@ enum command {
 	CMD_EMIT,
 	CMD_NEOPIXEL,
 	CMD_MACRO,
+	CMD_MACRO_REMOTE,
 };
 
 enum status {
@@ -396,7 +397,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		case 'm':
 			printf("enter macro number (starting with 0)\n");
 			scanf("%" SCNx8 "", &m);
-			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = CMD_MACRO_REMOTE;
 			outBuf[idx++] = m;    // (m+1)-th macro
 			printf("enter slot number, 0 for trigger\n");
 			scanf("%" SCNx8 "", &s);
