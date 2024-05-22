@@ -1,0 +1,205 @@
+diff -Nrup linux-5.15.159/drivers/hid/Kconfig linux-5.15.159-hid-irmp/drivers/hid/Kconfig
+--- linux-5.15.159/drivers/hid/Kconfig	2024-05-17 11:51:06.000000000 +0200
++++ linux-5.15.159-hid-irmp/drivers/hid/Kconfig	2024-05-22 21:10:56.404970426 +0200
+@@ -1222,6 +1222,13 @@ config HID_MCP2221
+ 	To compile this driver as a module, choose M here: the module
+ 	will be called hid-mcp2221.ko.
+ 
++config HID_IRMP
++	tristate "IRMP USB-HID-keyboard support"
++	depends on HID
++	---help---
++	Support for IRMP STM32 KBD remote control receivers.
++	Say Y here if you have a IRMP STM32 KBD.
++
+ endmenu
+ 
+ endif # HID
+diff -Nrup linux-5.15.159/drivers/hid/Makefile linux-5.15.159-hid-irmp/drivers/hid/Makefile
+--- linux-5.15.159/drivers/hid/Makefile	2024-05-17 11:51:06.000000000 +0200
++++ linux-5.15.159-hid-irmp/drivers/hid/Makefile	2024-05-22 21:10:56.404970426 +0200
+@@ -136,6 +136,7 @@ obj-$(CONFIG_HID_WALTOP)	+= hid-waltop.o
+ obj-$(CONFIG_HID_WIIMOTE)	+= hid-wiimote.o
+ obj-$(CONFIG_HID_SENSOR_HUB)	+= hid-sensor-hub.o
+ obj-$(CONFIG_HID_SENSOR_CUSTOM_SENSOR)	+= hid-sensor-custom.o
++obj-$(CONFIG_HID_IRMP)		+= hid-irmp.o
+ 
+ obj-$(CONFIG_USB_HID)		+= usbhid/
+ obj-$(CONFIG_USB_MOUSE)		+= usbhid/
+diff -Nrup linux-5.15.159/drivers/hid/hid-ids.h linux-5.15.159-hid-irmp/drivers/hid/hid-ids.h
+--- linux-5.15.159/drivers/hid/hid-ids.h	2024-05-17 11:51:06.000000000 +0200
++++ linux-5.15.159-hid-irmp/drivers/hid/hid-ids.h	2024-05-22 21:10:56.405970425 +0200
+@@ -1380,4 +1380,7 @@
+ #define USB_VENDOR_ID_SIGNOTEC			0x2133
+ #define USB_DEVICE_ID_SIGNOTEC_VIEWSONIC_PD1011	0x0018
+ 
++#define USB_VENDOR_ID_IRMP		0x1209
++#define USB_DEVICE_ID_IRMP_STM32_KBD	0x4445
++
+ #endif
+diff -Nrup linux-5.15.159/drivers/hid/hid-irmp.c linux-5.15.159-hid-irmp/drivers/hid/hid-irmp.c
+--- linux-5.15.159/drivers/hid/hid-irmp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-5.15.159-hid-irmp/drivers/hid/hid-irmp.c	2024-05-22 21:10:56.405970425 +0200
+@@ -0,0 +1,149 @@
++/*
++ *  HID driver for IRMP STM32 KBD remote control receiver
++ *
++ *  Copyright (c) 2018 Joerg Riechardt
++ *
++ * There are remote control receivers, which register as an USB HID keyboard and
++ * receive and decode signals from many IR remote controls with all kinds of IR
++ * protocols (for instance IRMP, the Infra Red Multi Protocol library). Most of
++ * those IR remote controls only send keys on key press, but not on key release.
++ * Because of that, the receiver sends either a release after each key press or
++ * after a timeout, when no key was pressed any more. The first has the
++ * disadvantage, that each key is processed as new, even if it is a repeat. The
++ * second has the disadvantage, that the autorepeat feature of the input core
++ * may generate keys during the timeout, while the user actually already has
++ * taken his  finger of the remote control button.
++ * In order to solve the problem, this driver was made. It processes keys
++ * exactly as they were sent. Autorepeat is turned off and key repeats are taken
++ * from raw events, get translated and are passed on to input.
++ */
++
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ */
++
++#include <linux/device.h>
++#include <linux/hid.h>
++#include <linux/module.h>
++
++#include "hid-ids.h"
++
++struct irmp_data {
++	struct hid_device *hdev;
++	struct input_dev *input;
++};
++
++/* copy of hid_keyboard[] from hid-input.c */
++#define unk	KEY_UNKNOWN
++
++static const unsigned char hid_keyboard[256] = {
++	  0,  0,  0,  0, 30, 48, 46, 32, 18, 33, 34, 35, 23, 36, 37, 38,
++	 50, 49, 24, 25, 16, 19, 31, 20, 22, 47, 17, 45, 21, 44,  2,  3,
++	  4,  5,  6,  7,  8,  9, 10, 11, 28,  1, 14, 15, 57, 12, 13, 26,
++	 27, 43, 43, 39, 40, 41, 51, 52, 53, 58, 59, 60, 61, 62, 63, 64,
++	 65, 66, 67, 68, 87, 88, 99, 70,119,110,102,104,111,107,109,106,
++	105,108,103, 69, 98, 55, 74, 78, 96, 79, 80, 81, 75, 76, 77, 71,
++	 72, 73, 82, 83, 86,127,116,117,183,184,185,186,187,188,189,190,
++	191,192,193,194,134,138,130,132,128,129,131,137,133,135,136,113,
++	115,114,unk,unk,unk,121,unk, 89, 93,124, 92, 94, 95,unk,unk,unk,
++	122,123, 90, 91, 85,unk,unk,unk,unk,unk,unk,unk,111,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,179,180,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,unk,
++	unk,unk,unk,unk,unk,unk,unk,unk,111,unk,unk,unk,unk,unk,unk,unk,
++	 29, 42, 56,125, 97, 54,100,126,164,166,165,163,161,115,114,113,
++	150,158,159,128,136,177,178,176,142,152,173,140,unk,unk,unk,unk
++};
++
++static int irmp_raw_event(struct hid_device *hdev, struct hid_report *report,
++							u8 *raw_data, int size)
++{
++	struct irmp_data *hdata = hid_get_drvdata(hdev);
++	struct input_dev *input = hdata->input;
++	static unsigned int last_key;
++	unsigned int key;
++
++	key = (raw_data[1] << 8) + raw_data[3];
++	if (key) {
++		if (key == last_key) {
++			/* modifier */
++			if (raw_data[1]) {
++				input_event(input, EV_KEY, hid_keyboard[raw_data[1]], 2);
++				input_sync(input);
++			}
++			/* key */
++			if (raw_data[3]) {
++				input_event(input, EV_KEY, hid_keyboard[raw_data[3]], 2);
++				input_sync(input);
++			}
++		} else {
++			last_key = key;
++		}
++	} else {
++		last_key = 0;
++	}
++
++	return 1;
++}
++
++static int irmp_input_configured(struct hid_device *hdev, struct hid_input *hidinput)
++{
++	struct irmp_data *irmp_data = hid_get_drvdata(hdev);
++	struct input_dev *input = hidinput->input;
++
++	irmp_data->input = input;
++	/* turn off repeat */
++	__clear_bit(EV_REP, input->evbit);
++	hid_set_drvdata(hdev, irmp_data);
++	printk(KERN_INFO "irmp configured\n");
++
++	return 0;
++}
++
++static int irmp_probe(struct hid_device *hdev, const struct hid_device_id *id)
++{
++	int ret;
++	struct irmp_data *irmp_data;
++
++	irmp_data = devm_kzalloc(&hdev->dev, sizeof(struct irmp_data), GFP_KERNEL);
++	if (irmp_data == NULL) {
++		hid_err(hdev, "can't alloc irmp descriptor\n");
++		return -ENOMEM;
++	}
++	irmp_data->hdev = hdev;
++	hid_set_drvdata(hdev, irmp_data);
++
++	ret = hid_parse(hdev);
++	if (ret) {
++		hid_err(hdev, "parse failed\n");
++		goto err_free;
++	}
++	ret = hid_hw_start(hdev, HID_CONNECT_DEFAULT);
++	if (ret) {
++		hid_err(hdev, "hw start failed\n");
++		goto err_free;
++	}
++	return 0;
++err_free:
++	return ret;
++}
++
++static const struct hid_device_id irmp_devices[] = {
++	{ HID_USB_DEVICE(USB_VENDOR_ID_IRMP, USB_DEVICE_ID_IRMP_STM32_KBD) },
++	{ }
++};
++MODULE_DEVICE_TABLE(hid, irmp_devices);
++
++static struct hid_driver irmp_driver = {
++	.name = "irmp",
++	.id_table = irmp_devices,
++	.probe = irmp_probe,
++	.raw_event = irmp_raw_event,
++	.input_configured = irmp_input_configured,
++};
++module_hid_driver(irmp_driver);
++
++MODULE_LICENSE("GPL v2");
+diff -Nrup linux-5.15.159/drivers/hid/hid-quirks.c linux-5.15.159-hid-irmp/drivers/hid/hid-quirks.c
+--- linux-5.15.159/drivers/hid/hid-quirks.c	2024-05-17 11:51:06.000000000 +0200
++++ linux-5.15.159-hid-irmp/drivers/hid/hid-quirks.c	2024-05-22 21:10:56.405970425 +0200
+@@ -429,6 +429,9 @@ static const struct hid_device_id hid_ha
+ #if IS_ENABLED(CONFIG_HID_ICADE)
+ 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_ION, USB_DEVICE_ID_ICADE) },
+ #endif
++#if IS_ENABLED(CONFIG_HID_IRMP)
++	{ HID_USB_DEVICE(USB_VENDOR_ID_IRMP, USB_DEVICE_ID_IRMP_STM32_KBD) },
++#endif
+ #if IS_ENABLED(CONFIG_HID_JABRA)
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_JABRA, HID_ANY_ID) },
+ #endif
