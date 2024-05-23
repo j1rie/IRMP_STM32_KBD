@@ -8,7 +8,7 @@ diff -Nrup linux-5.15.159/drivers/hid/Kconfig linux-5.15.159-hid-irmp/drivers/hi
 +config HID_IRMP
 +	tristate "IRMP USB-HID-keyboard support"
 +	depends on HID
-+	---help---
++	help
 +	Support for IRMP STM32 KBD remote control receivers.
 +	Say Y here if you have a IRMP STM32 KBD.
 +
