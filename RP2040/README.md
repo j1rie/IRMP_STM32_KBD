@@ -2,6 +2,7 @@
 
 <img src="https://www.vdr-portal.de/index.php?attachment/48154-20230825-130009-jpg" width="33%">(1)  
 <img src="https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg" width="96%">(2)  
+![](https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg)(2)  
 <img src="https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg" width="96%">(2)
 
 For boards with the RP2040, e.g. the Raspberry Pi Pico and many others.  
