@@ -268,7 +268,7 @@ void LED_Switch_init(void)
 	gpio_set_drive_strength(EXTLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	gpio_set_drive_strength(STATUSLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
-	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2040
+	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2xxx
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
 	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
 }
@@ -471,7 +471,13 @@ void SysTick_Handler(void)
 void Systick_Init(void)
 {
 	exception_set_exclusive_handler(SYSTICK_EXCEPTION, SysTick_Handler);
+#if PICO_RP2040
 	systick_hw->csr = M0PLUS_SYST_CSR_ENABLE_BITS | M0PLUS_SYST_CSR_TICKINT_BITS | M0PLUS_SYST_CSR_CLKSOURCE_BITS;
+#elif PICO_RP2350
+	systick_hw->csr = M33_SYST_CSR_ENABLE_BITS | M33_SYST_CSR_TICKINT_BITS | M33_SYST_CSR_CLKSOURCE_BITS;
+#else
+	#error unknown PICO_BOARD
+#endif
 	/* 1ms */
 	systick_hw->rvr = 124999UL;
 }

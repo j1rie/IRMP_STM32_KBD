@@ -70,8 +70,8 @@ uint8_t const * tud_descriptor_device_cb(void)
 // HID Report Descriptor
 //--------------------------------------------------------------------+
 
-#define HID_IN_REPORT_COUNT     64 /* RP2040->PC */
-#define HID_OUT_REPORT_COUNT    64 /* PC->RP2040 */
+#define HID_IN_REPORT_COUNT     64 /* RP2xxx->PC */
+#define HID_OUT_REPORT_COUNT    64 /* PC->RP2xxx */
 
 #define REPORT_ID_KBD           0x01
 #define REPORT_ID_CONFIG_IN     0x02
@@ -93,14 +93,14 @@ uint8_t const * tud_descriptor_device_cb(void)
       HID_LOGICAL_MAX_N ( 0xff, 2                              ),\
       HID_REPORT_SIZE   ( 8                                    ),\
 \
-      /* RP2040->PC */ \
+      /* RP2xxx->PC */ \
       /*HID_REPORT_ID   ( REPORT_ID_CONFIG_IN                ),*/\
       0x85, REPORT_ID_CONFIG_IN, /* HID_REPORT_ID              */\
       HID_USAGE       ( 0x03                                   ),\
       HID_REPORT_COUNT( HID_IN_REPORT_COUNT-1                  ),\
       HID_INPUT       ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
 \
-      /* PC->RP2040 */ \
+      /* PC->RP2xxx */ \
       /*HID_REPORT_ID     ( REPORT_ID_CONFIG_OUT             ),*/\
       0x85, REPORT_ID_CONFIG_OUT, /* HID_REPORT_ID             */\
       HID_USAGE       ( 0x04                                   ),\
@@ -108,7 +108,7 @@ uint8_t const * tud_descriptor_device_cb(void)
       HID_OUTPUT      ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
     HID_COLLECTION_END, \
 \
-      /* RP2040->PC, HID Keyboard */ \
+      /* RP2xxx->PC, HID Keyboard */ \
     HID_USAGE_PAGE_N ( HID_USAGE_PAGE_DESKTOP, 2                ),\
     HID_USAGE        (  HID_USAGE_DESKTOP_KEYBOARD              ),\
     HID_COLLECTION   ( HID_COLLECTION_APPLICATION               ),\

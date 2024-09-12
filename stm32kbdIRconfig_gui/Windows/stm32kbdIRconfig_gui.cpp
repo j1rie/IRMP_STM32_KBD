@@ -575,8 +575,8 @@ MainWindow::MainWindow(FXApp *app)
 	minutes_text->setHelpText("minutes");
 	seconds_text->setHelpText("seconds");
 	upgrade_button->setHelpText("upgrade firmware");
-	commit_button->setHelpText("RP2040: commit eeprom");
-	get_raw_button->setHelpText("RP2040: get eeprom raw");
+	commit_button->setHelpText("RP2xxx: commit eeprom");
+	get_raw_button->setHelpText("RP2xxx: get eeprom raw");
 	aset_button->setHelpText("set alarm");
 	aget_button->setHelpText("get alarm");
 	wslistbox->setHelpText("wakeup to be set");
@@ -851,7 +851,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	get_button->enable();
 	reset_button->enable();
 	reboot_button->enable();
-	if(uC == "RP2040"){
+	if(uC == "RP2xxx"){
 		commit_button->enable();
 		get_raw_button->enable();
 	}
@@ -954,10 +954,10 @@ int show_macro = 0;
 	t.format("%d", alarm % 60);
 	s += t;
 	s += " seconds\n";
-	if(uC != "STM32" && uC != "RP2040"){
+	if(uC != "STM32" && uC != "RP2xxx"){
 		s += "WARNING: This device's microcontroller is a ";
 		s += uC;
-		s += ", NOT a STM32 or RP2040!\n";
+		s += ", NOT a STM32 or RP2xxx!\n";
 	}
 	input_text->setText("");
 	output_text->setText("");
@@ -2228,7 +2228,7 @@ MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 {
-	if(uC != "RP2040"){
+	if(uC != "RP2xxx"){
 		const FXchar patterns[]="All Files (*)\nFirmware Files (*.bin)";
 		FXString s, v, Filename, FilenameText;
 		FXFileDialog open(this,"Open a firmware file");
@@ -3068,7 +3068,7 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 		save_button->enable();
 		upgrade_button->enable();
 		reboot_button->enable();
-		if(uC == "RP2040"){
+		if(uC == "RP2xxx"){
 			commit_button->enable();
 			get_raw_button->enable();
 		}

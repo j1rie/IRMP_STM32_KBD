@@ -24,7 +24,7 @@ For 2 € you can buy on ebay a ST-Link emulator or a STM32F103 development boar
 A macro makes it possible to send a sequence of IR commands via the send diode on reception of a trigger.
 macroslot0 is the trigger, macroslot1 … macroslot7 are the commands to be sent.  
 
-(*) only RP2040
+(*) only RP2xxx
 
 ## Software Linux
 * GUI config-tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.

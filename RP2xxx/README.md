@@ -1,10 +1,10 @@
-## IRMP on RP2040
+## IRMP on RP2xxx
 
 <img src="https://www.vdr-portal.de/index.php?attachment/48154-20230825-130009-jpg" width="33%"> [1]  
 [Receiver inside thin client](https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg) [2]  
 [Receiver inside thin client](https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg) [2]
 
-For boards with the RP2040, e.g. the Raspberry Pi Pico and many others.  
+For boards with the RP2xxx, e.g. the Raspberry Pi Pico, Pico2 and many others.  
 This is additional information, basic information in https://github.com/j1rie/IRMP_STM32#readme.
 
 ## Flashing the firmware
