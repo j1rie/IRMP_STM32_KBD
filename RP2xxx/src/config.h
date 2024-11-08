@@ -35,6 +35,7 @@
 #define IR_OUT_GPIO		6  /* GPIO 6  (Pico Pin 9,  One+Zero Pin 6)  */
 #define WAKEUP_RESET_GPIO	7  /* GPIO 7  (Pico Pin 10, One+Zero Pin 7)  */
 #define STATUSLED_GPIO		2  /* GPIO 2  (Pico Pin 4,  One+Zero Pin 2)  */
+#define NUMLED_GPIO		5  /* GPIO 5  (Pico Pin 7,  One+Zero Pin 5)  */
 #define IS_RGBW			false
 #ifdef PICO_DEFAULT_WS2812_PIN
 #define WS2812_PIN		PICO_DEFAULT_WS2812_PIN /* GPIO16 (One+Zero Onboard) */

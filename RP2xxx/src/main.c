@@ -265,12 +265,15 @@ void LED_Switch_init(void)
 	gpio_init(WAKEUP_GPIO);
 	gpio_init(EXTLED_GPIO);
 	gpio_init(STATUSLED_GPIO);
+	gpio_init(NUMLED_GPIO);
 	gpio_set_drive_strength(EXTLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	gpio_set_drive_strength(STATUSLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
+	gpio_set_drive_strength(NUMLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2xxx
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
 	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
+	gpio_set_dir(NUMLED_GPIO, GPIO_OUT);
 }
 
 void toggle_led(void)
@@ -355,6 +358,10 @@ void statusled_write(uint8_t led_state) {
 	else
 		statusled_state = custom;
 	set_rgb_led(statusled_state, 1);
+}
+
+void numled_write(uint8_t led_state) {
+	gpio_put(NUMLED_GPIO, led_state);
 }
 
 void eeprom_store(int addr, uint8_t *buf)
@@ -884,6 +891,12 @@ int main(void)
 			blink_LED();
 			if(Reboot)
 				reboot();
+		}
+
+		/* test if numlock command is received */
+		if(USB_HID_Data_Received && *bufptr == REPORT_ID_KBD) {
+			USB_HID_Data_Received = 0;
+			numled_write(*(bufptr+1) & KEYBOARD_LED_NUMLOCK);
 		}
 
 		/* poll IR-data */

@@ -24,6 +24,7 @@
  */
 
 #include "tusb.h"
+#include "usb_hid.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -70,14 +71,6 @@ uint8_t const * tud_descriptor_device_cb(void)
 // HID Report Descriptor
 //--------------------------------------------------------------------+
 
-#define HID_IN_REPORT_COUNT     64 /* RP2xxx->PC */
-#define HID_OUT_REPORT_COUNT    64 /* PC->RP2xxx */
-
-#define REPORT_ID_KBD           0x01
-#define REPORT_ID_CONFIG_IN     0x02
-#define REPORT_ID_CONFIG_OUT    0x03
-
-
 // HID Generic Input & Output & Keyboard
 // - 1st parameter is report size (mandatory)
 // - 2nd parameter is report id HID_REPORT_ID(n) (optional)
@@ -122,6 +115,17 @@ uint8_t const * tud_descriptor_device_cb(void)
         HID_REPORT_COUNT  ( HID_IN_REPORT_COUNT-1               ),\
         HID_REPORT_SIZE   ( 8                                   ),\
         HID_INPUT         ( HID_DATA | HID_ARRAY | HID_ABSOLUTE ),\
+\
+        /* PC->RP2xxx, LEDs */ \
+        HID_USAGE_PAGE   (HID_USAGE_PAGE_LED                     ),\
+        HID_USAGE_MIN    (1                                      ),\
+        HID_USAGE_MAX    (5                                      ),\
+        HID_REPORT_COUNT (5                                      ),\
+        HID_REPORT_SIZE  (1                                      ),\
+        HID_OUTPUT       (HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
+        HID_REPORT_COUNT (1                                      ),\
+        HID_REPORT_SIZE  (3                                      ),\
+        HID_OUTPUT       (HID_CONSTANT                           ),\
     HID_COLLECTION_END \
 
 uint8_t const desc_hid_report[] =
