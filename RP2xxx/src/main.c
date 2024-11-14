@@ -338,6 +338,7 @@ void fast_toggle(void)
 		else
 			set_rgb_led(i%2 ? strong_red : custom, 1);
 		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
+		gpio_put(NUMLED_GPIO, 1 - gpio_get(NUMLED_GPIO));
 		sleep_ms(50); 
 	}
 }
