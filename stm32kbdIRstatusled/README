@@ -1,0 +1,16 @@
+Set statusled on STM32.
+For use in vdr-plugin-statusleds.
+
+Usage:
+stm32kbdIRstatusled [-d device] -s led_state
+
+Examples:
+switch the statusled on:  stm32kbdIRstatusled -d /dev/hidraw1 -s 1
+switch the statusled off: stm32kbdIRstatusled -d /dev/hidraw1 -s 0
+
+put the udev rule from irmplircd into your udev rules directory, then you don't need to give a device
+
+vdr + vdr-plugin-statusleds + stm32kbdIRstatusled:
+vdr -P'statusleds --stm32kbdIRstatusled_path=/path/to/stm32kbdIRstatusled'
+this will turn the led on, when vdr starts; it will turn the led off, when vdr stops; it will make the led blink during recording
+for systemd add a line to the vdr service ExecStop=/path/to/stm32kbdIRstatusled -s 0

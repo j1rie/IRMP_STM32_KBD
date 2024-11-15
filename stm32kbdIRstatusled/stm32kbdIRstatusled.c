@@ -41,8 +41,8 @@ enum command {
 	CMD_STATUSLED,
 	CMD_EMIT,
 	CMD_NEOPIXEL,
-	CMD_HID_TEST,
 	CMD_MACRO,
+	CMD_MACRO_REMOTE,
 };
 
 enum status {

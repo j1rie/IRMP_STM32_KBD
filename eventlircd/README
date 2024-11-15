@@ -1,29 +1,29 @@
-For automatic start and stop of eventlircd during boot and on device dis/reconnect
-put the udev rule '70-irmp.rules' into your udev rules directory (/etc/udev/rules.d/) (depending on the kernel),
-put the udev rule '98-eventlircd.rules' into your udev rules directory (/etc/udev/rules.d/),
-put the evmap '03_1209_4445.evmap' into your evmap directory (/usr/etc/eventlircd.d/),
-put the systemd service 'eventlircd.service' into your services directory (/etc/systemd/system/),
-put the systemd service 'eventlircd.socket' into your services directory (/etc/systemd/system/),
-put the systemd-tmpfiles config file 'eventlircd.conf' into your tmpfiles directory (/etc/tmpfiles.d/),
+to automatically start and stop eventlircd at boot time and on device dis/reconnect
+put the udev rule '70-irmp.rules' in your udev rules directory (/etc/udev/rules.d/) (depending on your kernel),
+put the udev rule '98-eventlircd.rules' in your udev rules directory (/etc/udev/rules.d/),
+put the evmap '03_1209_4445.evmap' in your evmap directory (/usr/etc/eventlircd.d/),
+put the systemd service 'eventlircd.service' in your services directory (/etc/systemd/system/),
+put the systemd service 'eventlircd.socket' in your services directory (/etc/systemd/system/),
+put the systemd-tmpfiles configuration file 'eventlircd.conf' into your tmpfiles directory (/etc/tmpfiles.d/),
 and run "systemctl enable eventlircd.service eventlircd.socket" once.
-'03_1209_4445.evmap' fits for yaVDR.
+'03_1209_4445.evmap' will work for yaVDR.
 
-If you build your own kernel, you may patch it with hid_irmp.diff, with that repeats work perfectly, when
-repeat_timeout is set to e.g. 130. Activate the module under Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.
-It may be necessary to put 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' in /etc/init.d/boot.local (look
+If you are building your own kernel, you may patch it with hid_irmp.diff, which will make repeats work perfectly, whith
+repeat_timeout set to e.g. 130. Enable the module in Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.
+It may be necessary to add 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' to /etc/init.d/boot.local (look
 for "irmp configured" in dmesg) with kernel 4.14.
 
-Without the patch you need to have repeat_timeout set to 15 (default), and all key presses are new keys, so
-long key presses in kodi and acceleration are not working.
+Without the patch you repeat_timeout must be set to 15 (default), and all keystrokes are new keys, so
+long key presses in kodi and acceleration will not work.
 
 Instead of hid_irmp.diff you can try stm32kbd2uinput. With stm32kbd2uinput repeats work perfectly.
-repeat_timeout stays default (15), repeat_delay and repeat_period are 100 (or less).
+Leave repeat_timeout at default (15), repeat_delay and repeat_period at 100 (or less).
 
 You want to know, if the computer was started by the receiver?
-stm32kbd2uinput writes each start by the receiver into the log file /var/log/started_by_IRMP_STM32_KBD.
-If 'stat -c %Y /var/log/started_by_IRMP_STM32_KBD' is greater than 'stat -c %Y /var/log/boot.msg', the
+stm32kbd2uinput writes every start by the receiver into the log file /var/log/started_by_IRMP_STM32_KBD.
+If 'stat -c %Y /var/log/started_by_IRMP_STM32_KBD' is greater than 'stat -c %Y /var/log/boot.msg', then the
 computer was started by the receiver.
-You may use this in VDR's shutdownscript in order to not shut down on the first power key press, if the
+You can use this in VDR's shutdown script to prevent the computer from shutting down on the first power key press, if the
 computer is already running. See the example script.
-This is handy if you have a remote control with macros as the logitech and use one button to power
-on not only VDR but other devices as well.
+This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch
+on not only VDR but also other devices.
