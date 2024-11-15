@@ -8,7 +8,7 @@ put the systemd-tmpfiles configuration file 'eventlircd.conf' into your tmpfiles
 and run "systemctl enable eventlircd.service eventlircd.socket" once.
 '03_1209_4445.evmap' will work for yaVDR.
 
-If you are building your own kernel, you may patch it with hid_irmp.diff, which will make repeats work perfectly, whith
+If you are building your own kernel, you may patch it with hid_irmp.diff, which will make repeats work perfectly, with
 repeat_timeout set to e.g. 130. Enable the module in Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.
 It may be necessary to add 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' to /etc/init.d/boot.local (look
 for "irmp configured" in dmesg) with kernel 4.14.
