@@ -28,7 +28,7 @@ Exception: the first wakeup is committed by the firmware for backward compatibil
 ## Building from source
 See [Getting Started with the Raspberry Pi Pico](https://rptl.io/pico-get-started)  
 -> Get the SDK and examples  
--> Install the Toolchain  
+-> Install the toolchain  
 -> Build "Blink"  
 -> Load and run "Blink"  
 
