@@ -12,7 +12,7 @@ For 2 € you can buy an ST-Link emulator or a STM32F103 development board, usua
 ## Features
 * connection via USB 
 * registers as USB HID Keyboard device *and* appears as /dev/hidraw or "Custom HID device", no drivers needed
-* transfers the data over USB2 in hardware with fullspeed 
+* transfers the data over USB2 in hardware at fullspeed 
 * IR receiver (about 40 protocols decoded in hardware) 
 * power on PC via remote control from S3 (STR) and S4 (STD) via USB or from S3, S4 and S5 (SoftOff) via motherboard switch (+5V required, on USB or from PSU or motherboard) 
 * power on PC via built-in timer from S3 (STR) and S4 (STD) via USB or from S3, S4 and S5 (SoftOff) via motherboard switch (+5V required, on USB or from PSU or motherboard) 
@@ -29,7 +29,7 @@ macroslot0 is the trigger, macroslot1 … macroslot7 are the commands to be sent
 ## Software Linux
 * GUI configuration tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.
 * interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, macros, irdata, keys, alarm time, repeat and  send IR. It is possible to program wakeups, macros and irdata by remote control.
-* stm32kbdIRalarm for setting and reading alarm time via script
+* stm32kbdIRalarm for to set and read alarm time via script
 * stm32FWupgrade for command line firmware upgrade
 
 ## Software Windows
@@ -58,7 +58,7 @@ Click on "flash eeprom".
 ![building eeprom map](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/building_eeprom_map.jpg)  
 Third method: Click a line, click "set by remote - irdata", press the button on the remote.  
 Click a line, type the key (and modifier), click "set - key".  
-Repeat as many times as necessary. .  
+Repeat as many times as necessary.  
 
 If you press the keyboard + irdata-button twice, you can test your keyboard keys and on Windows even already configured buttons on the remote.  
 
@@ -111,9 +111,9 @@ See /eventlircd/README.
 ## Thanks to
 Frank Meyer for IRMP. [1]  
 Uwe Becker for adapting IRMP to the STM32F4xx and his USB-HID for the STM32F4xx. [2]  
-His work helped me in getting started with the STM32F105.  
+His work helped me to get started with the STM32F105.  
 Andrew Kambaroff for his USB-HID for the STM32F103. [3]  
-His work helped me in getting started with the STM32F103.  
+His work helped me to get started with the STM32F103.  
 Ole Ernst for code review, linux Makefile and linux download-extract-patch-script and new protocol. [4]  
 Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host is running. [5]  
 
@@ -124,7 +124,7 @@ Manuel Reimer for gcc-4.9 fix, SimpleCircuit and check if host is running. [5]
 [5] https://github.com/M-Reimer  
 
 ## Discussion and further information
-Comments, questions, suggestions can be sent to https://www.vdr-portal.de/forum/index.php?thread/132289-irmp-auf-stm32-ein-usb-hid-keyboard-ir-empf%C3%A4nger-einschalter-mit-wakeup-timer/
+Comments, questions and suggestions can be sent to https://www.vdr-portal.de/forum/index.php?thread/132289-irmp-auf-stm32-ein-usb-hid-keyboard-ir-empf%C3%A4nger-einschalter-mit-wakeup-timer/
 
 ## Construction manuals
 https://github.com/j1rie/IRMP_STM32_KBD/wiki/Herstellungsprozess-Schwarze  
