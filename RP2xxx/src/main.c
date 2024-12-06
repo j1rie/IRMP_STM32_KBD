@@ -315,6 +315,9 @@ void set_rgb_led(enum color led_color, bool store)
 		break;
 	case off:
 		put_pixel(0,0,0);
+#ifdef SEEED_XIAO_RP2350
+	 gpio_put(PICO_DEFAULT_WS2812_POWER_PIN, 0);
+#endif
 		break;
 	case custom:
 		put_pixel(custom_pixel[0],custom_pixel[1],custom_pixel[2]);
