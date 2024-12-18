@@ -22,7 +22,7 @@ https://www.mikrocontroller.net/articles/IRMP_auf_STM32_%E2%80%93_stark_vereinfa
 
 ## Emuliertes Eeprom
 Jede Konfiguration, die mit einem der Konfigurationsprogramme vorgenommen wird, wird zunächst nur im Cache gespeichert. Um
-diese Änderungen dauerhaft im Flash zu speichern, müssen Sie einen Eeprom-Commit durchführen.
+diese Änderungen dauerhaft im Flash zu speichern, muss ein Eeprom-Commit durchgeführt werden.
 Ausnahme: Der erste wakeup wird aus Gründen der Abwärtskompatibilität von der Firmware übertragen.
 
 ## Aus den Quellen bauen
@@ -34,6 +34,20 @@ Siehe [Getting Started with the Raspberry Pi Pico](https://rptl.io/pico-get-star
 
 ## Pin-Out
 Siehe ./src/config.h.
+
+## 5 V vom Netzteil statt über USB
+Wenn das Gerät vom Netzteil versorgt werden muss, darf es nicht zusätzlich über USB versorgt werden, um Querströme zu vermeiden.
+Eine Möglichkeit ist es, die Leiterbahn auf dem PCB zu durchtrennen:
+![VBUS trennen](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/RP2040-One_VBUS_trennen.jpg.jpg)
+
+##Signale von den LEDs
+
+Der Pico(2) hat eine normale LED, der One und der Zero haben eine RGB LED, und der XIAO-RP2350 hat eine RGBW LED.
+Zusätzlich kann eine externe LED oder RGB LED angeschlossen werden.
+Diese zeigen an, was in der Firmware passiert.
+
+Dann gibt es noch die Status LED (über hidraw angesteuert) und die Num LED (über USB angesteuert).
+Diese zeigen den Status des vdr-plugin-statusleds an und blinken beim Einschalten, beim Speichern des ersten Wakeups und bei Reboot.
 
 ##
  \
