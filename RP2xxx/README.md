@@ -38,11 +38,11 @@ See ./src/config.h.
 ## 5 V from power supply instead via USB
 If you need to power the device from the power supply, it must not be powered via USB in order to avoid cross-current.
 One way is to cut the copper on the pcb:
-![cut VBUS](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/RP2040-One_VBUS_trennen.jpg.jpg)
+![cut VBUS](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/RP2040-One_VBUS_trennen.jpg)
 
 ## Signals from LEDs
 The pico(2) has a regular led, the one and the zero have an RGB led, and the XIAO-RP2350 has an RGBW led.
-An external LED or RGB led can be connected.
+An external led or RGB led can be connected.
 They show what is happening inside the firmware.
 
 Then there is the Status led (controlled over hidraw) and the Num led (controlled via USB).
