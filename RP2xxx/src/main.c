@@ -257,7 +257,7 @@ static bool led_state = false;
 static enum color statusled_state = custom; // custom or red
 static enum color statusled_color = custom; // restore after blue/led_callback
 uint8_t pixel[NUM_PIXELS * 3] = {0};
-uint8_t custom_pixel[3] = {3,3,2}; // default white
+uint8_t custom_pixel[3] = {3,3,2}; // color when inactive, default white
 
 void LED_Switch_init(void)
 {
@@ -294,6 +294,8 @@ void toggle_led(void)
  */
 void set_rgb_led(enum color led_color, bool store)
 {
+	if (custom_pixel[0] == 0 && custom_pixel[1] == 0 && custom_pixel[2] == 0) // if off, stay off
+		return;
 	switch (led_color) {
 	case red:
 		put_pixel(3,0,0);
