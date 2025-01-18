@@ -271,6 +271,7 @@ void LED_Switch_init(void)
 	gpio_set_drive_strength(NUMLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2xxx
+	gpio_pull_up(WAKEUP_GPIO); // RP2350-E9
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
 	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
 	gpio_set_dir(NUMLED_GPIO, GPIO_OUT);
@@ -511,6 +512,7 @@ void Wakeup(void)
 	gpio_put(WAKEUP_GPIO, 0);
 	sleep_ms(500);
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN);
+	gpio_pull_up(WAKEUP_GPIO); // RP2350-E9
 	fast_toggle();
 	/* let software know, PC was powered on by firmware */
 	send_ir_on_delay = 90;
