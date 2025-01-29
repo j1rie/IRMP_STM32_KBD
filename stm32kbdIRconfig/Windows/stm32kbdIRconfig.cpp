@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32kbdIRconfig: configure IRMP_STM32_KBD
 
-	Copyright (C) 2014-2023 Joerg Riechardt
+	Copyright (C) 2014-2024 Joerg Riechardt
 
 	based on work by Alan Ott
 	Copyright 2010  Alan Ott
@@ -49,7 +49,12 @@ enum command {
 	CMD_EEPROM_RESET,
 	CMD_EEPROM_COMMIT,
 	CMD_EEPROM_GET_RAW,
-	CMD_HID_TEST
+	CMD_HID_TEST,
+	CMD_STATUSLED,
+	CMD_EMIT,
+	CMD_NEOPIXEL,
+	CMD_MACRO,
+	CMD_MACRO_REMOTE,
 };
 
 enum status {
@@ -63,6 +68,22 @@ enum report_id {
 	REPORT_ID_CONFIG_IN = 2,
 	REPORT_ID_CONFIG_OUT = 3
 };
+
+enum color {
+	red,
+	green,
+	blue,
+	yellow,
+	white,
+	off,
+	custom,
+	strong_red,
+	orange,
+	purple,
+	strong_white
+};
+
+#define NUM_PIXELS 64
 
 hid_device *handle;
 uint8_t inBuf[64];
@@ -127,7 +148,7 @@ int main(int argc, char* argv[])
 {
 	uint64_t i;
 	uint16_t kk = 0x0000;
-	char c, d;
+	char c, d, e;
 	uint8_t l, idx, eeprom_lines;
 	int8_t k;
 	unsigned int s, m;
@@ -198,16 +219,16 @@ int main(int argc, char* argv[])
 	puts("");
 
 	#ifdef WIN32
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2xxx (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2xxx, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nhid test (h)\nneopixel test (n)exit (x)\n");
 	#else
-cont:	printf("set: wakeups, IR-data, keys, repeat, alarm and commit on RP2xxx (s)\nset by remote: wakeups and IR-data (q)\nget: wakeups, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, IR-data, keys, repeat, alarm and eeprom (r)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)\nexit (x)\n");
+cont:	printf("set: wakeups, IR-data, keys, repeat, alarm, commit on RP2xxx, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nhid test (h)neopixel test (n)\nexit (x)\n");
 	#endif
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2xxx(c)\n");
+set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2xxx(c)\nstatusled(s)\nneopixel(n)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -218,6 +239,24 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			scanf("%u", &s);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = s;
+			printf("enter IRData (protocoladdresscommandflag)\n");
+			scanf("%llx", &i);
+			outBuf[idx++] = (i>>40) & 0xFF;
+			outBuf[idx++] = (i>>24) & 0xFF;
+			outBuf[idx++] = (i>>32) & 0xFF;
+			outBuf[idx++] = (i>>8) & 0xFF;
+			outBuf[idx++] = (i>>16) & 0xFF;
+			outBuf[idx++] = i & 0xFF;
+			write_and_check(idx, 4);
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%u", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%u", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			printf("enter IRData (protocoladdresscommandflag)\n");
 			scanf("%llx", &i);
 			outBuf[idx++] = (i>>40) & 0xFF;
@@ -257,7 +296,7 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			    }
 			}
 			outBuf[idx++] = kk;
-			printf("enter modifier (KEY_xxx)\n");
+			printf("enter modifier (KEY_xxx or ff for none)\n");
 			scanf("%s", &c);
 			for(l=0; l < lines; l++) {
 			    if(!strcmp(mapusb[l].key, &c)) {
@@ -290,13 +329,107 @@ set:		printf("set wakeup(w)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alar
 			outBuf[idx++] = CMD_EEPROM_COMMIT;
 			write_and_check(idx, 4);
 			break;
+		case 's':
+			outBuf[idx++] = CMD_STATUSLED;
+			printf("enter 1 for on, 0 for off\n");
+			scanf("%u", &s);
+			outBuf[idx++] = s;
+			write_and_check(idx, 4);
+			break;
+		case 'n':
+			outBuf[idx++] = CMD_NEOPIXEL;
+			printf("enter led number (starting with 1)\n");
+			scanf("%u", &s);
+			outBuf[idx++] = 3 * s;
+			outBuf[idx++] = (s - 1) / 19;
+			outBuf[idx++] = 3 * ((s - 1) % 19) + 1;
+			idx += 3 * ((s - 1) % 19);
+color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)\nstrong_red(s)\norange(a)\npurple(p)\nstrong_white(x)\n");
+			scanf("%s", &e);
+			switch (e) {
+			case 'r':
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'g':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 4;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'b':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 12;
+				write_and_check(idx, 4);
+				break;
+			case 'y':
+				outBuf[idx++] = 4;
+				outBuf[idx++] = 2;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'w':
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 3;
+				outBuf[idx++] = 2;
+				write_and_check(idx, 4);
+				break;
+			case 'o':
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'c':
+				printf("enter red in hex\n");
+				scanf("%u", &s);
+				outBuf[idx++] = s;
+				printf("enter green in hex\n");
+				scanf("%u", &s);
+				outBuf[idx++] = s;
+				printf("enter blue in hex\n");
+				scanf("%u", &s);
+				outBuf[idx++] = s;
+				write_and_check(idx, 4);
+				break;
+			case 's':
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'a':
+				outBuf[idx++] = 8;
+				outBuf[idx++] = 2;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'p':
+				outBuf[idx++] = 8;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 8;
+				write_and_check(idx, 4);
+				break;
+			case 'x':
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 255;
+				write_and_check(idx, 4);
+				break;
+			default:
+				goto color;
+			}
+			break;
 		default:
 			goto set;
 		}
 		break;
 
 	case 'q':
-Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control(i)\n");
+Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m)\nset IR-data with remote control(i)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -307,6 +440,15 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 			scanf("%u", &s);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
 			outBuf[idx++] = s;
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%u", &m);
+			outBuf[idx++] = CMD_MACRO_REMOTE;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%u", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
@@ -321,7 +463,7 @@ Set:		printf("set wakeup with remote control(w)\nset IR-data with remote control
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\n");
+get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -332,6 +474,16 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 			scanf("%u", &s);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = s;
+			write_and_check(idx, 10);
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%u", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%u", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			write_and_check(idx, 10);
 			break;
 		case 'i':
@@ -375,10 +527,11 @@ get:		printf("get wakeup(w)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget cap
 					read_stm32(in_size, l == 0 ? 9 : in_size);
 				if (!l) { // first query for slots and depth
 					printf("number of keys: %u\n", inBuf[4]);
-					//printf("macro_depth: %u\n", inBuf[5]);
 					printf("number of wakeups (including reboot): %u\n", inBuf[6]);
 					printf("hid in report count: %u\n", inBuf[7]);
 					printf("hid out report count: %u\n", inBuf[8]);
+					printf("number of macros: %u\n", inBuf[9]);
+					printf("macro depth: %u\n", inBuf[10]);
 				} else {
 					if(!jump_to_firmware) { // queries for supported_protocols
 						printf("protocols: ");
@@ -484,7 +637,7 @@ out:
 		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
+reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -495,6 +648,15 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 			scanf("%u", &s);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = s;
+			break;
+		case 'm':
+			printf("enter macro number (starting with 0)\n");
+			scanf("%u", &m);
+			outBuf[idx++] = CMD_MACRO;
+			outBuf[idx++] = m;    // (m+1)-th macro
+			printf("enter slot number, 0 for trigger\n");
+			scanf("%u", &s);
+			outBuf[idx++] = s;    // (s+1)-th slot
 			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
@@ -526,6 +688,22 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 		write_and_check(idx, 4);
 		break;
 
+	case 'i':
+		printf("enter IRData (protocoladdresscommandflag)\n");
+		scanf("%llx", &i);
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
+		idx = 2;
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_EMIT;
+		outBuf[idx++] = (i>>40) & 0xFF;
+		outBuf[idx++] = (i>>24) & 0xFF;
+		outBuf[idx++] = (i>>32) & 0xFF;
+		outBuf[idx++] = (i>>8) & 0xFF;
+		outBuf[idx++] = (i>>16) & 0xFF;
+		outBuf[idx++] = i & 0xFF;
+		write_and_check(idx, 4);
+		break;
+
 	case 'b':
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -551,6 +729,66 @@ reset:		printf("reset wakeup(w)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)
 
 	case 'm':
 		goto monit;
+		break;
+
+	case 'n':
+		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
+		idx = 2;
+		outBuf[idx++] = ACC_SET;
+		outBuf[idx++] = CMD_NEOPIXEL;
+		outBuf[idx++] = NUM_PIXELS * 3;
+		for (m = 0; m < 3; m++) {
+			for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+				idx = 5;
+				outBuf[idx++] = s; // chunk s
+				outBuf[idx++] = 0;
+				for (i = 0; i < 19; i++) {
+					if (s * 19 + i < NUM_PIXELS) {
+						outBuf[idx++] = s * 19 + i;
+						outBuf[idx++] = 64 - s * 19 - i;
+						outBuf[idx++] = 0;
+					}
+				}
+				write_and_check(idx, 4);
+			}
+			#ifdef WIN32
+			Sleep(1000);
+			#else
+			usleep(1000000);
+			#endif
+			for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+				idx = 5;
+				outBuf[idx++] = s; // chunk s
+				outBuf[idx++] = 0;
+				for (i = 0; i < 19; i++) {
+					if (s * 19 + i < NUM_PIXELS) {
+						outBuf[idx++] = 64 - s * 19 - i;
+						outBuf[idx++] = s * 19 + i;
+						outBuf[idx++] = 0;
+					}
+				}
+				write_and_check(idx, 4);
+			}
+			#ifdef WIN32
+			Sleep(1000);
+			#else
+			usleep(1000000);
+			#endif
+		}
+		for (s = 0; s < (NUM_PIXELS + 18) / 19; s++) {
+			idx = 5;
+			outBuf[idx++] = s; // chunk s
+			outBuf[idx++] = 0;
+			for (i = 0; i < 19; i++) {
+				if (s * 19 + i < NUM_PIXELS) {
+					outBuf[idx++] = 0;
+					outBuf[idx++] = 0;
+					outBuf[idx++] = 0;
+				}
+			}
+			write_and_check(idx, 4);
+		}
+		break;
 
 	case 'x':
 		goto exit;

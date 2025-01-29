@@ -1,8 +1,9 @@
 ## IRMP auf RP2xxx
 
 <img src="https://www.vdr-portal.de/index.php?attachment/48154-20230825-130009-jpg" width="33%"> [1]  
-[Empfänger im Thin Client](https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg) [2]  
-[Empfänger im Thin Client](https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg) [2]
+<img src="https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg" width="100%">
+<img src="https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg" width="60%"> [2]  
+
 
 Für Boards mit dem RP2xxx, z.B. den Raspberry Pi Pico, Pico2 und viele andere.  
 Dies sind zusätzliche Informationen, grundlegende Informationen unter https://github.com/j1rie/IRMP_STM32#readme.
@@ -46,6 +47,20 @@ Eine Möglichkeit ist es, die Leiterbahn auf dem PCB zu durchtrennen:
 Der Pico(2) hat eine normale LED, der One und der Zero haben eine RGB LED, und der XIAO-RP2350 hat eine RGBW LED.
 Zusätzlich kann eine externe LED oder RGB LED angeschlossen werden.
 Diese zeigen an, was in der Firmware passiert.
+
+| Empfänger             |  RGB-LED                                  |
+|-----------------------|-------------------------------------------|
+| stromlos              |  aus                                      |
+| USB eingehängt        |  weiß (oder custom)                       |
+| USB suspend           |  orange                                   |
+| IR Empfang            |  flackert blau                            |
+| Wakeup speichern      |  blinkt schnell rot                       |
+| Wakeup                |  blinkt schnell rot                       |
+| Reboot                |  blinkt schnell rot                       |
+| IR senden             |  kurz gelb                                |
+| VDR läuft             |  rot                                      |
+| VDR nimmt auf         |  blinkt rot entsprechend Anzahl Aufnahmen |
+| Konfigurationsbefehl  |  kurz grün                                |
 
 Dann gibt es noch die Status LED (über hidraw angesteuert) und die Num LED (über USB angesteuert).
 Diese zeigen den Status des vdr-plugin-statusleds an und blinken beim Einschalten, beim Speichern des ersten Wakeups und bei Reboot.

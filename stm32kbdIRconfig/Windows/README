@@ -1,6 +1,7 @@
 configure IRMP_STM32_KBD
 
-program and read the eeprom (wakeups, irdata, keys and capabilities)
-reset wakeups, irdata, keys, alarm and eeprom
+program and read the eeprom (wakeups, macros, irdata, keys and capabilities)
+reset wakeups, macros, irdata, keys, alarm and eeprom
 set and get the alarm
 reboot the device
+send IR

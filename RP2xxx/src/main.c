@@ -60,17 +60,6 @@ enum status {
 	STAT_FAILURE
 };
 
-enum color {
-	red,
-	green,
-	blue,
-	yellow,
-	white,
-	off,
-	custom,
-	strong_red
-};
-
 const char supported_protocols[] = {
 #if IRMP_SUPPORT_SIRCS_PROTOCOL==1
 IRMP_SIRCS_PROTOCOL,
@@ -254,8 +243,8 @@ uint8_t Reboot = 0;
 volatile unsigned int send_ir_on_delay = 0;
 uint16_t repeat_default[3] = {250, 150, 15};
 static bool led_state = false;
-static enum color statusled_state = custom; // custom or red
-static enum color statusled_color = custom; // restore after blue/led_callback
+static enum color statusled_state = off; // cache for blink_LED(), fast_toggle(), yellow_short_on()
+static enum color statusled_state_cb = off; // cache for led_callback
 uint8_t pixel[NUM_PIXELS * 3] = {0};
 uint8_t custom_pixel[3] = {3,3,2}; // color when inactive, default white
 
@@ -271,7 +260,7 @@ void LED_Switch_init(void)
 	gpio_set_drive_strength(NUMLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2xxx
-	gpio_pull_up(WAKEUP_GPIO); // RP2350-E9
+	gpio_pull_up(WAKEUP_GPIO); // TODO: needed for RP2350-E9?
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
 	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
 	gpio_set_dir(NUMLED_GPIO, GPIO_OUT);
@@ -291,7 +280,6 @@ void toggle_led(void)
 
 /* this is called by led_callback(), which is called by irmp_ISR(),
  * so it needs to be fast, we can't set many leds here!
- * setting only one led may disturb next led unfortunately
  */
 void set_rgb_led(enum color led_color, bool store)
 {
@@ -311,7 +299,7 @@ void set_rgb_led(enum color led_color, bool store)
 		put_pixel(0,0,255);
 		break;
 	case yellow:
-		put_pixel(40,20,0);
+		put_pixel(40,25,0);
 		break;
 	case white:
 		put_pixel(3,3,2);
@@ -325,9 +313,18 @@ void set_rgb_led(enum color led_color, bool store)
 	case custom:
 		put_pixel(custom_pixel[0],custom_pixel[1],custom_pixel[2]);
 		break;
+	case orange:
+		put_pixel(8,2,0);
+		break;
+	case purple:
+		put_pixel(8,0,8);
+		break;
+	case strong_white:
+		put_pixel(255,255,255);
+		break;
 	}
 	if (store)
-		statusled_color = led_color;
+		statusled_state_cb = led_color;
 }
 
 void blink_LED(void)
@@ -344,10 +341,10 @@ void fast_toggle(void)
 	int i;
 	for(i=0; i<10; i++) {
 		toggle_led();
-		if (statusled_state == custom)
-			set_rgb_led(i%2 ? custom : strong_red, 1);
+		if (statusled_state == usb_state_color)
+			set_rgb_led(i%2 ? usb_state_color : strong_red, 1);
 		else
-			set_rgb_led(i%2 ? strong_red : custom, 1);
+			set_rgb_led(i%2 ? red : strong_red, 1);
 		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
 		gpio_put(NUMLED_GPIO, 1 - gpio_get(NUMLED_GPIO));
 		sleep_ms(50); 
@@ -368,7 +365,7 @@ void statusled_write(uint8_t led_state) {
 	if (led_state)
 		statusled_state = red;
 	else
-		statusled_state = custom;
+		statusled_state = usb_state_color;
 	set_rgb_led(statusled_state, 1);
 }
 
@@ -512,7 +509,7 @@ void Wakeup(void)
 	gpio_put(WAKEUP_GPIO, 0);
 	sleep_ms(500);
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN);
-	gpio_pull_up(WAKEUP_GPIO); // RP2350-E9
+	gpio_pull_up(WAKEUP_GPIO); // TODO: needed for RP2350-E9?
 	fast_toggle();
 	/* let software know, PC was powered on by firmware */
 	send_ir_on_delay = 90;
@@ -825,7 +822,7 @@ void led_callback(uint_fast8_t on)
 	if (led_state) {
 		set_rgb_led(blue, 0);
 	} else {
-		set_rgb_led(statusled_color, 0);
+		set_rgb_led(statusled_state_cb, 0);
 	}
 }
 
@@ -846,6 +843,7 @@ int main(void)
 	uint8_t last_magic_sent = 0;
 	uint16_t key, last_sent, last_received;
 	uint8_t num, release_needed;
+	uint8_t old_usb_state_color = usb_state_color;
 
 	board_init();
 	LED_Switch_init();
@@ -854,13 +852,21 @@ int main(void)
 	IRMP_Init();
 	irsnd_init();
 	ws2812_init();
-	set_rgb_led(white, 0);
+	set_rgb_led(usb_state_color, 0);
 	eeprom_begin(4*FLASH_PAGE_SIZE, 8, 2*FLASH_SECTOR_SIZE ); // 32 pages of 1024 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
 	while (1)
 	{
 		tud_task(); // tinyusb device task
+
+		if (usb_state_color != old_usb_state_color) {
+			old_usb_state_color = usb_state_color;
+			if (statusled_state != red) {
+				set_rgb_led(usb_state_color, 1);
+				statusled_state = usb_state_color;
+			}
+		}
 
 		if (board_button_read() && !tud_ready())
 			Wakeup();

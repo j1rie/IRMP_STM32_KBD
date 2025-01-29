@@ -1,8 +1,8 @@
 ## IRMP on RP2xxx
 
 <img src="https://www.vdr-portal.de/index.php?attachment/48154-20230825-130009-jpg" width="33%"> [1]  
-[Receiver inside thin client](https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg) [2]  
-[Receiver inside thin client](https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg) [2]
+<img src="https://www.vdr-portal.de/index.php?attachment/49235-ir-sensor-1-jpg" width="100%">
+<img src="https://www.vdr-portal.de/index.php?attachment/49236-ir-sensor-2-jpg" width="60%"> [2]  
 
 For boards with the RP2xxx, e.g. the Raspberry Pi Pico, Pico2 and many others.  
 This is additional information, basic information in https://github.com/j1rie/IRMP_STM32#readme.
@@ -45,6 +45,20 @@ One way is to cut the copper on the pcb:
 The pico(2) has a regular led, the one and the zero have an RGB led, and the XIAO-RP2350 has an RGBW led.
 An external led or RGB led can be connected.
 They show what is happening inside the firmware.
+
+| Receiver              | RGB-LED                                       |
+|-----------------------|-----------------------------------------------|
+| disconnected          | off                                           |
+| USB resumed           | white (or custom)                             |
+| USB suspended         | orange                                        |
+| IR reception          | flickers blue                                 |
+| save wakeup           | flashes red quickly                           |
+| Wakeup                | flashes red quickly                           |
+| Reboot                | flashes red quickly                           |
+| Send IR               | short yellow                                  |
+| VDR running           | red                                           |
+| VDR recording         | flashes red according to number of recordings |
+| configuration command | short green                                   |
 
 Then there is the Status led (controlled over hidraw) and the Num led (controlled via USB).
 They give status messages from the vdr-plugin-statusleds and blink on power-on, storage of first wakeup and reboot.

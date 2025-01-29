@@ -69,7 +69,13 @@ enum color {
 	green,
 	blue,
 	yellow,
-	white
+	white,
+	off,
+	custom,
+	strong_red,
+	orange,
+	purple,
+	strong_white
 };
 
 #define NUM_PIXELS 64
@@ -213,7 +219,7 @@ set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repea
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNu8 "", &m);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			printf("enter IRData (protocoladdresscommandflag)\n");
@@ -321,7 +327,7 @@ set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repea
 			outBuf[idx++] = (s - 1) / 19;
 			outBuf[idx++] = 3 * ((s - 1) % 19) + 1;
 			idx += 3 * ((s - 1) % 19);
-color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)\n");
+color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)\nstrong_red(s)\norange(a)\npurple(p)\nstrong_white(x)\n");
 			scanf("%s", &e);
 			switch (e) {
 			case 'r':
@@ -372,6 +378,30 @@ color: printf("red(r)\ngreen(g)\nblue(b)\nyellow(y)\nwhite(w)\noff(o)\ncustom(c)
 				outBuf[idx++] = s;
 				write_and_check(idx, 4);
 				break;
+			case 's':
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'a':
+				outBuf[idx++] = 8;
+				outBuf[idx++] = 2;
+				outBuf[idx++] = 0;
+				write_and_check(idx, 4);
+				break;
+			case 'p':
+				outBuf[idx++] = 8;
+				outBuf[idx++] = 0;
+				outBuf[idx++] = 8;
+				write_and_check(idx, 4);
+				break;
+			case 'x':
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 255;
+				outBuf[idx++] = 255;
+				write_and_check(idx, 4);
+				break;
 			default:
 				goto color;
 			}
@@ -390,7 +420,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNu8 "", &m);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE_REMOTE;
 			outBuf[idx++] = m;
 			break;
@@ -424,7 +454,7 @@ get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repe
 		switch (d) {
 		case 'w':
 			printf("enter wakeup number (starting with 0)\n");
-			scanf("%" SCNu8 "", &m);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			write_and_check(idx, 10);
@@ -438,6 +468,7 @@ get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repe
 			scanf("%" SCNx8 "", &s);
 			outBuf[idx++] = s;    // (s+1)-th slot
 			write_and_check(idx, 10);
+			break;
 		case 'i':
 			printf("enter IR-data number (starting with 0)\n");
 			scanf("%" SCNu8 "", &m);
@@ -573,7 +604,7 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset ke
 		switch (d) {
 		case 'w':
 			printf("enter slot number (starting with 0)\n");
-			scanf("%" SCNu8 "", &m);
+			scanf("%" SCNx8 "", &m);
 			outBuf[idx++] = CMD_WAKE;
 			outBuf[idx++] = m;
 			break;
