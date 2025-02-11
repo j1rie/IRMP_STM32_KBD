@@ -35,7 +35,7 @@
 #define IR_OUT_GPIO		6  /* GPIO 6  (Pico(2) Pin 9,  One+Zero Pin 6, Seeed XIAO RP2350 D4)  */
 //#define WAKEUP_RESET_GPIO	7  /* GPIO 7  (Pico(2) Pin 10, One+Zero Pin 7, Seeed XIAO RP2350 D5)  */
 #define STATUSLED_GPIO		2  /* GPIO 2  (Pico(2) Pin 4,  One+Zero Pin 2, Seeed XIAO RP2350 D8)  */
-#define NUMLED_GPIO		5  /* GPIO 5  (Pico(2) Pin 7,  One+Zero Pin 5, Seeed XIAO RP2350 D3)  */
+//#define NUMLED_GPIO		5  /* GPIO 5  (Pico(2) Pin 7,  One+Zero Pin 5, Seeed XIAO RP2350 D3)  */
 #ifndef SEEED_XIAO_RP2350
 #define IS_RGBW			false
 #else

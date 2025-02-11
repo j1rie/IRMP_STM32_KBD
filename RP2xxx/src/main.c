@@ -254,16 +254,13 @@ void LED_Switch_init(void)
 	gpio_init(WAKEUP_GPIO);
 	gpio_init(EXTLED_GPIO);
 	gpio_init(STATUSLED_GPIO);
-	gpio_init(NUMLED_GPIO);
 	gpio_set_drive_strength(EXTLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	gpio_set_drive_strength(STATUSLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
-	gpio_set_drive_strength(NUMLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
 	gpio_set_dir(WAKEUP_GPIO, GPIO_IN); // no open drain on RP2xxx
 	gpio_pull_up(WAKEUP_GPIO); // TODO: needed for RP2350-E9?
 	gpio_set_dir(EXTLED_GPIO, GPIO_OUT);
 	gpio_set_dir(STATUSLED_GPIO, GPIO_OUT);
-	gpio_set_dir(NUMLED_GPIO, GPIO_OUT);
 #ifdef SEEED_XIAO_RP2350
 	gpio_init(PICO_DEFAULT_WS2812_POWER_PIN);
 	gpio_set_dir(PICO_DEFAULT_WS2812_POWER_PIN, GPIO_OUT);
@@ -346,7 +343,6 @@ void fast_toggle(void)
 		else
 			set_rgb_led(i%2 ? red : strong_red, 1);
 		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
-		gpio_put(NUMLED_GPIO, 1 - gpio_get(NUMLED_GPIO));
 		sleep_ms(50); 
 	}
 }
@@ -367,10 +363,6 @@ void statusled_write(uint8_t led_state) {
 	else
 		statusled_state = usb_state_color;
 	set_rgb_led(statusled_state, 1);
-}
-
-void numled_write(uint8_t led_state) {
-	gpio_put(NUMLED_GPIO, led_state);
 }
 
 void eeprom_store(int addr, uint8_t *buf)
@@ -915,7 +907,7 @@ int main(void)
 		/* test if numlock command is received */
 		if(USB_HID_Data_Received && *bufptr == REPORT_ID_KBD) {
 			USB_HID_Data_Received = 0;
-			numled_write(*(bufptr+1) & KEYBOARD_LED_NUMLOCK);
+			statusled_write(*(bufptr+1) & KEYBOARD_LED_NUMLOCK);
 		}
 
 		/* poll IR-data */
