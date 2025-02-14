@@ -62,8 +62,11 @@ Diese zeigen an, was in der Firmware passiert.
 | VDR nimmt auf         |  blinkt rot entsprechend Anzahl Aufnahmen |
 | Konfigurationsbefehl  |  kurz grün                                |
 
-Dann gibt es noch die Status LED (über hidraw angesteuert) und die Num LED (über USB angesteuert).
-Diese zeigen den Status des vdr-plugin-statusleds an und blinken beim Einschalten, beim Speichern des ersten Wakeups und bei Reboot.
+Dann gibt es noch die Status LED (über hidraw oder über HID-Tastatur angesteuert).
+Diese zeigt den Status des vdr-plugin-statusleds an und blinkt beim Einschalten, beim Speichern des ersten Wakeups und bei Reboot.
+
+## Externe RGB-LEDs
+Es wird empfohlen, zwei Widerstände im Datenkabel zu verwenden, siehe http://stefanfrings.de/ws2812/.
 
 ##
  \

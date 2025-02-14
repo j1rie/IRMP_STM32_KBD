@@ -60,8 +60,11 @@ They show what is happening inside the firmware.
 | VDR recording         | flashes red according to number of recordings |
 | configuration command | short green                                   |
 
-Then there is the Status led (controlled over hidraw) and the Num led (controlled via USB).
-They give status messages from the vdr-plugin-statusleds and blink on power-on, storage of first wakeup and reboot.
+Then there is the Status led (controlled over hidraw or via HID-keyboard).
+It gives status messages from the vdr-plugin-statusleds and blinks on power-on, storage of first wakeup and reboot.
+
+## External RGB-LEDs
+It is recommended to use two resistors in the data cable, see http://stefanfrings.de/ws2812/.
 
 ##
   \
