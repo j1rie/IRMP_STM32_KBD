@@ -45,12 +45,12 @@ One way is to cut the copper on the pcb:
 ![cut VBUS](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/RP2040-One_VBUS_trennen.jpg)
 
 ## Signals from LEDs
-The pico(2) has a regular led, the one and the zero have an RGB led, and the XIAO-RP2350 has a dual and an RGBW led.
-An external led or RGB led can be connected.
-They show what is happening inside the firmware.
-Then there is the Status led (controlled over hidraw or via HID-keyboard), which shows status messages from the vdr-plugin-statusleds and blinks on power-on, storage of first wakeup and reboot.
+The pico(2) has a regular led, the one and the zero have an RGB led, and the XIAO-RP2350 has a dual and an RGBW led.  
+An external led or RGB led can be connected.  
+They show what is happening inside the firmware.  
+Then there is the Status led (controlled over hidraw or via HID-keyboard), which shows status messages from the vdr-plugin-statusleds (and blinks on power-on, storage of first wakeup and reboot).
 
-| Receiver              | Board/External-RGB-LED                           | Board/External-LED | Status-LED                                       |
+| Receiver              | Board/External RGB-LED                           | Board/External LED | External Status-LED                              |
 |-----------------------|--------------------------------------------------|--------------------|--------------------------------------------------|
 | disconnected          | off                                              |                    |                                                  |
 | USB resumed           | white (or custom)                                |                    |                                                  |
