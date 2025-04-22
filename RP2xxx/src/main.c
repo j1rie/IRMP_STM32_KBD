@@ -52,6 +52,7 @@ enum command {
 	CMD_NEOPIXEL,
 	CMD_MACRO,
 	CMD_MACRO_REMOTE,
+	CMD_SEND_AFTER_WAKEUP,
 };
 
 enum status {
@@ -240,7 +241,7 @@ volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 //volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
-volatile unsigned int send_ir_on_delay = 0;
+volatile unsigned int send_after_wakeup = 0;
 uint16_t repeat_default[3] = {250, 150, 15};
 static bool led_state = false;
 static enum color statusled_state = off; // cache for blink_LED(), fast_toggle(), yellow_short_on()
@@ -447,6 +448,24 @@ uint16_t get_repeat(uint8_t num)
 	return repeat;
 }
 
+/* put send_after_wakeup into eeprom */
+void put_send_after_wakeup(uint8_t send_after_wakeup)
+{
+	eeprom_write(NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 2 * 3, send_after_wakeup);
+}
+
+/* get send_after_wakeup from eeprom */
+uint8_t get_send_after_wakeup(void)
+{
+	uint8_t send_after_wakeup;
+	send_after_wakeup = eeprom_read(NUM_KEYS * (SIZEOF_IR + 2) + WAKE_SLOTS * SIZEOF_IR + 2 * 3);
+	if (send_after_wakeup == 0xFF) {
+		/* after reset */
+		send_after_wakeup = 0;
+	}
+	return send_after_wakeup;
+}
+
 void store_wakeup(IRMP_DATA *ir)
 {
 	uint16_t idx;
@@ -469,8 +488,8 @@ void SysTick_Handler(void)
 	if (i == 999) {
 		if (AlarmValue)
 			AlarmValue--;
-		if (send_ir_on_delay)
-			send_ir_on_delay--;
+		if (send_after_wakeup)
+			send_after_wakeup--;
 		i = 0;
 	} else {
 		i++;
@@ -505,7 +524,7 @@ void Wakeup(void)
 	gpio_pull_up(WAKEUP_GPIO); // TODO: needed for RP2350-E9?
 	fast_toggle();
 	/* let software know, PC was powered on by firmware */
-	send_ir_on_delay = 90;
+	send_after_wakeup = get_send_after_wakeup();
 }
 
 int8_t store_new_irdata(uint16_t num)
@@ -594,6 +613,10 @@ int8_t get_handler(uint8_t *buf)
 	case CMD_EEPROM_GET_RAW:
 		eeprom_get_raw(&buf[4], buf[4], buf[5]);
 		ret += 32;
+		break;
+	case CMD_SEND_AFTER_WAKEUP:
+		*((uint8_t*)&buf[4]) = get_send_after_wakeup();
+		ret += 1;
 		break;
 	default:
 		ret = -1;
@@ -693,6 +716,9 @@ int8_t set_handler(uint8_t *buf)
 			}
 		}
 		break;
+	case CMD_SEND_AFTER_WAKEUP:
+		put_send_after_wakeup(buf[4]);
+		break;
 	default:
 		ret = -1;
 	}
@@ -729,6 +755,9 @@ int8_t reset_handler(uint8_t *buf)
 		break;
 	case CMD_EEPROM_RESET:
 		eeprom_reset();
+		break;
+	case CMD_SEND_AFTER_WAKEUP:
+		put_send_after_wakeup(0xFF);
 		break;
 	default:
 		ret = -1;
@@ -873,9 +902,9 @@ int main(void)
 			Wakeup();
 
 		/* always wait for previous transfer to complete before sending again, consider using a send buffer */
-		if (PrevXferComplete && send_ir_on_delay && last_magic_sent != send_ir_on_delay) {
+		if (PrevXferComplete && send_after_wakeup && last_magic_sent != send_after_wakeup) {
 			send_magic();
-			last_magic_sent = send_ir_on_delay;
+			last_magic_sent = send_after_wakeup;
 		}
 
 		/* test if configuration command is received */

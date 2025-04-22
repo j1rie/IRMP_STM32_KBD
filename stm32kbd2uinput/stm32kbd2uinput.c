@@ -86,52 +86,52 @@ int main(void)
 	while(1){
 		usleep(1000); // don't eat too much cpu
 		if (read(fd, &event, sizeof(event)) != -1) {
-		if (event.type == EV_KEY && event.value == 1) {
-			clock_gettime(CLOCK_MONOTONIC, &now);
-			this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
-			pair = (this_time - last_received < 10)? 1 : 0; // modifier+key
-			if(only_once && event.code == magic_key) {
-				FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
-				time_t date = time(NULL);
-				struct tm *ts = localtime(&date);
-				fprintf(out, "%s", asctime(ts));
-				fclose(out);
-				only_once = 0;
-			}
-			if(debug) printf("r %ld %d %d --- ", this_time, event.code, pair);
-			if(!pair){
-				if(this_time - last_received > timeout) { // new key
-					last_received = this_time;
-					value = 1;
-					skip = 0;
-				} else { // repeat
-					last_received = this_time;
-					if( ((value == 1) && (this_time - last_sent < delay)) || ((value == 2) && (this_time - last_sent) < period)) {
-						skip = 1;
-						continue; // don't send key
-					} else {
-						value = 2;
+			if (event.type == EV_KEY && event.value == 1) {
+				clock_gettime(CLOCK_MONOTONIC, &now);
+				this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
+				pair = (this_time - last_received < 10)? 1 : 0; // modifier+key
+				if(only_once && event.code == magic_key) {
+					FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
+					time_t date = time(NULL);
+					struct tm *ts = localtime(&date);
+					fprintf(out, "%s", asctime(ts));
+					fclose(out);
+					only_once = 0;
+				}
+				if(debug) printf("r %ld %d %d --- ", this_time, event.code, pair);
+				if(!pair){
+					if(this_time - last_received > timeout) { // new key
+						last_received = this_time;
+						value = 1;
 						skip = 0;
+					} else { // repeat
+						last_received = this_time;
+						if( ((value == 1) && (this_time - last_sent < delay)) || ((value == 2) && (this_time - last_sent) < period)) {
+							skip = 1;
+							continue; // don't send key
+						} else {
+							value = 2;
+							skip = 0;
+						}
 					}
 				}
-			}
-      
-			/* send key */
-			if (!skip){
-				if(!pair) {
-					code = event.code;
-				} else {
-					code2 = event.code;
-				}
-				write_event(ufd, EV_KEY, event.code, value);
-				write_event(ufd, EV_SYN, SYN_REPORT, 0);
-				last_sent = this_time;
-				if(debug) printf("w %d %3d\n", event.code, value);
-				release_needed = 1;
+
+				/* send key */
+				if (!skip){
+					if(!pair) {
+						code = event.code;
+					} else {
+						code2 = event.code;
+					}
+					write_event(ufd, EV_KEY, event.code, value);
+					write_event(ufd, EV_SYN, SYN_REPORT, 0);
+					last_sent = this_time;
+					if(debug) printf("w %d %3d\n", event.code, value);
+					release_needed = 1;
 				}
 			}
 		}
- 
+
 		/* send release */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;

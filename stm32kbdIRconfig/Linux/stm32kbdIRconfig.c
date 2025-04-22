@@ -50,6 +50,7 @@ enum command {
 	CMD_NEOPIXEL,
 	CMD_MACRO,
 	CMD_MACRO_REMOTE,
+	CMD_SEND_AFTER_WAKEUP,
 };
 
 enum status {
@@ -205,13 +206,13 @@ int main(int argc, const char **argv) {
 		printf("old firmware!\n");
 	puts("");
 
-cont:	printf("set: wakeups, macros, IR-data, keys, repeat, alarm, commit on RP2xxx, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, macros, IR-data, keys, repeat, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nrun test (t)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
+cont:	printf("set: wakeups, macros, IR-data, keys, repeat, send_after_wakeup, alarm, commit on RP2xxx, statusled and neopixel(s)\nset by remote: wakeups, macros and IR-data (q)\nget: wakeups, macros, IR-data, keys, repeat, send_after_wakeup, alarm, capabilities, eeprom and raw eeprom from RP2xxx (g)\nreset: wakeups, macros, IR-data, keys, repeat, send_after_wakeup, alarm and eeprom (r)\nsend IR (i)\nreboot (b)\nmonitor until ^C (m)\nrun test (t)\nhid test (h)\nneopixel test (n)\nexit (x)\n");
 	scanf("%s", &c);
 
 	switch (c) {
 
 	case 's':
-set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset alarm(a)\ncommit on RP2xxx(c)\nstatusled(s)\nneopixel(n)\n");
+set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repeat(r)\nset send_after_wakeup(x)\nset alarm(a)\ncommit on RP2xxx(c)\nstatusled(s)\nneopixel(n)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -299,6 +300,13 @@ set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repea
 			scanf("%" SCNu16 "", &kk);
 			outBuf[idx++] = kk & 0xFF;
 			outBuf[idx++] = (kk>>8) & 0xFF;
+			write_and_check(idx, 4);
+			break;
+		case 'x':
+			outBuf[idx++] = CMD_SEND_AFTER_WAKEUP;
+			printf("enter send_after_delay (dec)\n");
+			scanf("%" SCNu8 "", &s);
+			outBuf[idx++] = s;
 			write_and_check(idx, 4);
 			break;
 		case 'a':
@@ -446,7 +454,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\n");
+get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget send_after_weakeup(x)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -489,6 +497,10 @@ get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repe
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = m;
 			write_and_check(idx, 6);
+			break;
+		case 'x':
+			outBuf[idx++] = CMD_SEND_AFTER_WAKEUP;
+			write_and_check(idx, 5);
 			break;
 		case 'a':
 			outBuf[idx++] = CMD_ALARM;
@@ -596,7 +608,7 @@ out:
 		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
+reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset send_after_wakeup(x)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -634,6 +646,9 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset ke
 			scanf("%" SCNu8 "", &m);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = m;
+			break;
+		case 'x':
+			outBuf[idx++] = CMD_SEND_AFTER_WAKEUP;
 			break;
 		case 'e':
 			outBuf[idx++] = CMD_EEPROM_RESET;
