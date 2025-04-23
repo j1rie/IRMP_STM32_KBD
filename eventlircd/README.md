@@ -20,8 +20,9 @@ Instead of hid_irmp.diff you can try stm32kbd2uinput. Than long keystrokes work 
 
 ## Was the computer started by the receiver?
 You can log when the receiver has started the computer.  
-At each start by the receiver, it sends KEY_REFRESH every second for a configurable period of time. The first one is written to the log file /var/log/started_by_IRMP_STM32_KBD.
+At each start by the receiver, it sends KEY_REFRESH every second for a configurable period of time. The first one is written to the log file /var/log/started_by_IRMP_STM32_KBD. To do this, log_KEY_REFRESH.sh is called by irexec or triggerhappy.  
 If an entry appears in the log file (/var/log/started_by_IRMP_STM32_KBD) shortly after the boot messages (depending on the distribution/var/log/boot.msg or similar), you know that the computer was started by the receiver.  
 If the entry in the log file is older than the boot messages, it was started by switching on the computer or by timer.
 
 This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch on not only VDR but also other devices. If the VDR was started by a timer, it would otherwise go off when you want to switch on all other devices. This can be avoided by a query in the shutdown script (see the example script vdrshutdown).
+log_KEY_REFRESH.sh 
