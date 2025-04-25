@@ -629,7 +629,6 @@ int8_t set_handler(uint8_t *buf)
 	/* number of valid bytes in buf, -1 signifies error */
 	int8_t ret = 4;
 	uint16_t idx;
-	uint8_t tmp[SIZEOF_IR];
 	switch (buf[3]) {
 	case CMD_EMIT:
 		yellow_short_on();
@@ -875,7 +874,8 @@ int main(void)
 	board_init();
 	LED_Switch_init();
 	Systick_Init();
-	tusb_init();
+	tusb_rhport_init_t dev_init = { .role = TUSB_ROLE_DEVICE, .speed = TUSB_SPEED_AUTO };
+	tusb_init(BOARD_TUD_RHPORT, &dev_init);
 	IRMP_Init();
 	irsnd_init();
 	ws2812_init();
