@@ -12,7 +12,7 @@ and run "systemctl enable eventlircd.service eventlircd.socket" once.
 If you are building your own kernel, you may patch it with hid_irmp.diff.  
 Than long key presses will work perfectly, with repeat_timeout set to e.g. 130.  
 Enable the module in Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.  
-It may be necessary to add 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' to /etc/init.d/boot.local (look for "irmp configured" in dmesg) with kernel 4.14.
+It may be necessary to add 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' to /etc/init.d/boot.local (look for "irmp configured" in dmesg).
 
 Without the patch your repeat_timeout must be set to 15 (default), and all keystrokes are new keys, so long key presses in kodi and acceleration will not work.
 
@@ -24,7 +24,7 @@ At each start by the receiver, it sends KEY_REFRESH every second for a configura
 If an entry appears in the log file (/var/log/started_by_IRMP_STM32_KBD) shortly after the boot messages (depending on the distribution/var/log/boot.msg or similar), you know that the computer was started by the receiver.  
 If the entry in the log file is older than the boot messages, it was started by switching on the computer or by timer.
 
-This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch on not only VDR but also other devices. If the VDR was started by a timer, it would otherwise go off when you want to switch on all other devices. This can be avoided by a query in the shutdown script (see the example script vdrshutdown).
+This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch on not only VDR but also other devices. If the VDR was started by a timer, it would otherwise go off when you want to switch on all other devices. This can be avoided by a query in the shutdown script (see the example script vdrshutdown).  
 log_KEY_REFRESH.sh is called by i.e. triggerhappy or irexec.  
 For triggerhappy put irmp_stm32_kbd.conf into /etc/triggerhappy/triggers.d/  
 stm32kbd2uinput writes into /var/log/started_by_IRMP_STM32_KBD directly.
