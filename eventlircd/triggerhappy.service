@@ -1,0 +1,28 @@
+[Unit]
+Description=triggerhappy global hotkey daemon
+#Requisite=dev-irmp_stm32_kbd_event.device
+#After=dev-irmp_stm32_kbd_event.device
+After=local-fs.target
+
+[Service]
+# added automatically, for details please see
+# https://en.opensuse.org/openSUSE:Security_Features#Systemd_hardening_effort
+ProtectSystem=full
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictRealtime=true
+# end of automatic additions 
+Type=notify
+ExecStart=/usr/sbin/thd --triggers /etc/triggerhappy/triggers.d/ --user root --deviceglob /dev/input/event*
+Restart=on-failure
+RestartSec=1s
+KillMode=process
+TimeoutStopSec=1s
+
+[Install]
+WantedBy=multi-user.target
+#WantedBy=dev-irmp_stm32_kbd_event.device

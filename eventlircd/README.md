@@ -25,4 +25,6 @@ If an entry appears in the log file (/var/log/started_by_IRMP_STM32_KBD) shortly
 If the entry in the log file is older than the boot messages, it was started by switching on the computer or by timer.
 
 This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch on not only VDR but also other devices. If the VDR was started by a timer, it would otherwise go off when you want to switch on all other devices. This can be avoided by a query in the shutdown script (see the example script vdrshutdown).
-log_KEY_REFRESH.sh 
+log_KEY_REFRESH.sh is called by i.e. triggerhappy or irexec.  
+For triggerhappy put irmp_stm32_kbd.conf into /etc/triggerhappy/triggers.d/  
+stm32kbd2uinput writes into /var/log/started_by_IRMP_STM32_KBD directly.
