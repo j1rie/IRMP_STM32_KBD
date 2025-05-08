@@ -23,7 +23,7 @@
 #include "timestamp.h"
 #include "pico/bootrom.h"
 #include "ws2812.h"
-extern void put_pixel(uint8_t red, uint8_t green, uint8_t blue);
+extern void put_pixel(uint8_t red, uint8_t green, uint8_t blue, bool only_apa);
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
 
@@ -244,6 +244,7 @@ uint8_t Reboot = 0;
 volatile unsigned int send_after_wakeup = 0;
 uint16_t repeat_default[3] = {250, 150, 15};
 static bool led_state = false;
+static bool led_callback_state = false;
 static enum color statusled_state = off; // cache for blink_LED(), fast_toggle(), yellow_short_on()
 static enum color statusled_state_cb = off; // cache for led_callback
 uint8_t pixel[NUM_PIXELS * 3] = {0};
@@ -279,7 +280,7 @@ void toggle_led(void)
 /* this is called by led_callback(), which is called by irmp_ISR(),
  * so it needs to be fast, we can't set many leds here!
  */
-void set_rgb_led(enum color led_color, bool store)
+void set_rgb_led(enum color led_color, bool store, bool only_apa)
 {
 	if (custom_pixel[0] == 0 && custom_pixel[1] == 0 && custom_pixel[2] == 0) // if off, stay off
 		return;
@@ -289,37 +290,37 @@ void set_rgb_led(enum color led_color, bool store)
 #endif
 	switch (led_color) {
 	case red:
-		put_pixel(3,0,0);
+		put_pixel(3,0,0, only_apa);
 		break;
 	case strong_red:
-		put_pixel(255,0,0);
+		put_pixel(255,0,0, only_apa);
 		break;
 	case green:
-		put_pixel(0,255,0);
+		put_pixel(0,255,0, only_apa);
 		break;
 	case blue:
-		put_pixel(0,0,255);
+		put_pixel(0,0,255, only_apa);
 		break;
 	case yellow:
-		put_pixel(40,25,0);
+		put_pixel(40,25,0, only_apa);
 		break;
 	case white:
-		put_pixel(3,3,2);
+		put_pixel(3,3,2, only_apa);
 		break;
 	case off:
-		put_pixel(0,0,0);
+		put_pixel(0,0,0, only_apa);
 		break;
 	case custom:
-		put_pixel(custom_pixel[0],custom_pixel[1],custom_pixel[2]);
+		put_pixel(custom_pixel[0],custom_pixel[1],custom_pixel[2], only_apa);
 		break;
 	case orange:
-		put_pixel(8,2,0);
+		put_pixel(8,2,0, only_apa);
 		break;
 	case purple:
-		put_pixel(8,0,8);
+		put_pixel(8,0,8, only_apa);
 		break;
 	case strong_white:
-		put_pixel(255,255,255);
+		put_pixel(255,255,255, only_apa);
 		break;
 	}
 	if (store)
@@ -329,10 +330,10 @@ void set_rgb_led(enum color led_color, bool store)
 void blink_LED(void)
 {
 	toggle_led();
-	set_rgb_led(green, 1);
+	set_rgb_led(green, 1, 0);
 	sleep_ms(25);
 	toggle_led();
-	set_rgb_led(statusled_state, 1);
+	set_rgb_led(statusled_state, 1, 0);
 }
 
 void fast_toggle(void)
@@ -341,21 +342,21 @@ void fast_toggle(void)
 	for(i=0; i<10; i++) {
 		toggle_led();
 		if (statusled_state == usb_state_color)
-			set_rgb_led(i%2 ? usb_state_color : strong_red, 1);
+			set_rgb_led(i%2 ? usb_state_color : strong_red, 1, 0);
 		else
-			set_rgb_led(i%2 ? red : strong_red, 1);
+			set_rgb_led(i%2 ? red : strong_red, 1, 0);
 		gpio_put(STATUSLED_GPIO, 1 - gpio_get(STATUSLED_GPIO));
-		sleep_ms(50); 
+		sleep_ms(50);
 	}
 }
 
 void yellow_short_on(void)
 {
 	toggle_led();
-	set_rgb_led(yellow, 1);
+	set_rgb_led(yellow, 1, 0);
 	sleep_ms(130);
 	toggle_led();
-	set_rgb_led(statusled_state, 1);
+	set_rgb_led(statusled_state, 1, 0);
 }
 
 void statusled_write(uint8_t led_state) {
@@ -364,7 +365,7 @@ void statusled_write(uint8_t led_state) {
 		statusled_state = red;
 	else
 		statusled_state = usb_state_color;
-	set_rgb_led(statusled_state, 1);
+	set_rgb_led(statusled_state, 1, 0);
 }
 
 void eeprom_store(int addr, uint8_t *buf)
@@ -704,7 +705,7 @@ int8_t set_handler(uint8_t *buf)
 			}
 			if (idx >= buf[4] - 1) { // reached last led
 				for (int n = 0; n < NUM_PIXELS * 3; n += 3)
-					put_pixel(pixel[n], pixel[n + 1], pixel[n + 2]);
+					put_pixel(pixel[n], pixel[n + 1], pixel[n + 2], 0);
 				if (cpy_flag) {
 					memcpy(custom_pixel, pixel, 3); // save color and restore it after blink_LED(), etc
 #ifdef SEEED_XIAO_RP2350
@@ -846,15 +847,17 @@ void led_callback(uint_fast8_t on)
 {
 	toggle_led();
 	if (led_state) {
-		set_rgb_led(blue, 0);
+		set_rgb_led(blue, 0, 0);
+		led_callback_state = true;
 	} else {
-		set_rgb_led(statusled_state_cb, 0);
+		set_rgb_led(statusled_state_cb, 0, 0);
+		led_callback_state = false;
 	}
 }
 
 void send_magic(void)
 {
-	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH, TODO: make configurable
+	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH
 	uint8_t release[3] = {0x00, 0x00, 0x00};
 	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
 	sleep_ms(repeat_default[2]);
@@ -879,7 +882,7 @@ int main(void)
 	IRMP_Init();
 	irsnd_init();
 	ws2812_init();
-	set_rgb_led(usb_state_color, 0);
+	set_rgb_led(usb_state_color, 0, 0);
 	eeprom_begin(4*FLASH_PAGE_SIZE, 8, 2*FLASH_SECTOR_SIZE ); // 32 pages of 1024 byte, put KBD eeprom below IRMP eeprom
 	irmp_set_callback_ptr(led_callback);
 
@@ -890,9 +893,15 @@ int main(void)
 		if (usb_state_color != old_usb_state_color) {
 			old_usb_state_color = usb_state_color;
 			if (statusled_state != red) {
-				set_rgb_led(usb_state_color, 1);
+				set_rgb_led(usb_state_color, 1, 0);
 				statusled_state = usb_state_color;
 			}
+		}
+
+		if (led_callback_state) { // chinese crap needs continous renewal
+			set_rgb_led(blue, 0, 1);
+		} else {
+			set_rgb_led(statusled_state_cb, 0, 1);
 		}
 
 		if (board_button_read() && !tud_ready())
