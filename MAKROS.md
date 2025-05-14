@@ -2,7 +2,7 @@
 Ein Makro ermöglicht das Senden einer Befehlsfolge über die IR-Sendediode mit einem Tastendruck.
 macroslot0 ist der Auslöser, macroslot1 … macroslot7 sind die Befehle, die bei Empfang des Auslösers ausgesendet werden.
 
-Beispiel:
+Beispiel:  
 In macro0-macroslot0 ist Taste A konfiguriert.  
 In macro0-macroslot1 ist Taste B konfiguriert.  
 In macro0-macroslot2 ist Taste C konfiguriert.  
