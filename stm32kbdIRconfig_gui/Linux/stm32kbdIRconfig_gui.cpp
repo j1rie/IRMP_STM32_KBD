@@ -1,7 +1,7 @@
 /*
  *  GUI Config Tool for IRMP STM32 KBD devices
  *
- *  Copyright (C) 2015-2022 Joerg Riechardt
+ *  Copyright (C) 2015-2025 Joerg Riechardt
  *
  *  based on work by Alan Ott
  *  Copyright 2010  Alan Ott
@@ -23,6 +23,7 @@
 #include "usb_hid_keys.h"
 #include "fxkeys_jr.h"
 #include "upgrade.h"
+#include "protocols.h"
 
 // Headers needed for sleeping.
 #ifdef _WIN32
@@ -786,7 +787,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	for(int i = 0; i < wakeupslots; i++) {
 		s = (i < wakeupslots-1) ? "wakeup" : "reboot";
 #if (FOX_MINOR >= 7)
-		t.fromUInt(i,10);
+		t.fromInt(i,10);
 		s += (i > 0 && i < wakeupslots-1) ? t : "";
 #else
 		s += (i > 0 && i < wakeupslots-1) ? FXStringVal(i,10) : "";
@@ -859,7 +860,7 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 	//list wakeups, macros and alarm and warn if no STM32
 	for(int i = 0; i < wakeupslots; i++) {
 #if (FOX_MINOR >= 7)
-		t.fromUInt(i,16);
+		t.fromInt(i,16);
 #else
 		t = FXStringVal(i,16);
 #endif
@@ -1565,8 +1566,7 @@ MainWindow::onPrepeat(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 {
-	FXString s;
-	FXString t;
+	FXString s, t;
 	protocol_text->setText("");
 	address_text->setText("");
 	command_text->setText("");
@@ -1595,7 +1595,7 @@ MainWindow::onPRwakeup(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onPRmacro(FXObject *sender, FXSelector sel, void *ptr)
 {
-	FXString s, t, p, a, c;
+	FXString s, t;
 	protocol_text->setText("");
 	address_text->setText("");
 	command_text->setText("");
@@ -1920,8 +1920,7 @@ MainWindow::onGrepeat(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 {
-	FXString s;
-	FXString t;
+	FXString s, t, u;
 	int jump_to_firmware, romtable;
 	jump_to_firmware = 0;
 	romtable = 0;
@@ -1929,7 +1928,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 	for(int i = 0; i < 20; i++) { // for safety stop after 20 loops
 		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_CAPS);
 #if (FOX_MINOR >= 7)
-		t.fromUInt(i,16);
+		t.fromInt(i,16);
 		s += t;
 #else
 		s += FXStringVal(i,16);
@@ -1949,7 +1948,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			t.format("macro depth: %u\n", buf[10]);
 			s += t;
 			wakeupslots = buf[6];
-			t.format("number of wakeups: %u", buf[6]);
+			t.format("number of wakeups: %u\n", buf[6]);
 			s += t;
 			t.format("hid in report count: %u\n", in_size);
 			s += t;
@@ -1957,7 +1956,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			s += t;
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
-				s = "protocols: ";
+				s = "protocols: \n";
 				for (int k = 4; k < in_size; k++) {
 					if (!buf[k]) { // NULL termination
 						s += "\n";
@@ -1968,7 +1967,10 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 					}
 					t.format("%u ", buf[k]);
 					protocols += t;
+					u = protocol[buf[k]];
 					s += t;
+					s += u;
+					s += "\n";
 				}
 			} else { // queries for firmware
 				s = "firmware: ";
@@ -2784,7 +2786,7 @@ MainWindow::onGReeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 			Write_and_Check(6, 36);
 
-			for (int i = 4; i < 36; i++) {
+			for (int i = 4; i < 36; i++) { // 32
 				t.format("%02x", buf[i]);
 				u += t;
 			}
@@ -2848,7 +2850,7 @@ MainWindow::onApply(FXObject *sender, FXSelector sel, void *ptr){
 		u += v;
 		u += " ";
 #if (FOX_MINOR >= 7)
-		v.fromUInt(mapbeg[i], 10);
+		v.fromInt(mapbeg[i], 10);
 #else
 		v = FXStringVal(mapbeg[i],10);
 #endif

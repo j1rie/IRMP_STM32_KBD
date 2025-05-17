@@ -1,7 +1,7 @@
 /*
  *  GUI Config Tool for IRMP STM32 KBD devices
  *
- *  Copyright (C) 2015-2022 Joerg Riechardt
+ *  Copyright (C) 2015-2025 Joerg Riechardt
  *
  *  based on work by Alan Ott
  *  Copyright 2010  Alan Ott
@@ -23,6 +23,7 @@
 #include "usb_hid_keys.h"
 #include "fxkeys_jr.h"
 #include "upgrade.h"
+#include "protocols.h"
 
 // Headers needed for sleeping.
 #ifdef _WIN32
@@ -1919,8 +1920,7 @@ MainWindow::onGrepeat(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 {
-	FXString s;
-	FXString t;
+	FXString s, t, u;
 	int jump_to_firmware, romtable;
 	jump_to_firmware = 0;
 	romtable = 0;
@@ -1956,7 +1956,7 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 			s += t;
 		} else {
 			if (!jump_to_firmware) { // queries for supported_protocols
-				s = "protocols: ";
+				s = "protocols: \n";
 				for (int k = 4; k < in_size; k++) {
 					if (!buf[k]) { // NULL termination
 						s += "\n";
@@ -1967,7 +1967,10 @@ MainWindow::onGcaps(FXObject *sender, FXSelector sel, void *ptr)
 					}
 					t.format("%u ", buf[k]);
 					protocols += t;
+					u = protocol[buf[k]];
 					s += t;
+					s += u;
+					s += "\n";
 				}
 			} else { // queries for firmware
 				s = "firmware: ";
@@ -2228,7 +2231,7 @@ MainWindow::onRalarm(FXObject *sender, FXSelector sel, void *ptr)
 long
 MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 {
-	if(uC != "RP2xxx"){
+	//if(uC != "RP2xxx"){
 		const FXchar patterns[]="All Files (*)\nFirmware Files (*.bin)";
 		FXString s, v, Filename, FilenameText;
 		FXFileDialog open(this,"Open a firmware file");
@@ -2250,11 +2253,14 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 			sprintf(firmwarefile, "%s", mbstring.text());
 #endif
 
+			if(uC == "STM32"){
 			doUpgrade.set_firmwarefile(firmwarefile);
 			doUpgrade.set_print(print);
 			doUpgrade.set_printcollect(printcollect);
 			doUpgrade.set_signal(guisignal);
+			doUpgrade.set_RP2xxx_device(false);
 			doUpgrade.start();
+			}
 
 			cur_item = device_list->getCurrentItem();
 			num_devices_before_upgrade = device_list->getNumItems();
@@ -2263,8 +2269,17 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 			if(connected_device)
 				Write_and_Check(4, 4);
 			onDisconnect(NULL, 0, NULL);
+
+			if(uC == "RP2xxx"){
+			doUpgrade.set_firmwarefile(firmwarefile);
+			doUpgrade.set_print(print);
+			doUpgrade.set_printcollect(printcollect);
+			doUpgrade.set_signal(guisignal);
+			doUpgrade.set_RP2xxx_device(true);
+			doUpgrade.start();
+			}
 		}
-	} else {
+	/*} else {
 		if(MBOX_CLICKED_OK==FXMessageBox::information(this, MBOX_OK_CANCEL, "Firmware upgrade", "Switch the Pico into mass storage device mode.\nIn your file manager than drag and drop the firmware file *.uf2 onto the newly appeared mass storage device.\nThan press buttons 'Re-Scan devices' and 'Connect'.")){
 			FXString s;
 			s.format("%x %x %x %x", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_SET, CMD_REBOOT);
@@ -2273,7 +2288,7 @@ MainWindow::onUpgrade(FXObject *sender, FXSelector sel, void *ptr)
 			FXThread::sleep(1000000000); // 1 s
 			onRescan(NULL, 0, NULL);
 		}
-	}
+	}*/
 
 	return 1;
 }

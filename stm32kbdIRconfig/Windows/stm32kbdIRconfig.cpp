@@ -1,7 +1,7 @@
 /**********************************************************************************************************
 	stm32kbdIRconfig: configure IRMP_STM32_KBD
 
-	Copyright (C) 2014-2024 Joerg Riechardt
+	Copyright (C) 2014-2025 Joerg Riechardt
 
 	based on work by Alan Ott
 	Copyright 2010  Alan Ott

@@ -2,7 +2,7 @@
  *  IR receiver, sender, USB wakeup, motherboard switch wakeup, wakeup timer,
  *  USB HID keyboard device, eeprom emulation
  *
- *  Copyright (C) 2014-2024 Joerg Riechardt
+ *  Copyright (C) 2014-2025 Joerg Riechardt
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -541,6 +541,8 @@ int8_t store_new_irdata(uint16_t num)
 			new_IRData.flags = 0;
 			/* store received IRData at address num */
 			eeprom_store(num, (uint8_t *) &new_IRData);
+			//if (eeprom_commit())
+				//fast_toggle();
 			return ret;
 		}
 	}
@@ -667,7 +669,7 @@ int8_t set_handler(uint8_t *buf)
 		idx = NUM_KEYS * (SIZEOF_IR + 2) + SIZEOF_IR * buf[4];
 		ret = store_new_irdata(idx);
 		break;
-		case CMD_MACRO_REMOTE:
+	case CMD_MACRO_REMOTE:
 		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * buf[4] + SIZEOF_IR * buf[5];
 		ret = store_new_irdata(idx);
 		break;
