@@ -2,3 +2,5 @@ libudev-dev libfox-1.x-dev are required.
 
 If you have created nicer icons, use generate_icons.sh to integrate them on fox-1.6.x.
 On fox-1.7.x this is done in the Makefile.
+
+kbd.map and remote.conf work together for vdr
