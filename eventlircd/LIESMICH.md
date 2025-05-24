@@ -28,3 +28,7 @@ Das ist nützlich, wenn eine Logitech Fernbedienung mit Makros auf einen Tastend
 log_KEY_REFRESH.sh wird z.B. von triggerhappy oder irexec aufgerufen.  
 Für triggerhappy wird irmp_stm32_kbd.conf nach /etc/triggerhappy/triggers.d/ kopiert  
 stm32kbd2uinput schreibt direkt in /var/log/started_by_IRMP_STM32_KBD.
+
+## softhddevice fortsetzen
+softhddevice gibt X11 Tastendrücke an den VDR weiter, aber nicht im Suspend mit SuspendClose=1.  
+Um aus dem Suspend weiter zu machen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf.
