@@ -29,6 +29,6 @@ log_KEY_REFRESH.sh is called by i.e. triggerhappy or irexec.
 For triggerhappy put irmp_stm32_kbd.conf into /etc/triggerhappy/triggers.d/  
 stm32kbd2uinput writes into /var/log/started_by_IRMP_STM32_KBD directly.
 
-## Resume softhddevice
+## Resume softhddevice without eventlircd
 Softhddevice passes X11 keypresses on to VDR, but not when suspended and SuspendClose=1.  
 E.g. triggerhappy is needed to resume from suspend. See irmp_stm32_kbd.conf.
