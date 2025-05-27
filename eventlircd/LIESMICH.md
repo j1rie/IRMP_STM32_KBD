@@ -29,6 +29,10 @@ log_KEY_REFRESH.sh wird z.B. von triggerhappy oder irexec aufgerufen.
 Für triggerhappy wird irmp_stm32_kbd.conf nach /etc/triggerhappy/triggers.d/ kopiert  
 stm32kbd2uinput schreibt direkt in /var/log/started_by_IRMP_STM32_KBD.
 
-## softhddevice fortsetzen ohne eventlircd
-softhddevice gibt X11 Tastendrücke an den VDR weiter, aber nicht im Suspend mit SuspendClose=1.  
+## Ohne eventlircd: keysyms finden
+Softhddevice gibt X11 Tastendrücke als 'XKeySym' an VDR weiter. Um sie zu finden, startet man xev in einem xterm mit dem Fokus auf dem Testfenster, dann sieht man die keysym's, wenn man eine Taste auf der Fernbedienung drückt.  
+Zum Beispiel ist eine Taste als 'KEY_I' konfiguriert, was das keysym 'i' ergibt, das auf 'Info' abgebildet ist (siehe kbd.map und remote.conf).
+
+## Ohne eventlircd: softhddevice fortsetzen
+Im Suspend mit SuspendClose=1 gibt softhddevice keine X11 Tastendrücke weiter.  
 Um aus dem Suspend weiter zu machen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf.
