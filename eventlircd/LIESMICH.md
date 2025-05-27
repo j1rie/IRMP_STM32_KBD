@@ -30,9 +30,10 @@ Für triggerhappy wird irmp_stm32_kbd.conf nach /etc/triggerhappy/triggers.d/ ko
 stm32kbd2uinput schreibt direkt in /var/log/started_by_IRMP_STM32_KBD.
 
 ## Ohne eventlircd: keysyms finden
-Softhddevice gibt X11 Tastendrücke als 'XKeySym' an VDR weiter. Um sie zu finden, startet man xev in einem xterm mit dem Fokus auf dem Testfenster, dann sieht man die keysym's, wenn man eine Taste auf der Fernbedienung drückt.  
-Zum Beispiel ist eine Taste als 'KEY_I' konfiguriert, was das keysym 'i' ergibt, das auf 'Info' abgebildet ist (siehe kbd.map und remote.conf).
+Softhddevice gibt X11 Tastendrücke als 'XKeySym' an VDR weiter. Um sie zu finden, startet man xev in einem xterm mit dem Fokus auf dem Testfenster.  
+Drückt man dann eine Taste auf der Fernbedienung, werden die entsprechenden keysym's angezeigt.    
+Zum Beispiel ist eine Taste als 'KEY_I' konfiguriert, was das keysym 'i' ergibt, das auf 'Info' abgebildet ist. Siehe kbd.map und remote.conf.
 
 ## Ohne eventlircd: softhddevice fortsetzen
 Im Suspend mit SuspendClose=1 gibt softhddevice keine X11 Tastendrücke weiter.  
-Um aus dem Suspend weiter zu machen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf.
+Um aus dem Suspend weiterzumachen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf.

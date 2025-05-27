@@ -30,8 +30,9 @@ For triggerhappy put irmp_stm32_kbd.conf into /etc/triggerhappy/triggers.d/
 stm32kbd2uinput writes into /var/log/started_by_IRMP_STM32_KBD directly.
 
 ## Without eventlircd: Finding keysym's
-Softhddevice passes X11 keypresses on to VDR as 'XKeySym'. In order to find them, start xev in an xterm with the focus on the testwindow, than you see the keysym's when pressing a button on the remote.  
-For example a button is configured as 'KEY_I', which gives the keysym 'i', which is mapped to 'Info' (see kbd.map and remote.conf).
+Softhddevice passes X11 keypresses on to VDR as 'XKeySym'. To find them, start xev in an xterm with the focus on the test window.  
+When you then press a button on the remote, you'll see the corresponding keysym.  
+For example a button is configured as 'KEY_I', which gives the keysym 'i', which is mapped to 'Info'. See kbd.map and remote.conf.
 
 ## Without eventlircd: Resuming softhddevice
 No X11 keypresses are passed on by softhddevice when suspended and SuspendClose=1.  
