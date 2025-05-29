@@ -23,7 +23,8 @@ Wenn nicht (sehr selten) braucht man einen Optokoppler.
 
 ## Kabel löten und anschließen
 Ein 10 cm Dupont-Kabel wird aufgetrennt, die beiden Enden miteinander und dem 220 Ohm Widerstand verbunden, das andere Ende des Widerstands wird mit einem 20 cm Dupont-Kabel, dessen eine Buchse abgeschnitten ist, verbunden. Lötstellen einschrumpfen und das zweite 10 cm Kabel mittels Schrumpfschlauch anheften.  
-Der TSOP wird direkt mit den Pins 3,3 V, GND und IR_IN verbunden, das Kabelpaar wird zwischen die Mainboard-Einschaltpins und den Stecker des Einschalters eingeschleift.
+Der TSOP wird direkt mit den Pins 3,3 V, GND und IR_IN verbunden, das Kabelpaar wird zwischen die Mainboard-Einschaltpins und den Stecker des Einschalters eingeschleift.  
+
 ![Kabel](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/cables.jpg)
 ![verbunden](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/connected.jpg)
 

@@ -23,7 +23,7 @@ If not (very rare), you need an optocoupler.
 
 ## Solder and connect cables
 Split a 10 cm dupont cable, connect both ends and the 220 ohm resistor, connect the other end of the resistor with the 20 cm dupont cable, from which one socket is cut off. Shrink the solder connections and attach the other 10 cm cable with shrink tube.  
-The TSOP is connected directly to the 3,3V, GND and IR_IN pins, the pair of cables is inserted between the power-on pins of the mainboard and the connector from the power button.
+The TSOP is connected directly to the 3,3V, GND and IR_IN pins, the pair of cables is inserted between the power-on pins of the mainboard and the connector from the power button.  
 
 ![cables](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/cables.jpg)
 ![connected](https://raw.githubusercontent.com/wiki/j1rie/IRMP_STM32_KBD/images/connected.jpg)
