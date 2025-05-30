@@ -36,4 +36,4 @@ For example a button is configured as 'KEY_I', which gives the keysym 'i', which
 
 ## Without eventlircd: Resuming softhddevice
 No X11 keypresses are passed on by softhddevice when suspended and SuspendClose=1.  
-E.g. triggerhappy is needed to resume from suspend. See irmp_stm32_kbd.conf.
+E.g. triggerhappy is needed to resume from suspend. See irmp_stm32_kbd.conf and 70-irmp.rules.

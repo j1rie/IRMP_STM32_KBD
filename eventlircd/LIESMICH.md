@@ -36,4 +36,4 @@ Zum Beispiel ist eine Taste als 'KEY_I' konfiguriert, was das keysym 'i' ergibt,
 
 ## Ohne eventlircd: softhddevice fortsetzen
 Im Suspend mit SuspendClose=1 gibt softhddevice keine X11 Tastendrücke weiter.  
-Um aus dem Suspend weiterzumachen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf.
+Um aus dem Suspend weiterzumachen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf und 70-irmp.rules.
