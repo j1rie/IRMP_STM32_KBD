@@ -1,0 +1,9 @@
+This is a "plugin" for the Video Disk Recorder (VDR).
+
+Written by:                  Joerg Riechardt <J.Riechardt@gmx.de>
+
+Project's homepage:          https://github.com/j1rie/IRMP_STM32_KBD/vdr-plugin-irmphidkbd
+
+Latest version available at: https://github.com/j1rie/IRMP_STM32_KBD/vdr-plugin-irmphidkbd
+
+Description: The 'irmphidkbd' plugin sends keypresses from a IRMP HID-KBD-Device to VDR.

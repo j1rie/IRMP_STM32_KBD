@@ -1,5 +1,5 @@
 KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4444", SYMLINK+="irmp_stm32", MODE="0666", TAG+="uaccess", TAG+="systemd"
 KERNEL=="hidraw*", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4445", SYMLINK+="irmp_stm32_kbd", MODE="0666", TAG+="uaccess", TAG+="systemd", RUN+="/usr/bin/systemctl restart triggerhappy"
-SUBSYSTEM=="input", ATTRS{name}=="STMicroelectronics STM32 IRMP HID-KBD-Device Keyboard", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
-SUBSYSTEM=="input", ATTRS{name}=="Raspberry Pi Pico IRMP HID-KBD-Device Keyboard", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
-#SUBSYSTEM=="input", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4445", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
+#SUBSYSTEM=="input", ATTRS{name}=="STMicroelectronics STM32 IRMP HID-KBD-Device Keyboard", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
+#SUBSYSTEM=="input", ATTRS{name}=="Raspberry Pi Pico IRMP HID-KBD-Device Keyboard", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
+SUBSYSTEM=="input", ATTRS{idVendor}=="1209", ATTRS{idProduct}=="4445", SYMLINK+="irmp_stm32_kbd_event", MODE="0666", TAG+="uaccess", TAG+="systemd", ENV{ID_INPUT_KEYBOARD}="1"
