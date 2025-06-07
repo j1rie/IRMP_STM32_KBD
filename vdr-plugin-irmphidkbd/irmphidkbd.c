@@ -1,5 +1,5 @@
 /*
- * irmphidkbd.c: A HID keyboard plugin for the Video Disk Recorder
+ * irmphidkbd.c: An IRMP HID keyboard plugin for the Video Disk Recorder
  *
  * Copyright (C) 20025-2025 Joerg Riechardt <J.Riechardt@gmx.de>
  *
@@ -41,9 +41,9 @@ bool cIrmpRemote::Initialize()
   fd = open(kbd_device, O_RDONLY | O_NONBLOCK);
   if(fd == -1){
     printf("Cannot open %s. %s.\n", kbd_device, strerror(errno));
-    return false;
+    //return false;
   } else {
-  printf("opened %s\n", kbd_device);
+    printf("opened %s\n", kbd_device);
   }
 
   /*if(ioctl(fd, EVIOCGRAB, 1)){
@@ -64,7 +64,7 @@ bool cIrmpRemote::Stop()
 
 void cIrmpRemote::Action(void)
 {
-  printf("action!\n");
+  if(debug) printf("action!\n");
   struct input_event event;
   uint8_t magic_key = 173;
   uint8_t only_once = 1;
@@ -75,9 +75,23 @@ void cIrmpRemote::Action(void)
 
 	while(1){
 		usleep(1000); // don't eat too much cpu
-		delay = Setup.RcRepeatDelay; period = Setup.RcRepeatDelta;
+		if (delay != Setup.RcRepeatDelay)
+			delay = Setup.RcRepeatDelay;
+		if (period != Setup.RcRepeatDelta)
+			 period = Setup.RcRepeatDelta;
+		if (fd < 0) {
+			fd = open(kbd_device, O_RDONLY | O_NONBLOCK);
+			if(fd == -1){
+				printf("Cannot open %s. %s.\n", kbd_device, strerror(errno));
+				sleep(10);
+				continue;
+			} else {
+				printf("opened %s\n", kbd_device);
+			}
+		}
+
 		if (read(fd, &event, sizeof(event)) != -1) {
-			if (event.type == EV_KEY && event.value == 1) {
+			if (event.type == EV_KEY && event.value == 1) { // keypress
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
 				pair = (this_time - last_received < 10)? 1 : 0; // modifier+key, TODO: process modifier
@@ -114,6 +128,7 @@ void cIrmpRemote::Action(void)
 					} else {
 						code2 = event.code;
 					}
+					if(debug) printf("delta: %ld ", this_time - last_sent);
 					cRemote::Put(evkeys[event.code], repeat ? true : false);
 					last_sent = this_time;
 					if(debug) printf("put code: %s, %s\n", evkeys[event.code], repeat ? "repeat" : "first");

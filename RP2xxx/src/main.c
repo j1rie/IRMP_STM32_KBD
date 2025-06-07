@@ -242,7 +242,7 @@ volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 //volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile unsigned int send_after_wakeup = 0;
-uint16_t repeat_default[3] = {250, 150, 15};
+uint16_t repeat_default[3] = {0, 0, 15};
 static bool led_state = false;
 static enum color statusled_state = off; // cache for blink_LED(), fast_toggle(), yellow_short_on()
 static enum color statusled_state_cb = off; // cache for led_callback
