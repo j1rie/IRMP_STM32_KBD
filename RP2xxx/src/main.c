@@ -981,7 +981,7 @@ int main(void)
 		}
 
 		/* send release */
-		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) { // if new key is coming in, before release for previous key was send, it can't be handled for long repeat timeouts
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
