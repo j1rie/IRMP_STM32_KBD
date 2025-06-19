@@ -9,10 +9,10 @@ Dies sind zusätzliche Informationen, grundlegende Informationen unter https://g
 
 ## Firmware flashen
 USB Verbindung trennen.
-Halten Sie die BOOTSEL-Taste gedrückt und steckenn Sie das Gerät an den USB Anschluss. Das Gerät wird als Massenspeicher angezeigt.
+Halten Sie die BOOTSEL-Taste gedrückt und steckenn Sie das Gerät an den USB Anschluss. Das Gerät wird als Massenspeicher angezeigt (USB ID 2e8a:0003).  
 Ziehen Sie die Datei firmware.uf2 per Drag & Drop auf den Massenspeicher. Das Gerät wird neu gestartet und startet als IRMP HID Gerät.
 
-Durch das Senden des Befehls „reboot“ wird das Gerät ebenfalls in den Massenspeichermodus versetzt (USB ID 2e8a:0003).  
+Durch das Senden des Befehls „reboot“ wird das Gerät ebenfalls in den Massenspeichermodus versetzt.
 
 Wenn sich bereits eine ältere Firmware auf dem Gerät befindet, versetzt stm32IRconfig - b das Gerät in den Massenspeichermodus, und
 picotool load -v -x firmware.uf2 flasht die Firmware, verifiziert und startet sie.
