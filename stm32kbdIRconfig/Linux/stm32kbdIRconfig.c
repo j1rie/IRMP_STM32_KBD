@@ -556,8 +556,7 @@ again:			;
 				write(stm32fd, outBuf, idx);
 				usleep(3000);
 				read(stm32fd, inBuf, 10);
-				for (int i = 4; i < 10; i++)
-					printf("%02hhx", inBuf[i]);
+				printf("%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx", inBuf[4],inBuf[6],inBuf[5],inBuf[8],inBuf[7],inBuf[9]);
 				printf(" ");
 				idx = 3;
 				outBuf[idx++] = CMD_KEY;
