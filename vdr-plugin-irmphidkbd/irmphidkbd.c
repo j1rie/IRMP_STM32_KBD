@@ -66,14 +66,16 @@ bool cIrmpRemote::Stop()
 void cIrmpRemote::Action(void)
 {
   if(debug) printf("action!\n");
+  cTimeMs FirstTime;
+  cTimeMs LastTime;
+  cTimeMs ThisTime;
   struct input_event event;
   uint8_t magic_key = 173;
   uint8_t only_once = 1;
-  uint8_t release_needed = 0, repeat = 0, pair = 0, skip = 0;
-  long int this_time = 0, last_sent = 0, last_received = 0;
+  bool pressed = false;
+  bool repeat = false;
+  bool pair = false;
   uint16_t timeout = 160, code = 0, code2 = 0;
-  struct timespec now; // TODO unstellen auf VDR's cTimeMs
-  int Delta; // the time between two subsequent LIRC events
   int RepeatRate = 100000;
 
 	while(1){
@@ -91,11 +93,10 @@ void cIrmpRemote::Action(void)
 
 		if (read(fd, &event, sizeof(event)) != -1) {
 			if (event.type == EV_KEY && event.value == 1) { // keypress
-				if(debug) printf("read %ld %d %d --- ", this_time, event.code, pair);
-				clock_gettime(CLOCK_MONOTONIC, &now);
-				this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
-				pair = (this_time - last_received < 10)? 1 : 0; // modifier+key, TODO: process modifier
+				//if(debug) printf("read %ld %d %d --- ", this_time, event.code, pair);
+				pair = (LastTime.Elapsed() < 10)? 1 : 0; // modifier+key, TODO: process modifier // ??
 				if(only_once && event.code == magic_key) {
+					if(debug) printf("magic\n");
 					FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
 					time_t date = time(NULL);
 					struct tm *ts = localtime(&date);
@@ -103,56 +104,51 @@ void cIrmpRemote::Action(void)
 					fclose(out);
 					only_once = 0;
 				}
-				Delta = this_time - last_received;
+				int Delta = ThisTime.Elapsed();
 				if (debug) printf("Delta: %d\n", Delta);
 				if (RepeatRate > Delta)
 					RepeatRate = Delta; // determine repeat rate
 				if(!pair){
-					last_received = this_time;
-					if(Delta > timeout || Delta > RepeatRate * 11 / 10) { // new key
-						printf("Neuer\n");
-						repeat = 0;
-						skip = 0;
+					ThisTime.Set();
+					if(Delta > timeout || Delta > RepeatRate * 11 / 10) { // new key // ??
+						if (debug) printf("Neuer\n");
+						pressed = true;
+						repeat = false;
+						FirstTime.Set();
 					} else { // repeat
-						printf("Repeat\n");
-						if( (!repeat && (this_time - last_sent < Setup.RcRepeatDelay)) || (repeat && (this_time - last_sent) < Setup.RcRepeatDelta)) {
-							skip = 1;
+						if (debug) printf("Repeat\n");
+						if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay || LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
+							if (debug) printf("continue\n\n");
 							continue; // don't send key
 						} else {
-							repeat = 1;
-							skip = 0;
-							timeout = Delta * 11 / 10; // 10 % more should be enough
-
+							pressed = true;
+							repeat = true;
+							timeout = Delta * 3 / 2; // 11 / 10; // 10 % more should be enough
 						}
 					}
 				}
 
 				/* send key */
-				if (!skip){
+				if (pressed){
 					if(!pair) {
 						code = event.code;
 					} else {
 						code2 = event.code;
 					}
-					if(debug) printf("delta: %ld ", this_time - last_sent); /// TODO checken!!!
+					if(debug) printf("delta send: %ld\n", LastTime.Elapsed());
+					LastTime.Set();
 					cRemote::Put(evkeys[event.code], repeat);
-					last_sent = this_time;
-					if(debug) printf("put code: %s, %s\n", evkeys[event.code], repeat ? "repeat" : "first");
-					release_needed = 1;
 				}
 			}
 		}
 
 		/* send release */
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
-		if((this_time - last_received > timeout) && release_needed) { // && repeat ??
-			release_needed = 0;
+		if(ThisTime.Elapsed() > timeout && pressed && repeat) {
+			pressed = false;
+			if(debug) printf("delta release: %ld\n", ThisTime.Elapsed());
 			cRemote::Put(evkeys[code], false, true);
-			if(debug) printf("put  %ld %d %d --- put code: %s, release\n\n", this_time, code, pair, evkeys[code]);
 			if (pair) {
 				cRemote::Put(evkeys[code2], false, true);
-				if(debug) printf("put  %ld %d %d     put code: %s, release\n\n", this_time, code2, pair, evkeys[code2]);
 			}
 		}
 	}
