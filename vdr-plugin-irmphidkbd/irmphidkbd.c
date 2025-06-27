@@ -58,7 +58,8 @@ bool cIrmpRemote::Initialize()
 bool cIrmpRemote::Stop()
 {
   //ioctl(fd, EVIOCGRAB, 0);
-  close(fd);
+  if (fd) // ??
+	close(fd);
   return true;
 }
 
@@ -69,16 +70,14 @@ void cIrmpRemote::Action(void)
   uint8_t magic_key = 173;
   uint8_t only_once = 1;
   uint8_t release_needed = 0, repeat = 0, pair = 0, skip = 0;
-  long int this_time, last_sent = 0, last_received = 0;
-  uint16_t delay = 250, period = 150, timeout = 130, code = 0, code2 = 0;
-  struct timespec now;
+  long int this_time = 0, last_sent = 0, last_received = 0;
+  uint16_t timeout = 160, code = 0, code2 = 0;
+  struct timespec now; // TODO unstellen auf VDR's cTimeMs
+  int Delta; // the time between two subsequent LIRC events
+  int RepeatRate = 100000;
 
 	while(1){
 		usleep(1000); // don't eat too much cpu
-		if (delay != Setup.RcRepeatDelay)
-			delay = Setup.RcRepeatDelay;
-		if (period != Setup.RcRepeatDelta)
-			 period = Setup.RcRepeatDelta;
 		if (fd < 0) {
 			fd = open(kbd_device, O_RDONLY | O_NONBLOCK);
 			if(fd == -1){
@@ -92,6 +91,7 @@ void cIrmpRemote::Action(void)
 
 		if (read(fd, &event, sizeof(event)) != -1) {
 			if (event.type == EV_KEY && event.value == 1) { // keypress
+				if(debug) printf("read %ld %d %d --- ", this_time, event.code, pair);
 				clock_gettime(CLOCK_MONOTONIC, &now);
 				this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
 				pair = (this_time - last_received < 10)? 1 : 0; // modifier+key, TODO: process modifier
@@ -103,20 +103,26 @@ void cIrmpRemote::Action(void)
 					fclose(out);
 					only_once = 0;
 				}
-				if(debug) printf("read %ld %d %d --- ", this_time, event.code, pair);
+				Delta = this_time - last_received;
+				if (debug) printf("Delta: %d\n", Delta);
+				if (RepeatRate > Delta)
+					RepeatRate = Delta; // determine repeat rate
 				if(!pair){
-					if(this_time - last_received > timeout) { // new key
-						last_received = this_time;
+					last_received = this_time;
+					if(Delta > timeout || Delta > RepeatRate * 11 / 10) { // new key
+						printf("Neuer\n");
 						repeat = 0;
 						skip = 0;
 					} else { // repeat
-						last_received = this_time;
-						if( (!repeat && (this_time - last_sent < delay)) || (repeat && (this_time - last_sent) < period)) {
+						printf("Repeat\n");
+						if( (!repeat && (this_time - last_sent < Setup.RcRepeatDelay)) || (repeat && (this_time - last_sent) < Setup.RcRepeatDelta)) {
 							skip = 1;
 							continue; // don't send key
 						} else {
 							repeat = 1;
 							skip = 0;
+							timeout = Delta * 11 / 10; // 10 % more should be enough
+
 						}
 					}
 				}
@@ -128,8 +134,8 @@ void cIrmpRemote::Action(void)
 					} else {
 						code2 = event.code;
 					}
-					if(debug) printf("delta: %ld ", this_time - last_sent);
-					cRemote::Put(evkeys[event.code], repeat ? true : false);
+					if(debug) printf("delta: %ld ", this_time - last_sent); /// TODO checken!!!
+					cRemote::Put(evkeys[event.code], repeat);
 					last_sent = this_time;
 					if(debug) printf("put code: %s, %s\n", evkeys[event.code], repeat ? "repeat" : "first");
 					release_needed = 1;
@@ -140,7 +146,7 @@ void cIrmpRemote::Action(void)
 		/* send release */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		this_time = now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
-		if((this_time - last_received > timeout) && release_needed) {
+		if((this_time - last_received > timeout) && release_needed) { // && repeat ??
 			release_needed = 0;
 			cRemote::Put(evkeys[code], false, true);
 			if(debug) printf("put  %ld %d %d --- put code: %s, release\n\n", this_time, code, pair, evkeys[code]);
@@ -186,7 +192,7 @@ bool cPluginIrmphidkbd::ProcessArgs(int argc, char *argv[])
 
 bool cPluginIrmphidkbd::Start(void)
 {
-  new cIrmpRemote("IRMP");
+  new cIrmpRemote("IRMP_KBD");
   return true;
 }
 
