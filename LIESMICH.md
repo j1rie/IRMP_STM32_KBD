@@ -120,7 +120,7 @@ Martin Neubauer für die Integration in EasyVDR, Entwicklung einer Zusatzplatine
 Alexander Grothe für die Integration in yaVDR und für wertvolle Hilfe bei schwierigen Fragestellungen. [7]  
 Helmut Emmerich für den Verkauf von fertigen Empfängern mit Kabeln und die Unterstützung der Anwender. [8]  
 Claus Muus für die Integration in MLD. [9]  
-Alle Benutzer für Fragen, Feature-Anfragen, Feedback und Ideen  
+Alle Benutzer für Fragen, Feature-Anfragen, Feedback und Ideen.  
 
 [1] https://www.mikrocontroller.net/articles/IRMP  
 [2] http://mikrocontroller.bplaced.net/wordpress/?page_id=744  

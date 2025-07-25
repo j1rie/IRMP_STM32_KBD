@@ -19,24 +19,28 @@ const char* kbd_device = "/dev/irmp_stm32_kbd_event";
 
 uint8_t debug = 1;
 
+#define RECONNECTDELAY 3000 // ms
+
 class cIrmpRemote : public cRemote, private cThread {
 private:
+  bool Connect(void);
   virtual void Action(void) override;
+  bool Stop();
+  bool Ready();
+  int fd;
 public:
   cIrmpRemote(const char *Name);
-  virtual bool Initialize(void) override;
-  virtual bool Stop();
-  int fd;
 };
 
 cIrmpRemote::cIrmpRemote(const char *Name)
 :cRemote(Name)
+,cThread("IRMP_KBD remote control")
 {
-  Initialize();
+  Connect();
   Start();
 }
 
-bool cIrmpRemote::Initialize()
+bool cIrmpRemote::Connect()
 {
   fd = open(kbd_device, O_RDONLY | O_NONBLOCK);
   if(fd == -1){
@@ -58,9 +62,14 @@ bool cIrmpRemote::Initialize()
 bool cIrmpRemote::Stop()
 {
   //ioctl(fd, EVIOCGRAB, 0);
-  if (fd) // ??
-	close(fd);
+  if (fd)
+    close(fd);
   return true;
+}
+
+bool cIrmpRemote::Ready(void)
+{
+  return fd >= 0;
 }
 
 void cIrmpRemote::Action(void)
@@ -72,26 +81,32 @@ void cIrmpRemote::Action(void)
   struct input_event event;
   uint8_t magic_key = 173;
   uint8_t only_once = 1;
-  bool pressed = false;
+  bool release_needed = false;
   bool repeat = false;
   bool pair = false;
-  uint16_t timeout = 160, code = 0, code2 = 0;
-  int RepeatRate = 100000;
+  uint16_t timeout = 160, code = 0, code2 = 0, lastcode = 0, lastcode2 = 0;
 
-	while(1){
-		usleep(1000); // don't eat too much cpu
-		if (fd < 0) {
-			fd = open(kbd_device, O_RDONLY | O_NONBLOCK);
-			if(fd == -1){
-				printf("Cannot open %s. %s.\n", kbd_device, strerror(errno));
-				sleep(10);
-				continue;
-			} else {
-				printf("opened %s\n", kbd_device);
-			}
-		}
+  while(Running()){
 
-		if (read(fd, &event, sizeof(event)) != -1) {
+    bool ready = fd >= 0 && cFile::FileReady(fd, timeout); // implizit mindestens 100 ms!!!
+    int ret = ready ? safe_read(fd, &event, sizeof(event)) : -1;
+
+    if (fd < 0 || ready && ret <= 0) {
+	esyslog("ERROR: irmphidkbd connection broken, trying to reconnect every %.1f seconds", float(RECONNECTDELAY) / 1000);
+	if (fd >= 0)
+	    close(fd);
+	fd = -1;
+	while (Running() && fd < 0) {
+	    cCondWait::SleepMs(RECONNECTDELAY);
+	    if (Connect()) {
+		isyslog("reconnected to irmphidkbd");
+		break;
+	    }
+	}
+    }
+
+
+    if (ready && ret > 0) {
 			if (event.type == EV_KEY && event.value == 1) { // keypress
 				//if(debug) printf("read %ld %d %d --- ", this_time, event.code, pair);
 				pair = (LastTime.Elapsed() < 10)? 1 : 0; // modifier+key, TODO: process modifier // ??
@@ -104,15 +119,25 @@ void cIrmpRemote::Action(void)
 					fclose(out);
 					only_once = 0;
 				}
-				int Delta = ThisTime.Elapsed();
+
+				int Delta = ThisTime.Elapsed(); // the time between two consecutive events
 				if (debug) printf("Delta: %d\n", Delta);
-				if (RepeatRate > Delta)
-					RepeatRate = Delta; // determine repeat rate
 				if(!pair){
 					ThisTime.Set();
-					if(Delta > timeout || Delta > RepeatRate * 11 / 10) { // new key // ??
+					if(code != lastcode) { // new key // ??
 						if (debug) printf("Neuer\n");
-						pressed = true;
+						if (repeat) {
+							Put(lastcode, false, true); // generated release for previous repeated key
+							printf("put release for %d\n", lastcode);
+							if (pair) {// hier immer falsch!
+								Put(evkeys[lastcode2], false, true);
+							}
+						}
+						if(!pair) { // hier immer richtig!
+							lastcode = event.code;
+						} else {
+							lastcode2 = event.code;
+						}
 						repeat = false;
 						FirstTime.Set();
 					} else { // repeat
@@ -120,16 +145,12 @@ void cIrmpRemote::Action(void)
 						if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay || LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
 							if (debug) printf("continue\n\n");
 							continue; // don't send key
-						} else {
-							pressed = true;
-							repeat = true;
-							timeout = Delta * 3 / 2; // 11 / 10; // 10 % more should be enough
+						}
+						repeat = true;
 						}
 					}
-				}
 
 				/* send key */
-				if (pressed){
 					if(!pair) {
 						code = event.code;
 					} else {
@@ -137,18 +158,19 @@ void cIrmpRemote::Action(void)
 					}
 					if(debug) printf("delta send: %ld\n", LastTime.Elapsed());
 					LastTime.Set();
-					cRemote::Put(evkeys[event.code], repeat);
-				}
+					Put(evkeys[event.code], repeat);
+					release_needed = true;
 			}
 		}
 
 		/* send release */
-		if(ThisTime.Elapsed() > timeout && pressed && repeat) {
-			pressed = false;
-			if(debug) printf("delta release: %ld\n", ThisTime.Elapsed());
-			cRemote::Put(evkeys[code], false, true);
+		if (ThisTime.Elapsed() > timeout && release_needed && repeat) {
+			release_needed = false;
+			if(debug) printf("delta release: %ld timeout: %d code: %s\n", ThisTime.Elapsed(), timeout, evkeys[lastcode]);
+			cRemote::Put(evkeys[lastcode], false, true);
 			if (pair) {
-				cRemote::Put(evkeys[code2], false, true);
+			if(debug) printf("delta release: %ld timeout: %d code: %s\n", ThisTime.Elapsed(), timeout, evkeys[lastcode2]);
+				Put(evkeys[lastcode2], false, true);
 			}
 		}
 	}

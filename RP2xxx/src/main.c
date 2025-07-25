@@ -870,7 +870,7 @@ int main(void)
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
 	uint16_t key, last_sent, last_received;
-	uint8_t num, release_needed;
+	uint8_t num, release_needed = 0, repeat = 0;
 	uint8_t old_usb_state_color = usb_state_color;
 
 	board_init();
@@ -950,20 +950,27 @@ int main(void)
 		/* poll IR-data */
 		if (PrevXferComplete && irmp_get_data(&myIRData)) {
 			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
-			if (!(myIRData.flags)) {
+			if (!(myIRData.flags)) { // new
+				if (repeat) { // generate release for previous repeated key
+					kbd_buf[0] = 0;
+					kbd_buf[2] = 0;
+					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+				}
+				repeat = 0;
 				repeat_timer = 0;
-				last_sent = 0;
+				//last_sent = 0;
 				last_received = 0;
 				store_wakeup(&myIRData);
 				check_macros(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
-			} else {
+			} else { // repeat, or possibly unrecognized new if non toggling protocol
 				last_received = repeat_timer;
 				if ((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
 					continue; // don't send key
 				} else {
-					last_sent = repeat_timer;
+					repeat = 1;
+					//last_sent = repeat_timer;
 				}
 			}
 
@@ -976,16 +983,18 @@ int main(void)
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
+					last_sent = repeat_timer; //
 				}
 			}
 		}
 
 		/* send release */
-		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) { // if new key is coming in, before release for previous key was send, it can't be handled for long repeat timeouts
+		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
 			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+			repeat = 0;
 		}
 	}
 }

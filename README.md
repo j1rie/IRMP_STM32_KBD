@@ -120,7 +120,7 @@ Martin Neubauer for integration into EasyVDR, addon board development and sellin
 Alexander Grothe for integration into yaVDR and much help with difficult questions. [7]  
 Helmut Emmerich for selling ready-to-use receiver sets and user support. [8]  
 Claus Muus for integration into MLD. [9]  
-All Users for questions, feature requests, feedback and ideas  
+All Users for questions, feature requests, feedback and ideas.  
 
 [1] https://www.mikrocontroller.net/articles/IRMP  
 [2] http://mikrocontroller.bplaced.net/wordpress/?page_id=744  
