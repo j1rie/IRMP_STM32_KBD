@@ -6,16 +6,16 @@
  */
 
 #include <vdr/plugin.h>
-#include <linux/input.h>
+//#include <linux/input.h>
 #include <vdr/i18n.h>
 #include <vdr/remote.h>
 #include <vdr/thread.h>
-#include "input-event-codes.h"
+#include "usb_hid_keys.h"
 
-static const char *VERSION        = "0.0.1";
+static const char *VERSION        = "0.0.2";
 static const char *DESCRIPTION    = tr("Send keypresses from IRMP HID-KBD-Device to VDR");
 
-const char* kbd_device = "/dev/irmp_stm32_kbd_event";
+const char* kbd_device = "/dev/irmp_stm32_kbd";
 
 uint8_t debug = 1;
 
@@ -76,31 +76,40 @@ bool cIrmpRemote::Ready(void)
   return fd >= 0;
 }
 
+cString get_key_from_hex(uint8_t hex) {
+  for(int i = 0; i < lines; i++) {
+    if (hex == mapusb[i].usb_hid_key)
+      return mapusb[i].key;
+  }
+  return "error";
+}
+
 void cIrmpRemote::Action(void)
 {
   cTimeMs FirstTime;
   cTimeMs LastTime;
   cTimeMs ThisTime;
   cTimeMs LoopTime;
-  struct input_event event;
-  uint8_t magic_key = 173;
+  uint8_t buf[64];
+  uint8_t magic_key = 173; // testen!
   uint8_t only_once = 1;
   bool release_needed = false;
   bool repeat = false;
-  bool pair = false;
   int timeout = -1;
-  int RepeatRate = 118; // greatest repeat rate we know so far (except Sky)
-  uint16_t code = 0, lastcode = 0;
-  //uint16_t code2 = 0, lastcode2 = 0;
+  cString mod_key = "";
+  cString mod = "";
+  cString key = "";
+  cString last_mod_key = "";
+  int RepeatRate = 118;
 
   if(debug) printf("irmphidkbd action!\n");
 
   while(Running()){
 
-    //printf("loop timeout: %d, elapsed: %ld\n", timeout, LoopTime.Elapsed());
+    //if(debug) printf("loop timeout: %d, elapsed: %ld\n", timeout, LoopTime.Elapsed());
     LoopTime.Set();
     bool ready = fd >= 0 && cFile::FileReady(fd, timeout); // implizit mindestens 100 ms!!!
-    int ret = ready ? safe_read(fd, &event, sizeof(event)) : -1;
+    int ret = ready ? safe_read(fd, buf, sizeof(buf)) : -1;
 
     if (fd < 0 || ready && ret <= 0) {
         esyslog("ERROR: irmphidkbd connection broken, trying to reconnect every %.1f seconds", float(RECONNECTDELAY) / 1000);
@@ -117,16 +126,21 @@ void cIrmpRemote::Action(void)
     }
 
     if (ready && ret > 0) {
-            if (event.type != EV_KEY || event.value != 1) { // unbrauchbar
+            if (!buf[1] && !buf[3]) { // release
                 if (timeout >= (int)LoopTime.Elapsed()) {
                     timeout -= LoopTime.Elapsed(); // aber mind. 25
-                    //if(debug) printf("unusable event, new timeout: %d\n", timeout);
+                    //if(debug) printf("release, new timeout: %d, LoopTime.Elapsed(): %ld\n\n", timeout, LoopTime.Elapsed());
                 }
-                continue;
-            }
-            code = event.code;
-            pair = (FirstTime.Elapsed() < 10)? 1 : 0; // modifier+key, TODO: process modifier
-            if(only_once && code == magic_key) {
+              continue;
+            } // keypress
+            mod = get_key_from_hex(buf[1]);
+            key = get_key_from_hex(buf[3]);
+            mod_key = mod;
+            mod_key.Append("|");
+            mod_key.Append(key);
+            //if(debug) printf("mod_key: %s\n", (const char*)mod_key);
+
+            if(only_once && buf[3] == magic_key) {
                 if(debug) printf("magic\n");
                 FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
                 time_t date = time(NULL);
@@ -135,61 +149,53 @@ void cIrmpRemote::Action(void)
                 fclose(out);
                 only_once = 0;
             }
-            if(!pair){
-                int Delta = ThisTime.Elapsed(); // the time between two consecutive events
-                if (debug) printf("Delta: %d\n", Delta);
-                if (RepeatRate > Delta && Delta > 0)
-                    RepeatRate = Delta; // autodetect repeat rate
-                ThisTime.Set();
-                timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
-                if (debug) printf("code: %s, lastcode: %s, toggle: %d, timeout: %d, pair: %d\n", evkeys[code], evkeys[lastcode], Setup.RcTogglingProtocol, timeout, pair);
-                if(code != lastcode) { // new key
-                    if (debug) printf("Neuer\n");
-                    if (repeat) {
-                        Put(lastcode, false, true); // generated release for previous repeated key
-                        if (debug) printf("put release for %d\n", lastcode);
-                    }
-                    lastcode = code;
-                    repeat = false;
-                    FirstTime.Set();
-                } else { // repeat
-                    if (debug) printf("Repeat\n");
-                    if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay) {
-                        if (debug) printf("continue Delay\n\n");
-                        continue; // repeat function kicks in after a short delay
-                    }
-                    if (LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
-                        if (debug)  printf("continue Delta\n\n");
-                        continue; // skip same keys coming in too fast
-                    }
-                    repeat = true;
+
+            int Delta = ThisTime.Elapsed(); // the time between two consecutive events
+            if (debug) printf("Delta: %d\n", Delta);
+            if (debug && !Delta) printf("ACHTUNG: Delta: %d *****************************************************\n", Delta); // kommt nicht vor, oder?
+            if (RepeatRate > Delta)
+                RepeatRate = Delta; // autodetect repeat rate
+            ThisTime.Set();
+            timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
+            if (debug) printf("mod_key: %s, last_mod_key: %s, toggle: %d, timeout: %d\n", (const char*)mod_key, (const char*)last_mod_key, Setup.RcTogglingProtocol, timeout);
+            if (strcmp(mod_key, last_mod_key) != 0) {// new key
+                if (debug) printf("Neuer\n");
+                if (repeat) {
+                    if (debug) printf("put release for %s\n", (const char*)last_mod_key);
+                    Put(last_mod_key, false, true); // generated release for previous repeated key
                 }
-            } else {
-                if (debug) printf("pair!\n");
+                last_mod_key = mod_key;
+                repeat = false;
+                FirstTime.Set();
+            } else { // repeat
+                if (debug) printf("Repeat\n");
+                //if (RepeatRate > Delta)
+                    //RepeatRate = Delta; // autodetect repeat rate
+                if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay) {
+                    if (debug) printf("continue Delay\n\n");
+                    continue; // repeat function kicks in after a short delay
+                }
+                if (LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
+                    if (debug)  printf("continue Delta\n\n");
+                    continue; // skip same keys coming in too fast
+                }
+                repeat = true;
             }
 
             /* send key */
-            if(!pair) {
-                //code = code;
-            } else {
-                //code2 = code;
-            }
             if(debug) printf("delta send: %ld\n", LastTime.Elapsed());
             LastTime.Set();
-            Put(evkeys[code], repeat);
+            Put(mod_key, repeat);
             release_needed = true;
+
     } else { // no key within timeout
             if (release_needed && repeat) {
-                if(debug) printf("put release for %s, delta %ld\n", evkeys[lastcode], ThisTime.Elapsed());
-                Put(evkeys[lastcode], false, true);
-                /*if (pair) {
-                    if(debug) printf("put release for %s, delta %ld\n", evkeys[lastcode2], ThisTime.Elapsed());
-                    Put(evkeys[lastcode2], false, true);
-                }*/
+                if(debug) printf("put release for %s, delta %ld\n", (const char *)last_mod_key, ThisTime.Elapsed());
+                Put(last_mod_key, false, true);
             }
             release_needed = false;
             repeat = false;
-            lastcode = 0;
+            last_mod_key = "";
             timeout = -1;
             if (debug) printf("reset\n");
     }

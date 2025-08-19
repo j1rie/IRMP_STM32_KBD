@@ -191,7 +191,7 @@ int main(int argc, const char **argv) {
 	write(stm32fd, outBuf, 5);
 	usleep(3000);
 	read(stm32fd, inBuf, in_size);
-	while (inBuf[0] == 0x01)
+	while (inBuf[0] == 0x01) // REPORT_ID_KBD
 		read(stm32fd, inBuf, in_size);
 	eeprom_lines = inBuf[4];
 	if(in_size != (inBuf[7] ? inBuf[7] : 17))
@@ -514,7 +514,7 @@ get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repe
 				write_stm32(idx+1);
 				usleep(3000);
 				read_stm32(in_size, l == 0 ? 9 : in_size);
-				while (inBuf[0] == 0x01)
+				while (inBuf[0] == 0x01) // REPORT_ID_KBD
 					read_stm32(in_size, l == 0 ? 9 : in_size);
 				if (!l) { // first query for slots and depth
 					printf("number of keys: %u\n", inBuf[4]);
