@@ -6,7 +6,6 @@
  */
 
 #include <vdr/plugin.h>
-//#include <linux/input.h>
 #include <vdr/i18n.h>
 #include <vdr/remote.h>
 #include <vdr/thread.h>
@@ -153,8 +152,8 @@ void cIrmpRemote::Action(void)
             int Delta = ThisTime.Elapsed(); // the time between two consecutive events
             if (debug) printf("Delta: %d\n", Delta);
             if (debug && !Delta) printf("ACHTUNG: Delta: %d *****************************************************\n", Delta); // kommt nicht vor, oder?
-            if (RepeatRate > Delta)
-                RepeatRate = Delta; // autodetect repeat rate
+            //if (RepeatRate > Delta)
+                //RepeatRate = Delta; // autodetect repeat rate
             ThisTime.Set();
             timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
             if (debug) printf("mod_key: %s, last_mod_key: %s, toggle: %d, timeout: %d\n", (const char*)mod_key, (const char*)last_mod_key, Setup.RcTogglingProtocol, timeout);
@@ -169,8 +168,8 @@ void cIrmpRemote::Action(void)
                 FirstTime.Set();
             } else { // repeat
                 if (debug) printf("Repeat\n");
-                //if (RepeatRate > Delta)
-                    //RepeatRate = Delta; // autodetect repeat rate
+                if (RepeatRate > Delta)
+                    RepeatRate = Delta; // autodetect repeat rate
                 if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay) {
                     if (debug) printf("continue Delay\n\n");
                     continue; // repeat function kicks in after a short delay
