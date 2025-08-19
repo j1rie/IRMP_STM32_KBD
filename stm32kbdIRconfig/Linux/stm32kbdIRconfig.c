@@ -85,6 +85,7 @@ static int stm32fd = -1;
 uint8_t inBuf[64];
 uint8_t outBuf[64];
 unsigned int in_size, out_size;
+char error[6] = "error";
 
 static bool open_stm32(const char *devicename) {
 	stm32fd = open(devicename, O_RDWR );
@@ -133,6 +134,14 @@ void write_and_check(int idx, int show_len) {
 	} else {
 		puts("***************************ERROR*******************************\n");
 	}
+}
+
+char* get_key_from_hex(uint8_t hex) {
+  for(int i = 0; i < lines; i++) {
+    if (hex == mapusb[i].usb_hid_key)
+      return mapusb[i].key;
+  }
+  return error;
 }
 
 int main(int argc, const char **argv) {
@@ -777,8 +786,11 @@ monit:	while(true) {
 			for (l = 0; l < 64; l++)
 				printf("%02hhx ", inBuf[l]);
 			printf("\n");
-			printf("modifier|key: %02hhx%02hhx\n\n", inBuf[1],inBuf[3]);
-			printf("\n");
+			if (!inBuf[1] && !inBuf[3])
+			    printf("release\n\n\n");
+			else
+			    printf("modifier|key: %s|%s\n\n", get_key_from_hex(inBuf[1]),get_key_from_hex(inBuf[3]));
+			//printf("\n");
 		}
 	}
 
