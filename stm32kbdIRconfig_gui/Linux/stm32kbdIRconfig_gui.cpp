@@ -417,7 +417,7 @@ MainWindow::MainWindow(FXApp *app)
 	FXGroupBox *gb122 = new FXGroupBox(hf12, "set by remote", FRAME_GROOVE|LAYOUT_FILL_X);
 	prwakeup_button = new FXButton(gb122, "wakeup", NULL, this, ID_PRWAKEUP, BUTTON_NORMAL|LAYOUT_FILL_X);
 	prmacro_button = new FXButton(gb122, "macro", NULL, this, ID_PRMACRO, BUTTON_NORMAL|LAYOUT_FILL_X);
-	prirdata_button = new FXButton(gb122, "irdata", NULL, this, ID_PIRDATA, BUTTON_NORMAL|LAYOUT_FILL_X);
+	prirdata_button = new FXButton(gb122, "irdata", NULL, this, ID_PRIRDATA, BUTTON_NORMAL|LAYOUT_FILL_X);
 	pr_keyboard_and_irdata_button = new FXButton(gb122, "keyboard + irdata", NULL, this, ID_PR_KBD_IRDATA, BUTTON_NORMAL|LAYOUT_FILL_X);
 	pr_kbd_irdata_text = new FXTextField(new FXHorizontalFrame(gb122,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
 	pr_kbd_irdata_text_2 = new FXTextField(new FXHorizontalFrame(gb122,LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK, 0,0,0,0, 0,0,0,0), 12, NULL, 0, LAYOUT_FILL_X);
