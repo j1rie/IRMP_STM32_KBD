@@ -787,10 +787,9 @@ monit:	while(true) {
 				printf("%02hhx ", inBuf[l]);
 			printf("\n");
 			if (!inBuf[1] && !inBuf[3])
-			    printf("release\n\n\n");
+				printf("release\n\n\n");
 			else
-			    printf("modifier|key: %s|%s\n\n", get_key_from_hex(inBuf[1]),get_key_from_hex(inBuf[3]));
-			//printf("\n");
+				printf("modifier|key: %s|%s\n\n", get_key_from_hex(inBuf[1]), get_key_from_hex(inBuf[3]));
 		}
 	}
 

@@ -7,3 +7,5 @@ Project's homepage:          https://github.com/j1rie/IRMP_STM32_KBD/vdr-plugin-
 Latest version available at: https://github.com/j1rie/IRMP_STM32_KBD/vdr-plugin-irmphidkbd
 
 Description: The 'irmphidkbd' plugin sends keypresses from a IRMP HID-KBD-Device to VDR.
+
+The easiest way for creating key mappings in remote.conf is to use VDR's key learning process.

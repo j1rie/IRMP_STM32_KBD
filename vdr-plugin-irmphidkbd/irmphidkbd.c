@@ -10,8 +10,9 @@
 #include <vdr/remote.h>
 #include <vdr/thread.h>
 #include "usb_hid_keys.h"
+#include "protocols.h"
 
-static const char *VERSION        = "0.0.2";
+static const char *VERSION        = "0.0.3";
 static const char *DESCRIPTION    = tr("Send keypresses from IRMP HID-KBD-Device to VDR");
 
 const char* kbd_device = "/dev/irmp_stm32_kbd";
@@ -96,10 +97,10 @@ void cIrmpRemote::Action(void)
   bool repeat = false;
   int timeout = -1;
   cString mod_key = "";
-  cString mod = "";
-  cString key = "";
   cString last_mod_key = "";
   int RepeatRate = 118;
+  uint8_t protocol = 0;
+  bool toggle = false;
 
   if(debug) printf("irmphidkbd action!\n");
 
@@ -132,12 +133,23 @@ void cIrmpRemote::Action(void)
                 }
               continue;
             } // keypress
-            mod = get_key_from_hex(buf[1]);
-            key = get_key_from_hex(buf[3]);
-            mod_key = mod;
+            mod_key = get_key_from_hex(buf[1]);
             mod_key.Append("|");
-            mod_key.Append(key);
+            mod_key.Append(get_key_from_hex(buf[3]));
             //if(debug) printf("mod_key: %s\n", (const char*)mod_key);
+
+            if (buf[63] != protocol) { // new protocol, reset RepeatRate
+                RepeatRate = 118;
+                protocol = buf[63];
+                if(debug) printf("protocol: %02d, %s\n", protocol, (const char *)protocols[protocol]);
+                isyslog("protocol: %02d, %s\n", protocol, (const char *)protocols[protocol]);
+            }
+
+            if (protocol == 6 || protocol == 7 || protocol == 9 || protocol == 12 || protocol == 21 || protocol == 30 || protocol == 45 || protocol == 55) { // RECS80, RC5, RC6, RECS80EXT, RC6A, THOMSON, (S100), METZ
+                toggle = true;
+            } else {
+                toggle = false;
+            }
 
             if(only_once && buf[3] == magic_key) {
                 if(debug) printf("magic\n");
@@ -151,13 +163,24 @@ void cIrmpRemote::Action(void)
 
             int Delta = ThisTime.Elapsed(); // the time between two consecutive events
             if (debug) printf("Delta: %d\n", Delta);
-            if (debug && !Delta) printf("ACHTUNG: Delta: %d *****************************************************\n", Delta); // kommt nicht vor, oder?
-            //if (RepeatRate > Delta)
-                //RepeatRate = Delta; // autodetect repeat rate
             ThisTime.Set();
-            timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
-            if (debug) printf("mod_key: %s, last_mod_key: %s, toggle: %d, timeout: %d\n", (const char*)mod_key, (const char*)last_mod_key, Setup.RcTogglingProtocol, timeout);
-            if (strcmp(mod_key, last_mod_key) != 0) {// new key
+            // don't set own timeout for each protocol, because some are unknown and it is too error prone, so prefer autodetect and treat NEC and Sky+ extra
+            timeout = RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
+            if (protocol == 2) {
+                timeout = 112; // NEC + APPLE + ONKYO first 40, than 108
+                if(debug) printf("NEC detected, timeout set\n");
+            }
+            if (protocol == 61) {
+                timeout = 155; // Sky+ 150
+                if(debug) printf("Sky+ detected, timeout set\n");
+            }
+            if (protocol == 62) {
+                timeout = 155; // Sky+ Pro 150
+                if(debug) printf("Sky+ Pro detected, timeout set\n");
+            }
+            if (debug) printf("mod_key: %s, last_mod_key: %s, toggle: %d, timeout: %d\n", (const char*)mod_key, (const char*)last_mod_key, toggle, timeout);
+            // if the protocol toggles count == 0 is reliable, else regard same keys as new only after a timeout
+            if (toggle && buf[62] == 0 || !toggle && strcmp(mod_key, last_mod_key) != 0) { // new key
                 if (debug) printf("Neuer\n");
                 if (repeat) {
                     if (debug) printf("put release for %s\n", (const char*)last_mod_key);

@@ -865,7 +865,7 @@ void send_magic(void)
 
 int main(void)
 {
-	uint8_t kbd_buf[3] = {0}; // USB HID keyboard report: {modifier, reserved (ignored), keypress #1, keypress #2 (unused)}
+	uint8_t kbd_buf[HID_IN_REPORT_COUNT - 1] = {0}; // USB HID keyboard report: {modifier, reserved (ignored), keypress #1, keypress #2 (unused)}
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
@@ -958,7 +958,6 @@ int main(void)
 				}
 				repeat = 0;
 				repeat_timer = 0;
-				//last_sent = 0;
 				last_received = 0;
 				store_wakeup(&myIRData);
 				check_macros(&myIRData);
@@ -970,7 +969,6 @@ int main(void)
 					continue; // don't send key
 				} else {
 					repeat = 1;
-					//last_sent = repeat_timer;
 				}
 			}
 
@@ -981,6 +979,8 @@ int main(void)
 				if (key != 0xFFFF) {
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
+					kbd_buf[HID_IN_REPORT_COUNT - 2] = myIRData.protocol; // protocol
+					kbd_buf[HID_IN_REPORT_COUNT - 3] = myIRData.flags; // count
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
 					last_sent = repeat_timer; //
