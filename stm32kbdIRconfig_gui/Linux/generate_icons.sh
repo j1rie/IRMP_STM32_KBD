@@ -1,4 +1,4 @@
-ICONS='Icon.gif MiniIcon.ico'
+ICONS='Icon.gif'
 
 ### reswrap version 6.0.0:
 
