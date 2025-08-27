@@ -8,16 +8,6 @@ put the systemd-tmpfiles configuration file 'eventlircd.conf' into your tmpfiles
 and run "systemctl enable eventlircd.service eventlircd.socket" once.  
 '03_1209_4445.evmap' will work for yaVDR.
 
-## Long key presses
-If you are building your own kernel, you may patch it with hid_irmp.diff.  
-Than long key presses will work perfectly, with repeat_timeout set to e.g. 130.  
-Enable the module in Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.  
-It may be necessary to add 'rmmod hid_irmp', 'rmmod hid_generic' and 'modprobe hid_irmp' to /etc/init.d/boot.local (look for "irmp configured" in dmesg).
-
-Without the patch your repeat_timeout must be set to 15 (default), and all keystrokes are new keys, so long key presses in kodi and acceleration will not work.
-
-Instead of hid_irmp.diff you can try stm32kbd2uinput. Than long keystrokes work perfectly. Leave repeat_timeout at default (15), repeat_delay and repeat_period at 100 (or less).
-
 ## Was the computer started by the receiver?
 You can log when the receiver has started the computer.  
 At each start by the receiver, it sends KEY_REFRESH every second for a configurable period of time. The first one is written to the log file /var/log/started_by_IRMP_STM32_KBD. To do this, log_KEY_REFRESH.sh is called by irexec or triggerhappy.  
@@ -37,3 +27,6 @@ For example a button is configured as 'KEY_I', which gives the keysym 'i', which
 ## Without eventlircd: Resuming softhddevice
 No X11 keypresses are passed on by softhddevice when suspended and SuspendClose=1.  
 E.g. triggerhappy is needed to resume from suspend. See irmp_stm32_kbd.conf and 70-irmp.rules.
+
+## Don't use softhddevice for remote control
+It is recommended to use vdr-plugin-irmphidkbd instead, because softhddevice'r remote function is not as precise.

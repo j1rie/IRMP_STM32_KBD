@@ -8,16 +8,6 @@ die systemd-tmpfiles Konfigurationsdatei 'eventlircd.conf' wird in das tmpfiles 
 und es wird "systemctl enable eventlircd.service eventlircd.socket" einmal ausgeführt.  
 '03_1209_4445.evmap' funktioniert unter yaVDR.
 
-## Lange Tastendrücke
-Wenn man einen eigenen Kernel baut, kann man ihn mit hid_irmp.diff patchen.  
-Dann funktionieren die langen Tastendrücke perfekt, wenn man repeat_timeout auf  z.B. 130 setzt.  
-Man aktiviert das Modul unter Device drivers → HID support → Special HID drivers → IRMP USB-HID-keyboard support.  
-Es kann sein, dass man "rmmod hid_irmp", "rmmod hid_generic" und "modprobe hid_irmp" zu /etc/init.d/boot.local hinzufügen muss (taucht in dmesg "irmp configured" auf?).
-
-Ohne den Patch muss "repeat_timeout" auf 15 gesetzt werden (default). Dann sind alle Tastenanschläge neue Tasten und lange Tastendrücke in Kodi und Beschleunigung funktionieren deshalb nicht.
-
-Statt hid_irmp.diff kann man stm32kbd2uinput nehmen. Damit funktionieren lange Tastendrücke perfekt. Dabei bleibt repeat_timeout auf default (15), repeat_delay und repeat_period auf 100 (oder weniger).
-
 ## Wurde der Computer vom Empfänger gestartet?
 Man kann protokollieren, wann der Empfänger den Computer gestartet hat.  
 Bei jedem Start durch den Empfänger sendet er eine konfigurierbare Zeit lang sekündlich KEY_REFRESH. Der erste wird in die Logdatei /var/log/started_by_IRMP_STM32_KBD geschrieben. Dazu wird von irexec oder triggerhappy log_KEY_REFRESH.sh aufgerufen.  
@@ -37,3 +27,6 @@ Zum Beispiel ist eine Taste als 'KEY_I' konfiguriert, was das keysym 'i' ergibt,
 ## Ohne eventlircd: softhddevice fortsetzen
 Im Suspend mit SuspendClose=1 gibt softhddevice keine X11 Tastendrücke weiter.  
 Um aus dem Suspend weiterzumachen, braucht man z.B. triggerhappy. Siehe irmp_stm32_kbd.conf und 70-irmp.rules.
+
+## Verwenden Sie softhddevice nicht für die Fernbedienung.
+Es wird empfohlen, stattdessen vdr-plugin-irmphidkbd zu verwenden, da die Fernbedienungsfunktion von softhddevice nicht so präzise ist.

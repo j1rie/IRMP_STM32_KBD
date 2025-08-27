@@ -9,3 +9,5 @@ Aktuelle Version verfuegbar unter: https://github.com/j1rie/IRMP_STM32_KBD/vdr-p
 Beschreibung: Das Plugin irmphidkbd sendet Tastatureingaben von einem IRMP HID-KBD-Geraet an VDR.
 
 Die einfachste Methode zum Erstellen von Tastenbelegungen in remote.conf ist die Verwendung des Tasten-Anlernprozesses von VDR.
+
+repeat_delay und repeat_period müssen auf 0 gesetzt werden.
