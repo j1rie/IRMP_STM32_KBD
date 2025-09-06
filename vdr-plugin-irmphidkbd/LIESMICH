@@ -11,3 +11,5 @@ Beschreibung: Das Plugin irmphidkbd sendet Tastatureingaben von einem IRMP HID-K
 Die einfachste Methode zum Erstellen von Tastenbelegungen in remote.conf ist die Verwendung des Tasten-Anlernprozesses von VDR.
 
 repeat_delay und repeat_period müssen auf 0 gesetzt werden.
+
+Wenn man das vdr-plugin-softhddevice verwendet, muss die Fernbedienungsfunktion von softhddevice mit -P'softhddevice ... -N' deaktiviert werden.

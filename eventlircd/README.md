@@ -29,4 +29,4 @@ No X11 keypresses are passed on by softhddevice when suspended and SuspendClose=
 E.g. triggerhappy is needed to resume from suspend. See irmp_stm32_kbd.conf and 70-irmp.rules.
 
 ## Don't use softhddevice for remote control
-It is recommended to use vdr-plugin-irmphidkbd instead, because softhddevice'r remote function is not as precise.
+It is recommended to use vdr-plugin-irmphidkbd instead, because softhddevice's remote function is not as precise.
