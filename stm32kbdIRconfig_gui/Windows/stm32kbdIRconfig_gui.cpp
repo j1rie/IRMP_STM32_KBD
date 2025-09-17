@@ -114,6 +114,8 @@ enum command {
 	CMD_NEOPIXEL,
 	CMD_MACRO,
 	CMD_MACRO_REMOTE,
+	CMD_SEND_AFTER_WAKEUP,
+	CMD_EEPROM_DIRTY,
 };
 
 enum status {
@@ -576,7 +578,7 @@ MainWindow::MainWindow(FXApp *app)
 	minutes_text->setHelpText("minutes");
 	seconds_text->setHelpText("seconds");
 	upgrade_button->setHelpText("upgrade firmware");
-	commit_button->setHelpText("RP2xxx: commit eeprom");
+	commit_button->setHelpText("RP2xxx: flash permanently into eeprom");
 	get_raw_button->setHelpText("RP2xxx: get eeprom raw");
 	aset_button->setHelpText("set alarm");
 	aget_button->setHelpText("get alarm");
@@ -595,7 +597,7 @@ MainWindow::MainWindow(FXApp *app)
 	key_text->setHelpText("key");
 	save_button->setHelpText("save translation map");
 	map_text21->setHelpText("eeprom translation map");
-	flash_button->setHelpText("flash into eeprom");
+	flash_button->setHelpText("STM32: flash permanently into eeprom ; RP2xxx: flash temporarily into eeprom cache in RAM, so finally press 'commit'!");
 	get_button->setHelpText("get from eeprom");
 	reset_button->setHelpText("reset eeprom");
 	line_text->setHelpText("line in eeprom map");
@@ -679,6 +681,15 @@ MainWindow::onCmdQuit(FXObject *sender, FXSelector sel, void *ptr)
 {
 	if(map_text21->isModified()){
 		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+	}
+	if (uC == "RP2xxx") {
+		FXString s;
+		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_DIRTY); // hex!
+		output_text->setText(s);
+		Write_and_Check(4, 5);
+		if(buf[4]){
+			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
+		}
 	}
 	getApp()->exit(0);
 	return 0;
@@ -977,6 +988,15 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 {
 	if (!connected_device)
 		return 1;
+	if (uC == "RP2xxx") {
+		FXString s;
+		s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_GET, CMD_EEPROM_DIRTY); // hex!
+		output_text->setText(s);
+		Write_and_Check(4, 5);
+		if(buf[4]){
+			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
+		}
+	}
 	hid_close(connected_device);
 	connected_device = NULL;
 	connected_label->setText("Disconnected");
