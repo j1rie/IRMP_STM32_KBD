@@ -52,7 +52,7 @@ enum status {
 };
 
 enum report_id {
-	REPORT_ID_IR = 1,
+	REPORT_ID_KBD = 1,
 	REPORT_ID_CONFIG_IN = 2,
 	REPORT_ID_CONFIG_OUT = 3
 };
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 	    write_stm32();
 	    usleep(3000);
 	    read_stm32();
-	    while (inBuf[0] == REPORT_ID_IR)
+	    while (inBuf[0] == REPORT_ID_KBD)
 		read_stm32();
 	}
 	
