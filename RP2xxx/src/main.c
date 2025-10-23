@@ -861,8 +861,8 @@ void led_callback(uint_fast8_t on)
 
 void send_magic(void)
 {
-	uint8_t magic[3] = {0x00, 0x00, 0xFA}; // KEY_REFRESH
-	uint8_t release[3] = {0x00, 0x00, 0x00};
+	uint8_t magic[HID_IN_REPORT_COUNT - 1] = {0x00, 0x00, 0xFA}; // KEY_REFRESH
+	uint8_t release[HID_IN_REPORT_COUNT - 1] = {0};
 	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
 	sleep_ms(repeat_default[2]);
 	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
@@ -949,7 +949,7 @@ int main(void)
 		/* test if numlock command is received */
 		if(USB_HID_Data_Received && *bufptr == REPORT_ID_KBD) {
 			USB_HID_Data_Received = 0;
-			statusled_write(*(bufptr+1) & KEYBOARD_LED_NUMLOCK);
+			statusled_write(*(bufptr+1) & KEYBOARD_LED_SCROLLLOCK);
 		}
 
 		/* poll IR-data */
@@ -984,8 +984,6 @@ int main(void)
 				if (key != 0xFFFF) {
 					kbd_buf[0] = key >> 8; // modifier
 					kbd_buf[2] = key & 0xFF; // key
-					kbd_buf[HID_IN_REPORT_COUNT - 2] = myIRData.protocol; // protocol
-					kbd_buf[HID_IN_REPORT_COUNT - 3] = myIRData.flags; // count
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
 					last_sent = repeat_timer; //

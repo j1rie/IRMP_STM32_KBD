@@ -77,8 +77,8 @@ void cIrmpRemote::Action(void)
   cString key = "";
   cString lastkey = "";
   int RepeatRate = 118;
-  uint8_t protocol = 0, lastprotocol = 0, count = 0;
-  bool toggle = false;
+  //uint8_t protocol = 0, lastprotocol = 0, count = 0;
+  //bool toggle = false;
 
   if(debug) printf("IrmpRemote action!\n");
 
@@ -87,16 +87,16 @@ void cIrmpRemote::Action(void)
     cMutexLock MutexLock(&mutex);
     if (keyReceived.TimedWait(mutex, timeout)) { // keypress
 
-            protocol = buf[63];
+            //protocol = buf[63];
             //if(debug) printf("protocol: %02x\n", protocol);
-            count = buf[62];
+            //count = buf[62];
             //if(debug) printf("count: %02x\n", count);
             key = get_key_from_hex(buf[1]);
             key.Append("|");
             key.Append(get_key_from_hex(buf[3]));
             if(debug) printf("key: %s\n", (const char*)key);
 
-            if (protocol != lastprotocol) { // new protocol, reset RepeatRate
+            /*if (protocol != lastprotocol) { // new protocol, reset RepeatRate
                 RepeatRate = 118;
                 lastprotocol = protocol;
                 if(debug) printf("protocol: %02d, %s\n", protocol, (const char *)protocols[protocol]);
@@ -107,7 +107,7 @@ void cIrmpRemote::Action(void)
                 toggle = true;
             } else {
                 toggle = false;
-            }
+            }*/
 
             if(only_once && strcmp(key, magic_key) == 0) {
                 if(debug) printf("magic\n");
@@ -122,6 +122,7 @@ void cIrmpRemote::Action(void)
             int Delta = ThisTime.Elapsed(); // the time between two consecutive events
             if (debug) printf("Delta: %d\n", Delta);
             ThisTime.Set();
+            /*
             // don't set own timeout for each protocol, because some are unknown and it is too error prone, so prefer autodetect and treat NEC and Sky+ extra
             timeout = RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
             if (protocol == 2) {
@@ -138,7 +139,11 @@ void cIrmpRemote::Action(void)
             }
             if (debug) printf("key: %s, lastkey: %s, toggle: %d, timeout: %d\n", (const char*)key, (const char*)lastkey, toggle, timeout);
             // if the protocol toggles count == 0 is reliable, else regard same keys as new only after a timeout
-            if (toggle && count == 0 || !toggle && strcmp(key, lastkey) != 0) { // new key
+            if (toggle && count == 0 || !toggle && strcmp(key, lastkey) != 0) { // new key*/
+
+            timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
+            if (debug) printf("key: %s, lastkey: %s, toggle: %d, timeout: %d\n", (const char*)key, (const char*)lastkey, Setup.RcTogglingProtocol, timeout);
+            if (strcmp(key, lastkey) != 0) {// new key
                 if (debug) printf("Neuer\n");
                 if (repeat) {
                     if (debug) printf("put release for %s\n", (const char*)lastkey);
