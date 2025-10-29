@@ -10,8 +10,9 @@
 #include <vdr/remote.h>
 #include <vdr/thread.h>
 #include "usb_hid_keys.h"
+#include <locale.h>
 
-static const char *VERSION        = "0.0.5";
+static const char *VERSION        = "0.0.6";
 static const char *DESCRIPTION    = tr("Send keypresses from IRMP HID-KBD-Device to VDR");
 
 const char* kbd_device = "/dev/irmp_stm32_kbd";
@@ -55,12 +56,12 @@ bool cIrmpRemote::Ready(void)
   return fd >= 0;
 }
 
-cString get_key_from_hex(uint8_t hex) {
+char* get_key_from_hex(uint8_t hex) {
   for(int i = 0; i < lines; i++) {
     if (hex == mapusb[i].usb_hid_key)
       return mapusb[i].key;
   }
-  return "error";
+  return mapusb[lines - 1].key;
 }
 
 void cIrmpRemote::Action(void)
@@ -68,7 +69,7 @@ void cIrmpRemote::Action(void)
   cTimeMs FirstTime;
   cTimeMs LastTime;
   cTimeMs ThisTime;
-  cString magic_key = "ff|KEY_REFRESH"; // testen!
+  cString magic_key = "ff|KEY_REFRESH";
   uint8_t only_once = 1;
   bool release_needed = false;
   bool repeat = false;
@@ -84,27 +85,31 @@ void cIrmpRemote::Action(void)
     cMutexLock MutexLock(&mutex);
     if (keyReceived.TimedWait(mutex, timeout)) { // keypress
 
-            key = get_key_from_hex(buf[1]); // modifier
-            key.Append("|");
-            key.Append(get_key_from_hex(buf[3])); // key
-            if(debug) printf("key: %s\n", (const char*)key);
+            key = cString::sprintf("%s|%s", get_key_from_hex(buf[1]), get_key_from_hex(buf[3])); // modifier|key
 
             if(only_once && strcmp(key, magic_key) == 0) {
-                if(debug) printf("magic\n");
                 FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
+                setlocale(LC_TIME, "de_DE.UTF-8");
                 time_t date = time(NULL);
                 struct tm *ts = localtime(&date);
-                fprintf(out, "%s", asctime(ts));
+                char outstr[30];
+                strftime(outstr, sizeof(outstr), "%a %e. %b %H:%M:%S %Z %Y", ts); // wie date
+                fprintf(out, "%s\n", outstr);
                 fclose(out);
+                isyslog("irmphidkbd: started by IRMP_KBD\n");
                 only_once = 0;
             }
+
+            if(strcmp(key, magic_key) == 0) continue; // ignore magic // beide zusammenlegen?
 
             int Delta = ThisTime.Elapsed(); // the time between two consecutive events
             if (debug) printf("Delta: %d\n", Delta);
             ThisTime.Set();
 
             timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
+
             if (debug) printf("key: %s, lastkey: %s, timeout: %d\n", (const char*)key, (const char*)lastkey, timeout);
+
             if (strcmp(key, lastkey) != 0) { // new key
                 if (debug) printf("Neuer\n");
                 if (repeat) {
@@ -132,6 +137,7 @@ void cIrmpRemote::Action(void)
             /* send key */
             if(debug) printf("delta send: %ld\n", LastTime.Elapsed());
             LastTime.Set();
+            if (debug) printf("put %s %s\n", (const char*)key, repeat ? "" : "Repeat");
             Put(key, repeat);
             release_needed = true;
 
@@ -186,7 +192,7 @@ bool cReadIR::Connect()
     return false;
   } else {
     if(debug) printf("opened %s\n", kbd_device);
-    isyslog("opened %s\n", kbd_device);
+    isyslog("irmphidkbd: opened %s\n", kbd_device);
   }
 
   /*if(ioctl(fd, EVIOCGRAB, 1)){
