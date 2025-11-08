@@ -27,7 +27,7 @@ macroslot0 is the trigger, macroslot1 … macroslot7 are the commands to be sent
 (*) RP2xxx only
 
 ## Software Linux
-* GUI configuration tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, irdata, keys, alarm time, repeat. It is possible to program wakeups and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.
+* GUI configuration tool stm32kbdIRconfig_gui for configuration: set, get and reset wakeups, macros, irdata, keys, alarm time, repeat. It is possible to program wakeups, macros and irdata via remote control. Create the eeprom map with remote control and mouse. Comprehensive debug messages. Firmware update.
 * interactive command line program stm32kbdIRconfig for configuration: set, get and reset wakeups, macros, irdata, keys, alarm time, repeat and  send IR. It is possible to program wakeups, macros and irdata by remote control.
 * stm32kbdIRalarm for to set and read alarm time via script
 * stm32FWupgrade for command line firmware upgrade

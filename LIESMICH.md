@@ -27,7 +27,7 @@ macroslot0 ist der Auslöser, macroslot1 ... macroslot7 sind die zu sendenden Be
 (*) Nur RP2xxx
 
 ## Software Linux
-* GUI-Konfigurationswerkzeug stm32kbdIRconfig_gui für die Konfiguration: Wakeups, irdata, Tasten, Alarmzeit, Wiederholung setzen, abrufen und zurücksetzen. Es ist möglich, Wakeups und irdata über Fernsteuerung zu programmieren. Erstellen der Eeprom-Map mit Fernbedienung und Maus. Umfassende Debug-Meldungen. Firmware-Aktualisierung.
+* GUI-Konfigurationswerkzeug stm32kbdIRconfig_gui für die Konfiguration: Wakeups, Makros, irdata, Tasten, Alarmzeit, Wiederholung setzen, abrufen und zurücksetzen. Es ist möglich, Wakeups, Makros und irdata über Fernsteuerung zu programmieren. Erstellen der Eeprom-Map mit Fernbedienung und Maus. Umfassende Debug-Meldungen. Firmware-Aktualisierung.
 * Interaktives Kommandozeilenprogramm stm32kbdIRconfig zur Konfiguration: Setzen, Abrufen und Zurücksetzen von Wakeups, Makros, irdata, Tasten, Alarmzeit, Wiederholung und Senden von IR. Es ist möglich, Wakeups, Makros und irdata per Fernsteuerung zu programmieren.
 * stm32kbdIRalarm zum Setzen und Auslesen der Alarmzeit per Skript
 * stm32FWupgrade für das Firmware Upgrade per Kommandozeile
