@@ -87,7 +87,7 @@ public:
 		ID_CEEPROM,
 		ID_GREEPROM,
 		ID_PRIRDATA_TIMER
-	};
+};
 
 enum access {
 	ACC_GET,
@@ -303,6 +303,7 @@ public:
 	long onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr);
 	long onKbdTimeout(FXObject *sender, FXSelector sel, void *ptr);
 	long onPRirdataTimeout(FXObject *sender, FXSelector sel, void *ptr);
+	FXString app_label = "IRMP STM32 KBD Configuration                 (Version: " + (FXString)DATE_STR + ")";
 };
 
 // FOX 1.7 changes the timeouts to all be nanoseconds.
@@ -376,6 +377,7 @@ FXIMPLEMENT(MainWindow, FXMainWindow, MainWindowMap, ARRAYNUMBER(MainWindowMap))
 MainWindow::MainWindow(FXApp *app)
 	: FXMainWindow(app, "IRMP STM32 KBD Configuration", NULL, NULL, DECOR_ALL, 425, 39, 1200, 1030)  // for 1920x1080
 {
+	setTitle(app_label);
 	this->setIcon(new FXGIFIcon(app,Icon,0,IMAGE_OPAQUE)); // for taskbar
 	this->setMiniIcon(new FXGIFIcon(app,Icon,0,IMAGE_OPAQUE)); // for titlebar
 	devices = NULL;
@@ -868,7 +870,9 @@ MainWindow::onConnect(FXObject *sender, FXSelector sel, void *ptr)
 		get_raw_button->enable();
 	}
 
-	//list wakeups, macros and alarm and warn if no STM32
+	//list version, wakeups, macros and alarm and warn if no STM32
+	u += "Version: " + (FXString)DATE_STR;
+	u += "\n";
 	for(int i = 0; i < wakeupslots; i++) {
 #if (FOX_MINOR >= 7)
 		t.fromInt(i,16);
