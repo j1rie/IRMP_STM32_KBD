@@ -71,6 +71,7 @@ Then there is the Status led (controlled over hidraw or via HID-keyboard), which
 | VDR running           | red(*)                                           |                    | on(*)                                            |
 | VDR recording         | flashes red according to number of recordings(*) |                    | flashes according to number of recordings(*)     |
 | configuration command | short green                                      | short blink        |                                                  |
+| firmware upgrade      |                                                  | short blink        | short blink                                      |
 
 (*) needs vdr-plugin-statusled2irmphidkbd
 
