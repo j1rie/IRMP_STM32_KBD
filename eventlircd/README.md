@@ -12,12 +12,16 @@ and run "systemctl enable eventlircd.service eventlircd.socket" once.
 You can log when the receiver has started the computer.  
 At each start by the receiver, it sends KEY_REFRESH every second for a configurable period of time. The first one is written to the log file /var/log/started_by_IRMP_STM32_KBD. To do this, log_KEY_REFRESH.sh is called by irexec or triggerhappy.  
 If an entry appears in the log file (/var/log/started_by_IRMP_STM32_KBD) shortly after the boot messages (depending on the distribution/var/log/boot.msg or similar), you know that the computer was started by the receiver.  
-If the entry in the log file is older than the boot messages, it was started by switching on the computer or by timer.
+If the entry in the log file is older than the boot messages, it was started by switching on the computer or by timer.  
+Configuration via stm32kbdIRconfig -> s -> x -> 90.  
+To test, the PC must be turned off and started by the receiver.
 
+You can use this in VDR's shutdown script to avoid shutting down on the first power key press, if the computer is already running. See the example script.
 This is handy if you have a remote control with macros like the Logitech and you want to use one button to switch on not only VDR but also other devices. If the VDR was started by a timer, it would otherwise go off when you want to switch on all other devices. This can be avoided by a query in the shutdown script (see the example script vdrshutdown).  
-log_KEY_REFRESH.sh is called by i.e. triggerhappy or irexec.  
+
 For triggerhappy put irmp_stm32_kbd.conf into /etc/triggerhappy/triggers.d/  
-stm32kbd2uinput writes into /var/log/started_by_IRMP_STM32_KBD directly.
+
+vdr-plugin-irmphidkbd writes into /var/log/started_by_IRMP_STM32_KBD directly.
 
 ## Don't use softhddevice for remote control
 It is recommended to use vdr-plugin-irmphidkbd instead, because softhddevice's remote function is not as precise.

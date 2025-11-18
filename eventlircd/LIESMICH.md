@@ -12,11 +12,15 @@ und es wird "systemctl enable eventlircd.service eventlircd.socket" einmal ausge
 Man kann protokollieren, wann der Empfänger den Computer gestartet hat.  
 Bei jedem Start durch den Empfänger sendet er eine konfigurierbare Zeit lang sekündlich KEY_REFRESH. Der erste wird in die Logdatei /var/log/started_by_IRMP_STM32_KBD geschrieben. Dazu wird von irexec oder triggerhappy log_KEY_REFRESH.sh aufgerufen.  
 Wenn kurz nach den Bootmeldungen (je nach Distribution/var/log/boot.msg o.ä.) ein Eintrag im Logfile (/var/log/started_by_IRMP_STM32_KBD) landet, weiß man, dass der Computer vom Empfänger gestartet wurde.  
-Wenn der Eintrag im Logfile älter ist als die Bootmeldungen, wurde per Einschalter am Computer oder per Timer gestartet.
+Wenn der Eintrag im Logfile älter ist als die Bootmeldungen, wurde per Einschalter am Computer oder per Timer gestartet.  
+Konfiguration über stm32kbdIRconfig -> s -> x -> 90.  
+Zum Testen muss der PC aus sein und vom Empfänger gestartet werden.
 
+Man kann dies im Shutdown-Skript von VDR verwenden, um zu verhindern, dass der Computer beim ersten Drücken der Power-Taste heruntergefahren wird, wenn er bereits läuft. Siehe Beispielskript.
 Das ist nützlich, wenn eine Logitech Fernbedienung mit Makros auf einen Tastendruck hin den VDR und alle anderen Geräte einschaltet. Wenn der VDR durch einen Timer gestartet wurde, würde er sonst aus gehen, wenn man alle anderen Geräte einschalten will. Durch eine Abfrage im shutdown-Skript kann man das vermeiden (siehe das Beispielskript vdrshutdown).  
-log_KEY_REFRESH.sh wird z.B. von triggerhappy oder irexec aufgerufen.  
+
 Für triggerhappy wird irmp_stm32_kbd.conf nach /etc/triggerhappy/triggers.d/ kopiert  
+
 stm32kbd2uinput schreibt direkt in /var/log/started_by_IRMP_STM32_KBD.
 
 ## Verwenden Sie softhddevice nicht für die Fernbedienung.
