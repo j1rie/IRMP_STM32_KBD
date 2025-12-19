@@ -795,6 +795,7 @@ monit:	while(true) {
 				printf("release\n\n\n");
 			else
 				printf("modifier|key: %s|%s\n\n", get_key_from_hex(inBuf[1]), get_key_from_hex(inBuf[3]));
+				//printf("delta: %d min_delta: %d upper_border: %d same key: %d timeout: %d repeat detected: %d\n\n", inBuf[63], inBuf[62], inBuf[59], inBuf[54], inBuf[61], inBuf[60]);
 		}
 	}
 

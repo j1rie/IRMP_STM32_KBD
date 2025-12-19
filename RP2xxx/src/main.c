@@ -23,6 +23,7 @@
 #include "timestamp.h"
 #include "pico/bootrom.h"
 #include "ws2812.h"
+#include <hardware/vreg.h>
 extern void put_pixel(uint8_t red, uint8_t green, uint8_t blue);
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
@@ -237,13 +238,12 @@ IRMP_RC6A28_PROTOCOL,
 };
 
 uint32_t AlarmValue = 0xFFFFFFFF;
-volatile unsigned int systicks = 0;
 volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
 //volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile unsigned int send_after_wakeup = 0;
-uint16_t repeat_default[3] = {0, 0, 15};
+uint16_t repeat_default[3] = {0, 0, 0};
 static bool led_state = false;
 static enum color statusled_state = off; // cache for blink_LED(), fast_toggle(), yellow_short_on()
 static enum color statusled_state_cb = off; // cache for led_callback
@@ -484,7 +484,6 @@ void store_wakeup(IRMP_DATA *ir)
 
 void SysTick_Handler(void)
 {
-	systicks++;
 	repeat_timer++;
 	if (i == 999) {
 		if (AlarmValue)
@@ -533,7 +532,6 @@ void transmit_macro(uint8_t macro)
 	}
 }
 
-
 void Wakeup(void)
 {
 	/* USB wakeup */
@@ -560,7 +558,7 @@ int8_t store_new_irdata(uint16_t num)
 	int8_t ret = 4;
 	IRMP_DATA new_IRData;
 	irmp_get_data(&new_IRData); // flush input of irmp data
-	//blink_LED();
+	blink_LED();
 	/* 5 seconds to press button on remote */
 	for(loop=0; loop < 50; loop++) {
 		sleep_ms(100);
@@ -568,8 +566,7 @@ int8_t store_new_irdata(uint16_t num)
 			new_IRData.flags = 0;
 			/* store received IRData at address num */
 			eeprom_store(num, (uint8_t *) &new_IRData);
-			//if (eeprom_commit())
-				//fast_toggle();
+			blink_LED();
 			return ret;
 		}
 	}
@@ -879,9 +876,13 @@ int main(void)
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
 	uint16_t key, last_sent, last_received;
-	uint8_t num, release_needed = 0, repeat = 0;
+	uint8_t num, release_needed = 0;
 	uint8_t old_usb_state_color = usb_state_color;
 
+#if PICO_RP2350 // overclock  a little
+	vreg_set_voltage(VREG_VOLTAGE_1_15);
+	set_sys_clock_khz(200000, true);
+#endif
 	board_init();
 	LED_Switch_init();
 	Systick_Init();
@@ -950,7 +951,7 @@ int main(void)
 				reboot();
 		}
 
-		/* test if numlock command is received */
+		/* test if scrolllock command is received */
 		if(USB_HID_Data_Received && *bufptr == REPORT_ID_KBD) {
 			USB_HID_Data_Received = 0;
 			statusled_write(*(bufptr+1) & KEYBOARD_LED_SCROLLLOCK);
@@ -960,24 +961,22 @@ int main(void)
 		if (PrevXferComplete && irmp_get_data(&myIRData)) {
 			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
 			if (!(myIRData.flags)) { // new
-				if (repeat) { // generate release for previous repeated key
+				if (release_needed) { // generate release for previous not yet released key
+					release_needed = 0;
 					kbd_buf[0] = 0;
 					kbd_buf[2] = 0;
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 				}
-				repeat = 0;
+				// first time
 				repeat_timer = 0;
-				last_received = 0;
 				store_wakeup(&myIRData);
 				check_macros(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
 			} else { // repeat, or possibly unrecognized new if non toggling protocol
-				last_received = repeat_timer;
+				// since  first time, since last time
 				if ((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
 					continue; // don't send key
-				} else {
-					repeat = 1;
 				}
 			}
 
@@ -990,18 +989,19 @@ int main(void)
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
-					last_sent = repeat_timer; //
+					// last time
+					last_sent = repeat_timer;
 				}
 			}
 		}
 
 		/* send release */
-		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		// since last time > timeout
+		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(2) ? get_repeat(2) : upper_border))) {
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;
 			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
-			repeat = 0;
 		}
 	}
 }

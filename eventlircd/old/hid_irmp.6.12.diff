@@ -112,7 +112,7 @@ diff -Nrup linux-6.12.25.orig/drivers/hid/hid-irmp.c linux-6.12.25/drivers/hid/h
 +
 +	key = (raw_data[1] << 8) + raw_data[3];
 +	if (key) {
-+		if (key == last_key) { // TODO might be new same key without previous release
++		if (key == last_key) {
 +			/* modifier */
 +			if (raw_data[1]) {
 +				input_event(input, EV_KEY, hid_keyboard[raw_data[1]], 2);
