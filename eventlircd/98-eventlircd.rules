@@ -19,7 +19,11 @@ KERNEL!="event[0-9]*", GOTO="end"
 # eventlircd ignores devices created by eventlircd.
 ATTRS{name}=="eventlircd", GOTO="end"
 
-ATTRS{name}=="IRMP_STM32_KBD", \
+ATTRS{id/vendor}=="1209", ATTRS{id/product}=="4446",\
+  ENV{eventlircd_enable}="true", \
+  ENV{eventlircd_evmap}="03_1209_4446.evmap"
+
+ATTRS{id/vendor}=="1209", ATTRS{id/product}=="4445",\
   ENV{eventlircd_enable}="true", \
   ENV{eventlircd_evmap}="03_1209_4445.evmap"
 
@@ -91,10 +95,6 @@ ENV{ID_VENDOR_ID}=="1241", ENV{ID_MODEL_ID}=="e000", \
 ENV{ID_VENDOR_ID}=="147a", ENV{ID_MODEL_ID}=="e02d", \
   ENV{eventlircd_enable}="true", \
   ENV{eventlircd_evmap}="03_$env{ID_VENDOR_ID}_$env{ID_MODEL_ID}.evmap"
-
-#ATTRS{name}=="STMicroelectronics STM32 IRMP HID-KBD-Device", \
-#  ENV{eventlircd_enable}="true", \
-#  ENV{eventlircd_evmap}="03_1209_4445.evmap"
 
 # Enable wake-on-usb for the USB remotes.
 ENV{eventlircd_enable}=="true", RUN+="wakeup_enable"
