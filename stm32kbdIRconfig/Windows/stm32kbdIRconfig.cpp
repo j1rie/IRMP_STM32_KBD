@@ -55,6 +55,8 @@ enum command {
 	CMD_NEOPIXEL,
 	CMD_MACRO,
 	CMD_MACRO_REMOTE,
+	CMD_SEND_AFTER_WAKEUP,
+	CMD_EEPROM_DIRTY,
 };
 
 enum status {
@@ -318,6 +320,13 @@ set:		printf("set wakeup(w)\nset macro(m)\nset IR-data(i)\nset key(k)\nset repea
 			outBuf[idx++] = (kk>>8) & 0xFF;
 			write_and_check(idx, 4);
 			break;
+		case 'x':
+			outBuf[idx++] = CMD_SEND_AFTER_WAKEUP;
+			printf("enter send_after_delay (dec)\n");
+			scanf("%" SCNu8 "", &l);
+			outBuf[idx++] = s;
+			write_and_check(idx, 4);
+			break;
 		case 'a':
 			outBuf[idx++] = CMD_ALARM;
 			printf("enter alarm\n");
@@ -463,7 +472,7 @@ Set:		printf("set wakeup with remote control(w)\nset macro with remote control(m
 		break;
 
 	case 'g':
-get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\n");
+get:		printf("get wakeup(w)\nget macro(m)\nget IR-data (i)\nget key(k)\nget repeat(r)\nget send_after_weakeup(x)\nget caps(c)\nget alarm(a)\nget eeprom(e)\nget raw eeprom from RP2xxx(p)\nget dirty eeprom from RP2xxx(d)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -630,6 +639,10 @@ again:			;
 				printf("\n");
 			}
 			break;
+		case 'd':
+			outBuf[idx++] = CMD_EEPROM_DIRTY;
+			write_and_check(idx, 5);
+			break;
 		default:
 			goto get;
 		}
@@ -637,7 +650,7 @@ out:
 		break;
 
 	case 'r':
-reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset alarm(a)\nreset eeprom(e)\n");
+reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset key(k)\nreset repeat(r)\nreset send_after_wakeup(x)\nreset alarm(a)\nreset eeprom(e)\n");
 		scanf("%s", &d);
 		memset(&outBuf[2], 0, sizeof(outBuf) - 2);
 		idx = 2;
@@ -675,6 +688,9 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset ke
 			scanf("%u", &s);
 			outBuf[idx++] = CMD_REPEAT;
 			outBuf[idx++] = s;
+			break;
+		case 'x':
+			outBuf[idx++] = CMD_SEND_AFTER_WAKEUP;
 			break;
 		case 'e':
 			outBuf[idx++] = CMD_EEPROM_RESET;

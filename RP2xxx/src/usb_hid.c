@@ -20,17 +20,23 @@ void USB_HID_SendData(uint8_t Report_ID, uint8_t *ptr, uint8_t len)
 {
 	if (!tud_ready())
 		return;
-	if (Report_ID == REPORT_ID_KBD)
-	{
-		/* Windows needs HID_IN_REPORT_COUNT, for linux len + 1 is sufficient */
-		tud_hid_report(Report_ID, ptr, HID_IN_REPORT_COUNT - 1);
-	}
-	else if (Report_ID == REPORT_ID_CONFIG_IN)
+
+	if (Report_ID == REPORT_ID_CONFIG_IN)
 	{
 		/* Windows needs HID_IN_REPORT_COUNT, for linux len is sufficient */
 		memset(&ptr[len], 0, HID_IN_REPORT_COUNT - len);
 		tud_hid_report(Report_ID, ptr + 1, HID_IN_REPORT_COUNT - 1);
 	}
+	PrevXferComplete = 0;
+}
+
+void USB_KBD_SendData(uint8_t modifier, uint8_t key)
+{
+	if (!tud_ready())
+		return;
+	uint8_t buf[6] = {0};
+	buf[0] = key;
+	tud_hid_keyboard_report(REPORT_ID_KBD, (modifier >> 4) == 0x0e ? (1 << (modifier & 0x07)) : 0, buf); // convert 0xe0...0xe7 into bitmap
 	PrevXferComplete = 0;
 }
 

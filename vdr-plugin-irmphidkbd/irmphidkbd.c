@@ -70,18 +70,17 @@ void cIrmpRemote::Action(void)
   cTimeMs ThisTime;
   cString magic_key = "ff|KEY_REFRESH";
   uint8_t only_once = 1;
-  bool release_needed = false;
   bool repeat = false;
-  int timeout = INT_MAX;
   cString key = "";
   cString lastkey = "";
+  uint8_t release = 0;
 
   if(DEBUG) printf("IrmpRemote action!\n");
 
   while(Running()){
 
     cMutexLock MutexLock(&mutex);
-    if (keyReceived.TimedWait(mutex, timeout)) { // keypress
+    keyReceived.Wait(mutex); // keypress
 
             key = cString::sprintf("%s|%s", get_key_from_hex(buf[1]), get_key_from_hex(buf[3])); // modifier|key
 
@@ -99,56 +98,55 @@ void cIrmpRemote::Action(void)
             }
 
             if(strcmp(key, magic_key) == 0) continue; // ignore magic // beide zusammenlegen?
-            timeout = buf[59];
+
+            release = (!buf[1] && !buf[3]);
 
             int Delta = ThisTime.Elapsed(); // the time between two consecutive events
             if (DEBUG) printf("Delta: %d\n", Delta);
             ThisTime.Set();
 
-            //timeout = Setup.RcRepeatTimeout ? Setup.RcRepeatTimeout : RepeatRate * 103 / 100 + 1;  // 3 % + 1 should presumably be enough
+            if (DEBUG) printf("key: %s, lastkey: %s, release: %d\n", (const char*)key, (const char*)lastkey, release);
 
-            if (DEBUG) printf("key: %s, lastkey: %s, timeout: %d\n", (const char*)key, (const char*)lastkey, timeout);
+            if (!release) {
+                if (strcmp(key, lastkey) != 0) { // new key
+                    if (DEBUG) printf("new key\n");
+                    if (repeat) {
+                        if (DEBUG) printf("put release for %s\n", (const char*)lastkey);
+                        Put(lastkey, false, true); // generated release for previous repeated key
+                    }
+                    lastkey = key;
+                    repeat = false;
+                    FirstTime.Set();
+                } else { // repeat
+                    if (DEBUG) printf("repeat\n");
+                    if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay) {
+                        if (DEBUG) printf("continue Delay\n\n");
+                        continue; // repeat function kicks in after a short delay
+                    }
+                    if (LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
+                        if (DEBUG)  printf("continue Delta\n\n");
+                        continue; // skip same keys coming in too fast
+                    }
+                    repeat = true;
+                }
 
-            if (strcmp(key, lastkey) != 0) { // new key
-                if (DEBUG) printf("new key\n");
+                /* send key */
+                if(DEBUG) printf("delta send: %ld\n", LastTime.Elapsed());
+                LastTime.Set();
+                if (DEBUG) printf("put %s %s\n", (const char*)key, repeat ? "Repeat" : "");
+                Put(key, repeat);
+
+            } else { // release
                 if (repeat) {
-                    if (DEBUG) printf("put release for %s\n", (const char*)lastkey);
-                    Put(lastkey, false, true); // generated release for previous repeated key
+                    /* send release */
+                    if (DEBUG) printf("release\n");
+                    if(DEBUG) printf("delta send: %ld\n", LastTime.Elapsed());
+                    LastTime.Set();
+                    if(DEBUG) printf("put %s Release\n", (const char *)lastkey);
+                    Put(lastkey, false, true);
+                    repeat = false;
                 }
-                lastkey = key;
-                repeat = false;
-                FirstTime.Set();
-            } else { // repeat
-                if (DEBUG) printf("repeat\n");
-                if (FirstTime.Elapsed() < (uint)Setup.RcRepeatDelay) {
-                    if (DEBUG) printf("continue Delay\n\n");
-                    continue; // repeat function kicks in after a short delay
-                }
-                if (LastTime.Elapsed() < (uint)Setup.RcRepeatDelta) {
-                    if (DEBUG)  printf("continue Delta\n\n");
-                    continue; // skip same keys coming in too fast
-                }
-                repeat = true;
             }
-
-            /* send key */
-            if(DEBUG) printf("delta send: %ld\n", LastTime.Elapsed());
-            LastTime.Set();
-            if (DEBUG) printf("put %s %s\n", (const char*)key, repeat ? "Repeat" : "");
-            Put(key, repeat);
-            release_needed = true;
-
-    } else { // no key within timeout
-            if (release_needed && repeat) {
-                if(DEBUG) printf("put release for %s, delta %ld\n", (const char *)lastkey, ThisTime.Elapsed());
-                Put(lastkey, false, true);
-            }
-            release_needed = false;
-            repeat = false;
-            lastkey = "";
-            timeout = INT_MAX;
-            if (DEBUG) printf("reset\n");
-    }
     if (DEBUG) printf("\n");
   }
 }
@@ -224,10 +222,10 @@ void cReadIR::Action(void)
         }
     }
 
-    if (buf[0] == REPORT_ID_KBD && (buf[1] || buf[3])) {
+    if (buf[0] == REPORT_ID_KBD) {
         myIrmpRemote->Receive();
     } else {
-        //if(DEBUG) printf("configuration report or release\n");
+        //if(DEBUG) printf("configuration report\n");
     }
   }
 }

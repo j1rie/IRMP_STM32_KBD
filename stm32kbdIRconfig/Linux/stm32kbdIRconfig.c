@@ -145,6 +145,14 @@ char* get_key_from_hex(uint8_t hex) {
   return error;
 }
 
+char* get_modifier_from_hex(uint8_t hex) {
+  for(int i = 0; i < 10; i++) {
+    if (hex == modifier[i].usb_hid_key)
+      return modifier[i].key;
+  }
+  return error;
+}
+
 int main(int argc, const char **argv) {
 
 	uint64_t i;
@@ -785,6 +793,7 @@ reset:		printf("reset wakeup(w)\nreset macro slot(m)\nreset IR-data(i)\nreset ke
 	goto cont;
 
 monit:	while(true) {
+		memset(inBuf, 0, sizeof(inBuf));
 		retValm = read(stm32fd, inBuf, in_size);
 		if (retValm >= 0) {
 			printf("read %d bytes:\n\t", retValm);
@@ -794,8 +803,7 @@ monit:	while(true) {
 			if (!inBuf[1] && !inBuf[3])
 				printf("release\n\n\n");
 			else
-				printf("modifier|key: %s|%s\n\n", get_key_from_hex(inBuf[1]), get_key_from_hex(inBuf[3]));
-				//printf("delta: %d min_delta: %d upper_border: %d same key: %d timeout: %d repeat detected: %d\n\n", inBuf[63], inBuf[62], inBuf[59], inBuf[54], inBuf[61], inBuf[60]);
+					printf("modifier|key: %s|%s\n\n", get_modifier_from_hex(inBuf[1]), get_key_from_hex(inBuf[3]));
 		}
 	}
 

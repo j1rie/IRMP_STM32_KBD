@@ -73,14 +73,10 @@ uint8_t const * tud_descriptor_device_cb(void)
 //--------------------------------------------------------------------+
 
 // HID Generic Input & Output & Keyboard
-// - 1st parameter is report size (mandatory)
-// - 2nd parameter is report id HID_REPORT_ID(n) (optional)
-#define TUD_HID_REPORT_DESC_IRMP_KBD(report_size, ...) \
+#define TUD_HID_REPORT_DESC_IRMP_KBD(...) \
     HID_USAGE_PAGE_N ( HID_USAGE_PAGE_VENDOR, 2   ),\
     HID_USAGE        ( 0x01                       ),\
     HID_COLLECTION   ( HID_COLLECTION_APPLICATION ),\
-      /* Report ID if any */\
-      /*__VA_ARGS__*/ \
 \
       /* common global */\
       HID_LOGICAL_MIN   ( 0x00                                 ),\
@@ -88,50 +84,25 @@ uint8_t const * tud_descriptor_device_cb(void)
       HID_REPORT_SIZE   ( 8                                    ),\
 \
       /* RP2xxx->PC */ \
-      /*HID_REPORT_ID   ( REPORT_ID_CONFIG_IN                ),*/\
-      0x85, REPORT_ID_CONFIG_IN, /* HID_REPORT_ID              */\
+      HID_REPORT_ID   ( REPORT_ID_CONFIG_IN                    ) \
       HID_USAGE       ( 0x03                                   ),\
       HID_REPORT_COUNT( HID_IN_REPORT_COUNT-1                  ),\
       HID_INPUT       ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
 \
       /* PC->RP2xxx */ \
-      /*HID_REPORT_ID     ( REPORT_ID_CONFIG_OUT             ),*/\
-      0x85, REPORT_ID_CONFIG_OUT, /* HID_REPORT_ID             */\
+      HID_REPORT_ID   ( REPORT_ID_CONFIG_OUT                   ) \
       HID_USAGE       ( 0x04                                   ),\
       HID_REPORT_COUNT( HID_OUT_REPORT_COUNT-1                 ),\
       HID_OUTPUT      ( HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
     HID_COLLECTION_END, \
 \
       /* RP2xxx->PC, HID Keyboard */ \
-    HID_USAGE_PAGE_N ( HID_USAGE_PAGE_DESKTOP, 2                ),\
-    HID_USAGE        (  HID_USAGE_DESKTOP_KEYBOARD              ),\
-    HID_COLLECTION   ( HID_COLLECTION_APPLICATION               ),\
-      HID_USAGE_PAGE_N ( HID_USAGE_PAGE_KEYBOARD, 2             ),\
-        HID_USAGE_MIN     ( 0x00                                ),\
-        HID_USAGE_MAX_N   ( 0xff, 2                             ),\
-        HID_LOGICAL_MIN   ( 0x00                                ),\
-        HID_LOGICAL_MAX_N ( 0xff, 2                             ),\
-        /*HID_REPORT_ID     ( REPORT_ID_KBD                   ),*/\
-        0x85, REPORT_ID_KBD, /* HID_REPORT_ID                   */\
-        HID_REPORT_COUNT  ( HID_IN_REPORT_COUNT-1               ),\
-        HID_REPORT_SIZE   ( 8                                   ),\
-        HID_INPUT         ( HID_DATA | HID_ARRAY | HID_ABSOLUTE ),\
-\
         /* PC->RP2xxx, LEDs */ \
-        HID_USAGE_PAGE   (HID_USAGE_PAGE_LED                     ),\
-        HID_USAGE_MIN    (1                                      ),\
-        HID_USAGE_MAX    (5                                      ),\
-        HID_REPORT_COUNT (5                                      ),\
-        HID_REPORT_SIZE  (1                                      ),\
-        HID_OUTPUT       (HID_DATA | HID_VARIABLE | HID_ABSOLUTE ),\
-        HID_REPORT_COUNT (1                                      ),\
-        HID_REPORT_SIZE  (3                                      ),\
-        HID_OUTPUT       (HID_CONSTANT                           ),\
-    HID_COLLECTION_END \
+    TUD_HID_REPORT_DESC_KEYBOARD( HID_REPORT_ID(REPORT_ID_KBD) )
 
 uint8_t const desc_hid_report[] =
 {
-  TUD_HID_REPORT_DESC_IRMP_KBD(CFG_TUD_HID_EP_BUFSIZE)
+  TUD_HID_REPORT_DESC_IRMP_KBD()
 };
 
 // Invoked when received GET HID REPORT DESCRIPTOR

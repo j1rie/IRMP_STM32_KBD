@@ -63,6 +63,12 @@ enum status {
 	STAT_FAILURE
 };
 
+enum repeat {
+	delay,
+	period,
+	release
+};
+
 const char supported_protocols[] = {
 #if IRMP_SUPPORT_SIRCS_PROTOCOL==1
 IRMP_SIRCS_PROTOCOL,
@@ -256,6 +262,7 @@ void LED_Switch_init(void)
 	gpio_init(WAKEUP_GPIO);
 	gpio_init(EXTLED_GPIO);
 	gpio_init(STATUSLED_GPIO);
+	gpio_set_drive_strength(IR_OUT_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	gpio_set_drive_strength(EXTLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	gpio_set_drive_strength(STATUSLED_GPIO, GPIO_DRIVE_STRENGTH_12MA);
 	//gpio_set_drive_strength(WAKEUP_GPIO, GPIO_DRIVE_STRENGTH_12MA); // TODO: once enough?!
@@ -516,6 +523,7 @@ void transmit_macro(uint8_t macro)
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	uint8_t delay[SIZEOF_IR - 3] = {0xFF, 0x11, 0x11};
 	/* we start from 1, since we don't want to tx the trigger code of the macro*/
 	for (i=1; i < MACRO_DEPTH + 1; i++) {
 		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * macro + SIZEOF_IR * i;
@@ -523,11 +531,15 @@ void transmit_macro(uint8_t macro)
 		/* first encounter of zero in macro means end of macro */
 		if (!memcmp(buf, &zeros, sizeof(zeros)))
 			break;
+		if (!memcmp(buf, &delay, sizeof(delay))) {
+			sleep_ms(buf[SIZEOF_IR - 3] << 8 | buf[SIZEOF_IR - 1]);
+			continue;
+		}
 		/* if macros are sent already, while the trigger IR data are still repeated,
 		* the receiving device may crash
 		* Depending on the protocol we need a pause between the trigger and the transmission
 		* and between two transmissions. The highest known pause is 130 ms for Denon. */
-		yellow_short_on();
+		yellow_short_on(); // 130 ms
 		irsnd_send_data((IRMP_DATA *) buf, 1);
 	}
 }
@@ -862,16 +874,14 @@ void led_callback(uint_fast8_t on)
 
 void send_magic(void)
 {
-	uint8_t magic[HID_IN_REPORT_COUNT - 1] = {0x00, 0x00, 0xFA}; // KEY_REFRESH
-	uint8_t release[HID_IN_REPORT_COUNT - 1] = {0};
-	USB_HID_SendData(REPORT_ID_KBD, magic, sizeof(magic));
-	sleep_ms(repeat_default[2]);
-	USB_HID_SendData(REPORT_ID_KBD, release, sizeof(release));
+	USB_KBD_SendData(0, 0xFA); // KEY_REFRESH
+	while (!PrevXferComplete)
+		sleep_ms(1);
+	USB_KBD_SendData(0, 0);
 }
 
 int main(void)
 {
-	uint8_t kbd_buf[HID_IN_REPORT_COUNT - 1] = {0}; // USB HID keyboard report: {modifier, reserved (ignored), keypress #1, keypress #2 (unused)}
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
@@ -913,7 +923,7 @@ int main(void)
 		if (!AlarmValue && !tud_ready())
 			Wakeup();
 
-		/* always wait for previous transfer to complete before sending again, consider using a send buffer */
+		/* always wait for previous transfer to complete before sending again */
 		if (PrevXferComplete && send_after_wakeup && last_magic_sent != send_after_wakeup) {
 			send_magic();
 			last_magic_sent = send_after_wakeup;
@@ -959,13 +969,10 @@ int main(void)
 
 		/* poll IR-data */
 		if (PrevXferComplete && irmp_get_data(&myIRData)) {
-			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
-			if (!(myIRData.flags)) { // new
+			if (myIRData.flags == IRMP_FLAG_NEW ) { // new
 				if (release_needed) { // generate release for previous not yet released key
 					release_needed = 0;
-					kbd_buf[0] = 0;
-					kbd_buf[2] = 0;
-					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+					USB_KBD_SendData(0, 0);
 				}
 				// first time
 				repeat_timer = 0;
@@ -975,7 +982,7 @@ int main(void)
 				check_reboot(&myIRData);
 			} else { // repeat, or possibly unrecognized new if non toggling protocol
 				// since  first time, since last time
-				if ((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+				if ((repeat_timer < get_repeat(delay)) || (repeat_timer - last_sent) < get_repeat(period)) {
 					continue; // don't send key
 				}
 			}
@@ -985,9 +992,7 @@ int main(void)
 			if (num != 0xFF) {
 				key = get_key(num);
 				if (key != 0xFFFF) {
-					kbd_buf[0] = key >> 8; // modifier
-					kbd_buf[2] = key & 0xFF; // key
-					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+					USB_KBD_SendData(key >> 8, key & 0xFF); // modifier, key
 					release_needed = 1;
 					// last time
 					last_sent = repeat_timer;
@@ -996,12 +1001,10 @@ int main(void)
 		}
 
 		/* send release */
-		// since last time > timeout
-		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(2) ? get_repeat(2) : upper_border))) {
+		// since last time >= timeout
+		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(release) ? get_repeat(release) : upper_border))) {
 			release_needed = 0;
-			kbd_buf[0] = 0;
-			kbd_buf[2] = 0;
-			USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+			USB_KBD_SendData(0, 0);
 		}
 	}
 }
