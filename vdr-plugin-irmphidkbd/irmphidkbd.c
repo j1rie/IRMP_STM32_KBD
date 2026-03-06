@@ -217,7 +217,7 @@ void cReadIR::Action(void)
             cCondWait::SleepMs(RECONNECTDELAY);
             if (Connect()) {
                 isyslog("reconnected to irmphidkbd");
-                break;
+                continue; // read anew
             }
         }
     }
@@ -251,8 +251,8 @@ cPluginIrmphidkbd::~cPluginIrmphidkbd()
 
 const char *cPluginIrmphidkbd::CommandLineHelp(void)
 {
-  return "  input event device (/dev/input/event... )\n"
-         "  default /dev/irmp_stm32_kbd_event\n";
+  return "  hid device (/dev/hidraw... )\n"
+         "  default /dev/irmp_stm32_kbd\n";
 }
 
 bool cPluginIrmphidkbd::ProcessArgs(int argc, char *argv[])
