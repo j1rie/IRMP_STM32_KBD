@@ -78,7 +78,6 @@ void cIrmpRemote::Action(void)
   if(DEBUG) printf("IrmpRemote action!\n");
 
   while(Running()){
-
     cMutexLock MutexLock(&mutex);
     keyReceived.Wait(mutex); // keypress
 
@@ -97,7 +96,7 @@ void cIrmpRemote::Action(void)
                 only_once = 0;
             }
 
-            if(strcmp(key, magic_key) == 0) continue; // ignore magic // beide zusammenlegen?
+            if(strcmp(key, magic_key) == 0) continue; // ignore magic
 
             release = (!buf[1] && !buf[3]);
 
@@ -105,13 +104,13 @@ void cIrmpRemote::Action(void)
             if (DEBUG) printf("Delta: %d\n", Delta);
             ThisTime.Set();
 
-            if (DEBUG) printf("key: %s, lastkey: %s, release: %d\n", (const char*)key, (const char*)lastkey, release);
+            if (DEBUG) printf("key: %s, lastkey: %s  %s\n", (const char*)key, (const char*)lastkey, release ? "Release" : "");
 
             if (!release) {
                 if (strcmp(key, lastkey) != 0) { // new key
                     if (DEBUG) printf("new key\n");
                     if (repeat) {
-                        if (DEBUG) printf("put release for %s\n", (const char*)lastkey);
+                        if (DEBUG) printf("put %s Release\n", (const char*)lastkey);
                         Put(lastkey, false, true); // generated release for previous repeated key
                     }
                     lastkey = key;
@@ -140,12 +139,13 @@ void cIrmpRemote::Action(void)
                 if (repeat) {
                     /* send release */
                     if (DEBUG) printf("release\n");
-                    if(DEBUG) printf("delta send: %ld\n", LastTime.Elapsed());
+                    if (DEBUG) printf("delta send: %ld\n", LastTime.Elapsed());
                     LastTime.Set();
-                    if(DEBUG) printf("put %s Release\n", (const char *)lastkey);
+                    if (DEBUG) printf("put %s Release\n", (const char *)lastkey);
                     Put(lastkey, false, true);
                     repeat = false;
                 }
+                lastkey = "";
             }
     if (DEBUG) printf("\n");
   }
