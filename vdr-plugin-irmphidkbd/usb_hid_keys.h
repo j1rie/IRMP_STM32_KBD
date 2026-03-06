@@ -248,3 +248,17 @@ struct mapline mapusb[lines] =
 { "ff",	0x00},  // ff stands for no key and that's what 0x00 does
 { "ff",	0xFF},  // if eeprom is empty, we receive 0xFF, and that means no key
 };
+
+struct mapline modifier[10] =
+{
+{ "KEY_LEFTCTRL",   0x01 }, // Keyboard Left Control
+{ "KEY_LEFTSHIFT",  0x02 }, // Keyboard Left Shift
+{ "KEY_LEFTALT",    0x04 }, // Keyboard Left Alt
+{ "KEY_LEFTMETA",   0x08 }, // Keyboard Left GUI
+{ "KEY_RIGHTCTRL",  0x10 }, // Keyboard Right Control
+{ "KEY_RIGHTSHIFT", 0x20 }, // Keyboard Right Shift
+{ "KEY_RIGHTALT",   0x40 }, // Keyboard Right Alt
+{ "KEY_RIGHTMETA",  0x80 }, // Keyboard Right GUI
+{ "ff",             0x00},  // ff stands for no key and that's what 0x00 does
+{ "ff",             0xFF},  // if eeprom is empty, we receive 0xFF, and that means no key
+};

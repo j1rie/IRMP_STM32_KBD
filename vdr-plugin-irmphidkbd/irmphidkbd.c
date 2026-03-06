@@ -63,6 +63,14 @@ char* get_key_from_hex(uint8_t hex) {
   return mapusb[lines - 1].key;
 }
 
+char* get_modifier_from_hex(uint8_t hex) {
+  for(int i = 0; i < 10; i++) {
+    if (hex == modifier[i].usb_hid_key)
+      return modifier[i].key;
+  }
+  return modifier[9].key;
+}
+
 void cIrmpRemote::Action(void)
 {
   cTimeMs FirstTime;
@@ -81,7 +89,7 @@ void cIrmpRemote::Action(void)
     cMutexLock MutexLock(&mutex);
     keyReceived.Wait(mutex); // keypress
 
-            key = cString::sprintf("%s|%s", get_key_from_hex(buf[1]), get_key_from_hex(buf[3])); // modifier|key
+            key = cString::sprintf("%s|%s", get_modifier_from_hex(buf[1]), get_key_from_hex(buf[3])); // modifier|key
 
             if(only_once && strcmp(key, magic_key) == 0) {
                 FILE *out = fopen("/var/log/started_by_IRMP_STM32_KBD", "a");
