@@ -87,7 +87,7 @@ public:
 		ID_CEEPROM,
 		ID_GREEPROM,
 		ID_PRIRDATA_TIMER
-	};
+};
 
 enum access {
 	ACC_GET,
@@ -680,7 +680,7 @@ long
 MainWindow::onCmdQuit(FXObject *sender, FXSelector sel, void *ptr)
 {
 	if(map_text21->isModified()){
-		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),"%s", tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
 	}
 	if (uC == "RP2xxx") {
 		FXString s;
@@ -688,7 +688,7 @@ MainWindow::onCmdQuit(FXObject *sender, FXSelector sel, void *ptr)
 		output_text->setText(s);
 		Write_and_Check(4, 5);
 		if(buf[4]){
-			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
+			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),"%s",tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
 		}
 	}
 	getApp()->exit(0);
@@ -995,7 +995,7 @@ MainWindow::onDisconnect(FXObject *sender, FXSelector sel, void *ptr)
 		output_text->setText(s);
 		Write_and_Check(4, 5);
 		if(buf[4]){
-			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
+			if(FXMessageBox::question(this,MBOX_YES_NO,tr("eeprom was changed"),"%s",tr("Discard changes to eeprom? Otherwise press 'commit'"))==MBOX_CLICKED_NO) return 1;
 		}
 	}
 	hid_close(connected_device);
@@ -2352,7 +2352,7 @@ long
 MainWindow::onOpen(FXObject *sender, FXSelector sel, void *ptr)
 {
 	if(map_text21->isModified()){
-		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),"%s",tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
 	}
 	const FXchar patterns[]="All Files (*)\nmap Files (*.map)";
 	long loaded = 0;
@@ -2615,7 +2615,7 @@ MainWindow::get_key_from_hex(uint8_t hex){
 long
 MainWindow::onGeeprom(FXObject *sender, FXSelector sel, void *ptr){
 	if(map_text21->isModified()){
-		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
+		if(FXMessageBox::question(this,MBOX_YES_NO,tr("map was changed"),"%s",tr("Discard changes to map?"))==MBOX_CLICKED_NO) return 1;
 	}
 	map_text21->setText(NULL,0);
 	for(int i = 0; i < irdatanr; i++) {
@@ -2757,7 +2757,7 @@ MainWindow::onPeeprom(FXObject *sender, FXSelector sel, void *ptr){
 
 long
 MainWindow::onReeprom(FXObject *sender, FXSelector sel, void *ptr){
-	if(FXMessageBox::question(this,MBOX_YES_NO,tr("reset eeprom"),tr("really reset eeprom?"))==MBOX_CLICKED_NO) return 1;
+	if(FXMessageBox::question(this,MBOX_YES_NO,tr("reset eeprom"),"%s",tr("really reset eeprom?"))==MBOX_CLICKED_NO) return 1;
 
 	FXString s;
 	s.format("%x %x %x %x ", REPORT_ID_CONFIG_OUT, STAT_CMD, ACC_RESET, CMD_EEPROM_RESET);
@@ -3108,7 +3108,6 @@ MainWindow::onPR_kbd_irdata(FXObject *sender, FXSelector sel, void *ptr)
 			commit_button->enable();
 			get_raw_button->enable();
 		}
-
 		map_text21->enable();
 		key_text->setText("KEY_");
 		modifier_text->setText("ff");

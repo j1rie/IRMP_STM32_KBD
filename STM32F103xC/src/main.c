@@ -47,12 +47,21 @@ enum command {
 	CMD_EMIT,
 	CMD_NEOPIXEL,
 	CMD_MACRO,
+	CMD_MACRO_REMOTE,
+	CMD_SEND_AFTER_WAKEUP,
+	CMD_EEPROM_DIRTY,
 };
 
 enum status {
 	STAT_CMD,
 	STAT_SUCCESS,
 	STAT_FAILURE
+};
+
+enum repeat {
+	delay,
+	period,
+	release
 };
 
 char firmware[sizeof(FW_STR) + sizeof(rt)];
@@ -780,8 +789,8 @@ int main(void)
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
-	uint16_t key, last_sent, last_received;
-	uint8_t num, release_needed;
+	uint16_t key, last_sent;
+	uint8_t num, release_needed = 0;
 
 	LED_Switch_init();
 	Systick_Init();
@@ -841,20 +850,23 @@ int main(void)
 
 		/* poll IR-data */
 		if (PrevXferComplete && irmp_get_data(&myIRData)) {
-			myIRData.flags = myIRData.flags & IRMP_FLAG_REPETITION;
-			if (!(myIRData.flags)) {
+			if (myIRData.flags == IRMP_FLAG_NEW ) { // new
+				if (release_needed) { // generate release for previous not yet released key
+					release_needed = 0;
+					kbd_buf[0] = 0;
+					kbd_buf[2] = 0;
+					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
+				}
+				// first time
 				repeat_timer = 0;
-				last_sent = 0;
-				last_received = 0;
 				store_wakeup(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
-			} else {
-				last_received = repeat_timer;
-				if ((repeat_timer < get_repeat(0)) || (repeat_timer - last_sent) < get_repeat(1)) {
+			}
+			else if (myIRData.flags == IRMP_FLAG_REPETITION) { // repeat, or possibly unrecognized new if non toggling protocol
+				// since  first time, since last time
+				if ((repeat_timer < get_repeat(delay)) || (repeat_timer - last_sent) < get_repeat(period)) {
 					continue; // don't send key
-				} else {
-					last_sent = repeat_timer;
 				}
 			}
 
@@ -867,12 +879,15 @@ int main(void)
 					kbd_buf[2] = key & 0xFF; // key
 					USB_HID_SendData(REPORT_ID_KBD, kbd_buf, sizeof(kbd_buf));
 					release_needed = 1;
+					// last time
+					last_sent = repeat_timer;
 				}
 			}
 		}
 
 		/* send release */
-		if (PrevXferComplete && (repeat_timer - last_received >= get_repeat(2)) && release_needed) {
+		// since last time >= timeout
+		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(release) ? get_repeat(release) : upper_border * INV_F_INT_US / 1000))) { // ticks to ms
 			release_needed = 0;
 			kbd_buf[0] = 0;
 			kbd_buf[2] = 0;

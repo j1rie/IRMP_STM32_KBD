@@ -14,6 +14,9 @@ LIBS= -mwindows -Wl,-Bstatic -lFOX-1.6 -lpng -ljpeg -ltiff -lz -llzma -lws2_32 -
 else ifeq ($(MSYSTEM),MINGW64)
 CFLAGS=-I/mingw64/include/fox-1.6 -I/mingw64/include/libusb-1.0 -g -c -s -Wall -mno-ms-bitfields -O2 -DDATE_STR="\"$(DATE)\""
 # -static
+else ifeq ($(MSYSTEM),UCRT64)
+CFLAGS=-I/ucrt64/include/fox-1.6 -I/ucrt64/include/libusb-1.0 -g -c -s -Wall -mno-ms-bitfields -O2 -DDATE_STR="\"$(DATE)\""
+# -static
 LIBS= -mwindows -Wl,-Bstatic -lFOX-1.6 -lpng -ljpeg -ltiff -lz -lzstd -llzma -lws2_32 -lgdi32 -static-libgcc -static-libstdc++ -lkernel32 -lsetupapi -lusb-1.0 -ldeflate -lWebP -llerc -ljbig -lturbojpeg -lsharpyuv
 endif
 CXXFLAGS=-g -s -Wall -mno-ms-bitfields -O2

@@ -24,6 +24,7 @@
 #include "pico/bootrom.h"
 #include "ws2812.h"
 #include <hardware/vreg.h>
+
 extern void put_pixel(uint8_t red, uint8_t green, uint8_t blue);
 
 #define BYTES_PER_QUERY	(HID_IN_REPORT_COUNT - 4)
@@ -247,7 +248,6 @@ uint32_t AlarmValue = 0xFFFFFFFF;
 volatile unsigned int i = 0;
 volatile unsigned int repeat_timer = 0;
 uint8_t Reboot = 0;
-//volatile uint32_t boot_flag __attribute__((__section__(".noinit")));
 volatile unsigned int send_after_wakeup = 0;
 uint16_t repeat_default[3] = {0, 0, 0};
 static bool led_state = false;
@@ -357,13 +357,14 @@ void fast_toggle(void)
 	}
 }
 
-void yellow_short_on(void)
+void yellow_on(uint8_t on)
 {
 	toggle_led();
-	set_rgb_led(yellow, 1);
-	sleep_ms(130);
-	toggle_led();
-	set_rgb_led(statusled_state, 1);
+	if (on) {
+		set_rgb_led(yellow, 1);
+	} else {
+		set_rgb_led(statusled_state, 1);
+	}
 }
 
 void statusled_write(uint8_t led_state) {
@@ -524,7 +525,7 @@ void transmit_macro(uint8_t macro)
 	uint8_t buf[SIZEOF_IR];
 	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	uint8_t delay[SIZEOF_IR - 3] = {0xFF, 0x11, 0x11};
-	/* we start from 1, since we don't want to tx the trigger code of the macro*/
+	/* we start from 1, since we don't want to tx the trigger code of the macro */
 	for (i=1; i < MACRO_DEPTH + 1; i++) {
 		idx = 2*FLASH_PAGE_SIZE + (MACRO_DEPTH + 1) * SIZEOF_IR * macro + SIZEOF_IR * i;
 		eeprom_restore(buf, idx);
@@ -537,10 +538,10 @@ void transmit_macro(uint8_t macro)
 		}
 		/* if macros are sent already, while the trigger IR data are still repeated,
 		* the receiving device may crash
-		* Depending on the protocol we need a pause between the trigger and the transmission
-		* and between two transmissions. The highest known pause is 130 ms for Denon. */
-		yellow_short_on(); // 130 ms
-		irsnd_send_data((IRMP_DATA *) buf, 1);
+		 * we may need a pause between the trigger and the transmission */
+		yellow_on(1);
+		irsnd_send_data((IRMP_DATA *) buf, 1); // send data and trailing pause
+		yellow_on(0);
 	}
 }
 
@@ -673,8 +674,9 @@ int8_t set_handler(uint8_t *buf)
 	uint16_t idx;
 	switch (buf[3]) {
 	case CMD_EMIT:
-		yellow_short_on();
-		irsnd_send_data((IRMP_DATA *) &buf[4], 1);
+		yellow_on(1);
+		irsnd_send_data((IRMP_DATA *) &buf[4], 1); // send data and trailing pause
+		yellow_on(0);
 		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
@@ -814,9 +816,13 @@ void check_wakeups(IRMP_DATA *ir)
 	uint8_t i;
 	uint16_t idx;
 	uint8_t buf[SIZEOF_IR];
+	uint8_t zeros[SIZEOF_IR] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 	for (i=0; i < WAKE_SLOTS - 1; i++) {
 		idx = NUM_KEYS * (SIZEOF_IR + 2) + i * SIZEOF_IR;
 		eeprom_restore(buf, idx);
+		/* first encounter of zero in check_wakeups() means end of check */
+		if (!memcmp(buf, &zeros, sizeof(zeros)))
+			break;
 		if (!memcmp(buf, ir, sizeof(buf)))
 			Wakeup();
 	}
@@ -876,7 +882,7 @@ void send_magic(void)
 {
 	USB_KBD_SendData(0, 0xFA); // KEY_REFRESH
 	while (!PrevXferComplete)
-		sleep_ms(1);
+		tud_task();
 	USB_KBD_SendData(0, 0);
 }
 
@@ -885,7 +891,7 @@ int main(void)
 	IRMP_DATA myIRData;
 	int8_t ret;
 	uint8_t last_magic_sent = 0;
-	uint16_t key, last_sent, last_received;
+	uint16_t key, last_sent;
 	uint8_t num, release_needed = 0;
 	uint8_t old_usb_state_color = usb_state_color;
 
@@ -917,8 +923,7 @@ int main(void)
 			}
 		}
 
-		if (board_button_read() && !tud_ready())
-			Wakeup();
+		// don't use board_button_read() here, it disables and enables interrupts and disturbs the steadiness of the pulse of the irmp_ISR()
 
 		if (!AlarmValue && !tud_ready())
 			Wakeup();
@@ -980,7 +985,8 @@ int main(void)
 				check_macros(&myIRData);
 				check_wakeups(&myIRData);
 				check_reboot(&myIRData);
-			} else { // repeat, or possibly unrecognized new if non toggling protocol
+			}
+			else if (myIRData.flags == IRMP_FLAG_REPETITION) { // repeat, or possibly unrecognized new if non toggling protocol
 				// since  first time, since last time
 				if ((repeat_timer < get_repeat(delay)) || (repeat_timer - last_sent) < get_repeat(period)) {
 					continue; // don't send key
@@ -1001,8 +1007,8 @@ int main(void)
 		}
 
 		/* send release */
-		// since last time >= timeout
-		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(release) ? get_repeat(release) : upper_border))) {
+		// since last time >= timeout, don't use IRMP_FLAG_RELEASE for backward compability
+		if (PrevXferComplete && release_needed && (repeat_timer - last_sent >= (get_repeat(release) ? get_repeat(release) : upper_border * INV_F_INT_US / 1000))) { // ticks to ms
 			release_needed = 0;
 			USB_KBD_SendData(0, 0);
 		}

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023 Joerg Riechardt
+ *  Copyright (c) 2026 Joerg Riechardt
  *
  *  Copyright (c) 2009-2015 Frank Meyer - frank(at)fli4l.de
  *
@@ -19,7 +19,7 @@ void IRMP_Init(void)
 {
 	stdio_init_all();
 
-	add_repeating_timer_us(-1000000 / F_INTERRUPTS, irmp_timer_callback, NULL, &irmp_timer);
+	add_repeating_timer_us(-INV_F_INT_US, irmp_timer_callback, NULL, &irmp_timer);
 
 	irmp_init();
 }
