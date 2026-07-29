@@ -580,8 +580,11 @@ int8_t set_handler(uint8_t *buf)
 	uint8_t tmp[SIZEOF_IR];
 	switch (buf[3]) {
 	case CMD_EMIT:
-		yellow_short_on();
-		irsnd_send_data((IRMP_DATA *) &buf[4], 1);
+		yellow_on(1);
+		irsnd_send_data((IRMP_DATA *) &buf[4], 1); // send data and trailing pause
+		while (irsnd_is_busy())
+			; // wait until sending is finished
+		yellow_on(0);
 		break;
 	case CMD_ALARM:
 		memcpy(&AlarmValue, &buf[4], sizeof(AlarmValue));
